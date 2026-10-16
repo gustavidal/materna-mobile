@@ -7,41 +7,52 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.materna.screen.splash.SplashScreen
 import com.example.materna.ui.theme.MaternaTheme
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { false }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MaternaTheme {
+                var progress by remember { mutableStateOf(0f) }
+                var isFinishedLoading by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    while (progress < 1f) {
+                        delay(30) // Velocidade do carregamento
+                        progress += 0.02f
+                    }
+                    delay(200) // Pequena pausa ao chegar em 100%
+                    isFinishedLoading = true
+                }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    if (!isFinishedLoading) {
+                        SplashScreen(progress = progress)
+                    } else {
+                        HomeScreen(modifier = Modifier.padding(innerPadding))
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
-@Preview(showBackground = true)
+
 @Composable
-fun GreetingPreview() {
-    MaternaTheme {
-        Greeting("Android")
-    }
+fun HomeScreen(modifier: Modifier = Modifier) {
+
 }
