@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -58,7 +57,7 @@ fun OnboardingCard(
 
         Text(
             text = title,
-            color = Color(0xFF212121),
+            color = colorResource(R.color.main_text_color),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )

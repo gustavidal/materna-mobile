@@ -20,7 +20,8 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.materna.screen.onboarding.OnboardingScreen
+import com.example.materna.screens.onboarding.OnboardingScreen
+import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.splash.SplashScreen
 import com.example.materna.ui.theme.MaternaTheme
 import kotlinx.coroutines.delay
@@ -73,6 +74,14 @@ class MainActivity : ComponentActivity() {
 
                         composable(route = "onboarding") {
                             OnboardingScreen(
+                                modifier = Modifier
+                                    .padding(innerPadding),
+                                navController = navController
+                            )
+                        }
+
+                        composable(route = "login") {
+                            LoginScreen(
                                 modifier = Modifier
                                     .padding(innerPadding),
                                 navController = navController

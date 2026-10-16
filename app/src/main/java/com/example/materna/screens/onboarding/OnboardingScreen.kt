@@ -1,4 +1,4 @@
-package com.example.materna.screen.onboarding
+package com.example.materna.screens.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -63,9 +63,8 @@ fun OnboardingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBFB))
+            .background(colorResource(R.color.background))
     ) {
-        // Botão Pular
         Button(
             onClick = {
                 navController.navigate("home") {
@@ -74,12 +73,14 @@ fun OnboardingScreen(
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 16.dp, end = 24.dp)
-                .background(Color.White)
+                .padding(top = 16.dp, end = 24.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorResource(R.color.background),
+                contentColor = colorResource(R.color.secundary_gray)
+            ),
         ) {
             Text(
                 text = "Pular",
-                color = colorResource(R.color.secundary_gray),
                 fontSize = 14.sp
             )
         }
@@ -124,7 +125,7 @@ fun OnboardingScreen(
                     if (currentStep < 2) {
                         currentStep++
                     } else {
-                        navController.navigate("home") {
+                        navController.navigate("login") {
                             popUpTo("onboarding") { inclusive = true }
                         }
                     }
