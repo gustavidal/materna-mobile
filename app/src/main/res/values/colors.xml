@@ -10,4 +10,7 @@
 <!-- text colors -->
     <color name="main_text_color">#FF2D2121</color>
     <color name="secundary_gray">#FF8A7B76</color>
+
+<!-- text boxes -->
+    <color name="border">#FFEEDCD6</color>
 </resources>

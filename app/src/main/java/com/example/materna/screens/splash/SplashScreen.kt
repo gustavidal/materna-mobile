@@ -42,7 +42,7 @@ fun SplashScreen(progress: Float) {
         ) {
 
             Image(
-                painter = painterResource(id = R.drawable.ic_materna_logo),
+                painter = painterResource(id = R.drawable.ic_materna_logo_com_fundo),
                 contentDescription = "Logo Materna",
                 modifier = Modifier
                     .size(160.dp)

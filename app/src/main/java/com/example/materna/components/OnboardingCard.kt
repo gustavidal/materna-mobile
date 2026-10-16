@@ -46,7 +46,7 @@ fun OnboardingCard(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = imageRes),
+                painter = painterResource(imageRes),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()

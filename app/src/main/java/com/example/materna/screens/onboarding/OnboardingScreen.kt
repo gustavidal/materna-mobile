@@ -67,7 +67,7 @@ fun OnboardingScreen(
     ) {
         Button(
             onClick = {
-                navController.navigate("home") {
+                navController.navigate("login") {
                     popUpTo("onboarding") { inclusive = true }
                 }
             },
