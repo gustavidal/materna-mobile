@@ -1,4 +1,4 @@
-package com.example.materna.screen.splash
+package com.example.materna.screens.splash
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+<!-- content colors -->
     <color name="main_pink">#FFC85B63</color>
+    <color name="pink_beige">#FFFCEAE8</color>
+
+<!-- text colors -->
+    <color name="secundary_gray">#FF8A7B76</color>
 </resources>
