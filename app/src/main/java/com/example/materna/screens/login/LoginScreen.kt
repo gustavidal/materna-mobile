@@ -2,22 +2,38 @@ package com.example.materna.screens.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.materna.R
+import com.example.materna.components.CustomLoginField
+
+val FieldShape = RoundedCornerShape(28.dp)
 
 @Composable
 fun LoginScreen(
@@ -33,77 +52,197 @@ fun LoginScreen(
     navController: NavController,
     loginScreenViewModel: LoginScreenViewModel
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     val email by loginScreenViewModel.email.observeAsState(initial = "")
     val senha by loginScreenViewModel.senha.observeAsState(initial = "")
+
+    var passwordVisible by remember {
+        mutableStateOf(false)
+    }
+
+    val textColor       = colorResource(R.color.main_text_color)
+    val secondaryColor  = colorResource(R.color.secundary_gray)
+    val borderColor     = colorResource(R.color.border)
+    val pinkColor       = colorResource(R.color.main_pink)
+    val backgroundColor = colorResource(R.color.background)
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(colorResource(R.color.background)),
-        verticalArrangement = Arrangement.SpaceEvenly,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(backgroundColor)
+            .verticalScroll(rememberScrollState())
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        focusManager.clearFocus(force = true)
+                        keyboardController?.hide()
+                    }
+                )
+            }
+            .padding(horizontal = 28.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(32.dp)
     ) {
-
-        Column(
-            modifier = Modifier
-               .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_materna_logo_sem_fundo),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .size(120.dp)
-            )
-            Text(
-                text = "Materna",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.main_text_color)
-            )
-
-            Text(
-                text = "Bem-vinda!",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.secundary_gray)
-            )
-        }
-
+//        -- cabeçalho
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            OutlinedTextField(
-                value = email,
-                singleLine = true,
-                onValueChange = {
-                    loginScreenViewModel.onEmailChanged(it)
-                },
+            Image(
+                painter = painterResource(R.drawable.ic_materna_logo_sem_fundo),
+                contentDescription = "Logo Materna",
                 modifier = Modifier
-                    .fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email
-                ),
-                shape = RoundedCornerShape(16.dp),
-                placeholder = {
-                    Text("Digite um email cadastrado")
-                },
-                label = {
-                    Text("Email")
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = colorResource(R.color.border),
-                    focusedBorderColor = colorResource(R.color.main_text_color)
-                ),
-                trailingIcon = {
+                    .size(120.dp)
+            )
 
+            Text(
+                text = "Materna",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor
+            )
+
+            Text(
+                text = "Bem-vinda de volta",
+                fontSize = 13.sp,
+                color = secondaryColor
+            )
+        }
+
+//        -- seção de formulário
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "E-mail",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+            )
+
+            CustomLoginField(
+                value = email,
+                onValueChange = loginScreenViewModel::onEmailChanged,
+                placeholder = "Digite seu e-mail",
+                iconRes = R.drawable.ic_email,
+                borderColor = borderColor,
+                textColor = textColor,
+                keyboardType = KeyboardType.Email
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Senha",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+            )
+
+            CustomLoginField(
+                value = senha,
+                onValueChange = loginScreenViewModel::onSenhaChanged,
+                placeholder = "Digite sua senha",
+                iconRes = R.drawable.ic_lock,
+                borderColor = borderColor,
+                textColor = textColor,
+                keyboardType = KeyboardType.Password,
+                isPassword = true,
+                passwordVisible = passwordVisible,
+                onTogglePassword = {
+                    passwordVisible = !passwordVisible
                 }
             )
+
+            Text(
+                text = "Esqueci minha senha",
+                fontSize = 14.sp,
+                color = pinkColor,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(top = 10.dp)
+                    .clickable(
+                        interactionSource = remember {
+                            MutableInteractionSource()
+                        },
+                        indication = null
+                    ) {
+
+                    }
+            )
+
+            Spacer(modifier = Modifier.height(25.dp))
+
+            Button(
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = pinkColor
+                )
+            ) {
+                Text(
+                    text = "Entrar",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        }
+
+//        -- seção de um novo cadastro
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            Text(
+                text = "Ainda não tenho conta",
+                fontSize = 16.sp,
+                color = secondaryColor
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Button(
+                onClick = {
+                    navController.navigate("cadastro")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp)
+                    .border(
+                        width = 2.dp,
+                        color = borderColor,
+                        shape = CircleShape
+                    ),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = textColor
+                )
+            ) {
+                Text(
+                    text = "Criar conta",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
