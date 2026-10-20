@@ -7,12 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -60,7 +60,7 @@ fun SplashScreen(progress: Float) {
             Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                text = "Doe leite.\nCompartilhe esperança",
+                text = "Doe leite.\nCompartilhe esperança.",
                 color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
@@ -70,15 +70,20 @@ fun SplashScreen(progress: Float) {
 
             Spacer(modifier = Modifier.height(54.dp))
 
-            LinearProgressIndicator(
-                progress = { progress },
+            Box(
                 modifier = Modifier
                     .width(180.dp)
                     .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)), // Pontas da barra arredondadas
-                color = Color.White,
-                trackColor = Color.White.copy(alpha = 0.35f)
-            )
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White.copy(alpha = 0.35f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress.coerceIn(0f, 1f))
+                        .height(8.dp)
+                        .background(Color.White)
+                )
+            }
         }
     }
 }

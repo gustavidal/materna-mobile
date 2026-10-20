@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +31,8 @@ fun OnboardingCard(
     imageRes: Int,
     title: String,
     description: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -39,10 +41,11 @@ fun OnboardingCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f)
+                .widthIn(max = 360.dp)
+                .aspectRatio(if (compact) 1.25f else 1f)
                 .clip(RoundedCornerShape(32.dp))
                 .background(colorResource(R.color.pink_beige))
-                .padding(24.dp),
+                .padding(if (compact) 16.dp else 24.dp),
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -53,23 +56,24 @@ fun OnboardingCard(
             )
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(if (compact) 16.dp else 28.dp))
 
         Text(
             text = title,
             color = colorResource(R.color.main_text_color),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
+            fontSize = if (compact) 21.sp else 24.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(if (compact) 8.dp else 12.dp))
 
         Text(
             text = description,
             color = colorResource(R.color.secundary_gray),
-            fontSize = 15.sp,
+            fontSize = if (compact) 13.sp else 15.sp,
             fontWeight = FontWeight.Normal,
-            lineHeight = 22.sp,
+            lineHeight = if (compact) 18.sp else 22.sp,
             textAlign = TextAlign.Center
         )
     }
