@@ -21,6 +21,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.materna.data.local.MaternaDatabaseProvider
+import com.example.materna.screens.cadastro.CadastroScreen
+import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
@@ -113,6 +115,15 @@ class MainActivity : ComponentActivity() {
                                     .padding(innerPadding),
                                 navController = navController,
                                 loginScreenViewModel = LoginScreenViewModel()
+                            )
+                        }
+
+                        composable(route = "cadastro") {
+                            CadastroScreen(
+                                modifier = Modifier
+                                    .padding(innerPadding),
+                                navController = navController,
+                                cadastroScreenViewModel = CadastroScreenViewModel()
                             )
                         }
                     }
