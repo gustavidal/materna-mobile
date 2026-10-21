@@ -1,10 +1,6 @@
-
 package com.example.materna.screens.cadastro
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -17,16 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,23 +32,18 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.materna.R
+import com.example.materna.components.CadastroField
+import com.example.materna.components.CadastroStepIndicator
 
 private const val LAST_STEP = 2
-
-private val CadastroPink = Color(0xFFE16B75)
-private val CadastroText = Color(0xFF39313B)
-private val CadastroGray = Color(0xFF999AAA)
-private val CadastroBorder = Color(0xFFF0E0DC)
-private val CadastroBackground = Color(0xFFFFF9F6)
 
 @Composable
 fun CadastroScreen(
@@ -88,10 +76,15 @@ fun CadastroScreen(
     val mostrarSenha       by cadastroScreenViewModel.mostrarSenha.observeAsState(false)
     val mostrarConfirmacao by cadastroScreenViewModel.mostrarConfirmacao.observeAsState(false)
 
+    val consultandoCep     by cadastroScreenViewModel.consultandoCep.observeAsState(false)
+    val erroCep            by cadastroScreenViewModel.erroCep.observeAsState(null)
+    val erroDataNascimento =  cadastroScreenViewModel.erroDataNascimento()
+    val erroCpf            =  cadastroScreenViewModel.erroCpf()
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(CadastroBackground)
+            .background(colorResource(R.color.background_cream))
             .padding(horizontal = 24.dp, vertical = 16.dp)
             .verticalScroll(rememberScrollState())
             .pointerInput(Unit) {
@@ -102,7 +95,7 @@ fun CadastroScreen(
                     }
                 )
             }
-    ) {
+        ) {
 //        -- cabeçalho
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -113,7 +106,7 @@ fun CadastroScreen(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFF5EFEB))
+                    .background(colorResource(R.color.background_gray))
                     .clickable {
                         if (currentStep > 0) {
                             cadastroScreenViewModel.voltarEtapa()
@@ -128,7 +121,8 @@ fun CadastroScreen(
                 Text(
                     text = "‹",
                     fontSize = 34.sp,
-                    color = CadastroText
+                    color = colorResource(R.color.main_text_color),
+                    textAlign = TextAlign.Center
                 )
             }
 
@@ -139,7 +133,7 @@ fun CadastroScreen(
                     .background(Color(0xFFF5EFEB))
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 fontSize = 13.sp,
-                color = CadastroGray
+                color = colorResource(R.color.secundary_gray)
             )
         }
 
@@ -150,27 +144,10 @@ fun CadastroScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            repeat(3) { index ->
-                val indicatorWidth by animateFloatAsState(
-                    targetValue = if (index <= currentStep) 1f else 0.45f,
-                    animationSpec = tween(250),
-                    label = "stepIndicator$index"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .weight(indicatorWidth)
-                        .height(5.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (index <= currentStep) {
-                                colorResource(R.color.main_pink)
-                            } else {
-                                colorResource(R.color.border)
-                            }
-                        )
-                )
-            }
+            CadastroStepIndicator(
+                currentStep = currentStep,
+                totalSteps = 3
+            )
         }
 
         Spacer(Modifier.height(28.dp))
@@ -179,7 +156,7 @@ fun CadastroScreen(
             text = "Criar conta",
             fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
-            color = CadastroText
+            color = colorResource(R.color.main_text_color)
         )
 
         Spacer(Modifier.height(6.dp))
@@ -187,16 +164,14 @@ fun CadastroScreen(
         Text(
             text = "Preencha seus dados pessoais",
             fontSize = 15.sp,
-            color = CadastroGray
+            color = colorResource(R.color.secundary_gray)
         )
 
         // Área rolável: somente os campos mudam entre etapas
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(top = 28.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(top = 28.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             when (currentStep) {
@@ -206,33 +181,51 @@ fun CadastroScreen(
                         value = nome,
                         onValueChange = { cadastroScreenViewModel.onNomeChanged(it) },
                         placeholder = "Maria Silva",
-                        icon = "♙"
+                        icon = painterResource(R.drawable.ic_profile)
                     )
+
+
 
                     CadastroField(
                         label = "Data de nascimento",
                         value = dataNascimento,
                         onValueChange = { cadastroScreenViewModel.onDataNascimentoChanged(it) },
                         placeholder = "dd/mm/aaaa",
-                        icon = "▦",
+                        icon = painterResource(R.drawable.ic_calendar),
                         keyboardType = KeyboardType.Number
                     )
+                    if (erroDataNascimento != null) {
+                        Text(
+                            text = erroDataNascimento,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
 
                     CadastroField(
                         label = "CPF",
                         value = cpf,
                         onValueChange = { cadastroScreenViewModel.onCpfChanged(it) },
                         placeholder = "000.000.000-00",
-                        icon = "◷",
+                        icon = painterResource(R.drawable.ic_clock),
                         keyboardType = KeyboardType.Number
                     )
+
+                    if (erroCpf != null) {
+                        Text(
+                            text = erroCpf,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
+
 
                     CadastroField(
                         label = "Telefone",
                         value = telefone,
                         onValueChange = { cadastroScreenViewModel.onTelefoneChanged(it) },
                         placeholder = "(11) 90000-0000",
-                        icon = "♧",
+                        icon = painterResource(R.drawable.ic_phone),
                         keyboardType = KeyboardType.Phone
                     )
                 }
@@ -243,9 +236,25 @@ fun CadastroScreen(
                         value = cep,
                         onValueChange = { cadastroScreenViewModel.onCepChanged(it) },
                         placeholder = "00000-000",
-                        icon = "⌖",
+                        icon = null,
                         keyboardType = KeyboardType.Number
                     )
+
+                    if (consultandoCep) {
+                        Text(
+                            text = "Consultando CEP...",
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.secundary_gray)
+                        )
+                    }
+
+                    if (erroCep != null) {
+                        Text(
+                            text = erroCep.orEmpty(),
+                            fontSize = 12.sp,
+                            color = Color.Red
+                        )
+                    }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Box(Modifier.weight(0.8f)) {
@@ -253,7 +262,8 @@ fun CadastroScreen(
                                 label = "Estado",
                                 value = estado,
                                 onValueChange = { cadastroScreenViewModel.onEstadoChanged(it) },
-                                placeholder = "UF"
+                                placeholder = "UF",
+                                enabled = false
                             )
                         }
 
@@ -263,7 +273,8 @@ fun CadastroScreen(
                                 value = cidade,
                                 onValueChange = { cadastroScreenViewModel.onCidadeChanged(it) },
                                 placeholder = "Sua cidade",
-                                icon = "▤"
+                                icon = null,
+                                enabled = false
                             )
                         }
                     }
@@ -273,7 +284,7 @@ fun CadastroScreen(
                         value = endereco,
                         onValueChange = { cadastroScreenViewModel.onEnderecoChanged(it) },
                         placeholder = "Rua, Avenida, etc.",
-                        icon = "⌂"
+                        icon = null
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -304,7 +315,7 @@ fun CadastroScreen(
                         value = email,
                         onValueChange = { cadastroScreenViewModel.onEmailChanged(it) },
                         placeholder = "seu@email.com",
-                        icon = "✉",
+                        icon = null,
                         keyboardType = KeyboardType.Email
                     )
 
@@ -313,7 +324,7 @@ fun CadastroScreen(
                         value = senha,
                         onValueChange = { cadastroScreenViewModel.onSenhaChanged(it) },
                         placeholder = "Digite sua senha",
-                        icon = "♙",
+                        icon = null,
                         isPassword = !mostrarSenha,
                         trailingText = if (mostrarSenha) "Ocultar" else "Ver",
                         onTrailingClick = {
@@ -325,7 +336,7 @@ fun CadastroScreen(
                     Text(
                         text = "Mínimo de 8 caracteres",
                         fontSize = 12.sp,
-                        color = CadastroGray
+                        color = colorResource(R.color.secundary_gray)
                     )
 
                     CadastroField(
@@ -333,7 +344,7 @@ fun CadastroScreen(
                         value = confirmarSenha,
                         onValueChange = { cadastroScreenViewModel.onConfirmarSenhaChanged(it) },
                         placeholder = "Confirme sua senha",
-                        icon = "♙",
+                        icon = null,
                         isPassword = !mostrarConfirmacao,
                         trailingText = if (mostrarConfirmacao) "Ocultar" else "Ver",
                         onTrailingClick = {
@@ -353,7 +364,7 @@ fun CadastroScreen(
                         Text(
                             text = "Li e concordo com os Termos de Uso e a Política de Privacidade.",
                             fontSize = 12.sp,
-                            color = CadastroGray
+                            color = colorResource(R.color.secundary_gray)
                         )
                     }
                 }
@@ -374,12 +385,14 @@ fun CadastroScreen(
                 focusManager.clearFocus()
                 keyboardController?.hide()
             },
+            enabled = cadastroScreenViewModel.podeContinuar(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(
-                containerColor = CadastroPink
+                containerColor = colorResource(R.color.main_pink),
+                disabledContainerColor = colorResource(R.color.border)
             )
         ) {
             Text(
@@ -402,109 +415,20 @@ fun CadastroScreen(
             Text(
                 text = "Já tem uma conta? ",
                 fontSize = 13.sp,
-                color = CadastroGray
+                color = colorResource(R.color.secundary_gray)
             )
 
             Text(
                 text = "Entrar",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = CadastroPink,
+                color = colorResource(R.color.main_pink),
                 modifier = Modifier.clickable {
                     navController.navigate("login") {
                         launchSingleTop = true
                     }
                 }
             )
-        }
-    }
-}
-
-@Composable
-private fun CadastroField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    icon: String? = null,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    isPassword: Boolean = false,
-    trailingText: String? = null,
-    onTrailingClick: (() -> Unit)? = null
-) {
-    Column {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = CadastroText,
-            modifier = Modifier.padding(start = 2.dp, bottom = 8.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(17.dp))
-                .background(Color.White)
-                .border(
-                    width = 1.5.dp,
-                    color = CadastroBorder,
-                    shape = RoundedCornerShape(17.dp)
-                )
-                .padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (icon != null) {
-                Text(
-                    text = icon,
-                    fontSize = 20.sp,
-                    color = CadastroGray
-                )
-                Spacer(Modifier.width(12.dp))
-            }
-
-            Box(Modifier.weight(1f)) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        fontSize = 14.sp,
-                        color = Color(0xFFB8B8C3)
-                    )
-                }
-
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        fontSize = 14.sp,
-                        color = CadastroText
-                    ),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = keyboardType
-                    ),
-                    visualTransformation = if (isPassword) {
-                        PasswordVisualTransformation()
-                    } else {
-                        VisualTransformation.None
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            if (trailingText != null && onTrailingClick != null) {
-                Spacer(Modifier.width(6.dp))
-
-                Text(
-                    text = trailingText,
-                    color = CadastroGray,
-                    fontSize = 12.sp,
-                    modifier = Modifier.clickable {
-                        onTrailingClick()
-                    }
-                )
-            }
         }
     }
 }

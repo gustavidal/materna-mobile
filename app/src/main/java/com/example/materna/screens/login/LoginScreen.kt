@@ -65,7 +65,7 @@ fun LoginScreen(
     val secondaryColor  = colorResource(R.color.secundary_gray)
     val borderColor     = colorResource(R.color.border)
     val pinkColor       = colorResource(R.color.main_pink)
-    val backgroundColor = colorResource(R.color.background)
+    val backgroundColor = colorResource(R.color.background_cream)
 
     Column(
         modifier = modifier

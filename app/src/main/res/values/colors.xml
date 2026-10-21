@@ -3,13 +3,17 @@
 <!-- main colors-->
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
+    <color name="green">#FF2E7D32</color>
+    <color name="red">#FFFF0000</color>
 
 <!-- background color-->
-    <color name="background">#FFFFF9F6</color>
+    <color name="background_cream">#FFFFF9F6</color>
+    <color name="background_gray">#FFF5EFEB</color>
 
 <!-- content colors -->
     <color name="main_pink">#FFC85B63</color>
     <color name="pink_beige">#FFFCEAE8</color>
+    <color name="disabled">#FFF2EFED</color>
 
 <!-- text colors -->
     <color name="main_text_color">#FF2D2121</color>

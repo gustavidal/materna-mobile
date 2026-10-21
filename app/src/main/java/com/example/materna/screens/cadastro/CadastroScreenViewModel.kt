@@ -3,6 +3,14 @@ package com.example.materna.screens.cadastro
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.materna.model.Endereco
+import com.example.materna.service.RetrofitFactory
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class CadastroScreenViewModel : ViewModel() {
     private val _currentStep = MutableLiveData<Int>()
@@ -63,11 +71,43 @@ class CadastroScreenViewModel : ViewModel() {
 
 
     fun onNomeChanged(value: String) { _nome.value = value }
-    fun onDataNascimentoChanged(value: String) { _dataNascimento.value = value }
-    fun onCpfChanged(value: String) { _cpf.value = value }
-    fun onTelefoneChanged(value: String) { _telefone.value = value }
+    fun onDataNascimentoChanged(value: String) {
+        _dataNascimento.value = formatarData(value)
+    }
+    fun onCpfChanged(value: String) {
+        _cpf.value = formatarCpf(value)
+    }
+    fun onTelefoneChanged(value: String) {
+        _telefone.value = formatarTelefone(value)
+    }
 
-    fun onCepChanged(value: String) { _cep.value = value }
+
+    private val enderecoService = RetrofitFactory().getEnderecoService()
+    private var chamadaCep: Call<Endereco>? = null
+
+
+    fun onCepChanged(value: String) {
+        val numeros = value.filter { it.isDigit() }.take(8)
+        val cepFormatado = formatarCep(numeros)
+
+        if (cepFormatado == _cep.value) return
+
+        chamadaCep?.cancel()
+        chamadaCep = null
+
+        _cep.value = cepFormatado
+        _cepConsultado.value = false
+        _consultandoCep.value = false
+        _erroCep.value = null
+
+        _estado.value = ""
+        _cidade.value = ""
+        _endereco.value = ""
+
+        if (numeros.length == 8) {
+            consultarCep(numeros)
+        }
+    }
     fun onEstadoChanged(value: String) { _estado.value = value }
     fun onCidadeChanged(value: String) { _cidade.value = value }
     fun onEnderecoChanged(value: String) { _endereco.value = value }
@@ -78,6 +118,134 @@ class CadastroScreenViewModel : ViewModel() {
     fun onSenhaChanged(value: String) { _senha.value = value }
     fun onConfirmarSenhaChanged(value: String) { _confirmarSenha.value = value }
     fun onTermosAceitosChanged(value: Boolean) { _termosAceitos.value = value }
+
+
+
+
+
+
+    private fun formatarData(value: String): String {
+        val digits = value.filter { it.isDigit() }.take(8)
+
+        return buildString {
+            digits.forEachIndexed { index, char ->
+                if (index == 2 || index == 4) append('/')
+                append(char)
+            }
+        }
+    }
+
+    private fun formatarCpf(value: String): String {
+        val digits = value.filter { it.isDigit() }.take(11)
+
+        return buildString {
+            digits.forEachIndexed { index, char ->
+                if (index == 3 || index == 6) append('.')
+                if (index == 9) append('-')
+                append(char)
+            }
+        }
+    }
+
+    private fun formatarTelefone(value: String): String {
+        val digits = value.filter { it.isDigit() }.take(11)
+
+        return buildString {
+            digits.forEachIndexed { index, char ->
+                when (index) {
+                    0 -> append('(')
+                    2 -> append(") ")
+                    7 -> append('-')
+                }
+                append(char)
+            }
+        }
+    }
+
+    private fun formatarCep(value: String): String {
+        val digits = value.filter { it.isDigit() }.take(8)
+
+        return buildString {
+            digits.forEachIndexed { index, char ->
+                if (index == 5) append('-')
+                append(char)
+            }
+        }
+    }
+
+
+
+
+
+
+    private fun dataNascimentoValida(): Boolean {
+        val valor = _dataNascimento.value ?: return false
+
+        if (!valor.matches(Regex("\\d{2}/\\d{2}/\\d{4}"))) {
+            return false
+        }
+
+        val formato = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        formato.isLenient = false
+
+        val dataNascimento = try {
+            formato.parse(valor)
+        } catch (e: Exception) {
+            null
+        } ?: return false
+
+        val hoje = Calendar.getInstance()
+        val nascimento = Calendar.getInstance().apply {
+            time = dataNascimento
+        }
+
+        return !nascimento.after(hoje)
+    }
+
+    private fun cpfValido(): Boolean {
+        val numeros = _cpf.value
+            ?.filter { it.isDigit() }
+            ?: return false
+
+        if (numeros.length != 11) return false
+
+        // Rejeita CPFs com todos os dígitos iguais.
+        if (numeros.all { it == numeros[0] }) return false
+
+        val digitos = numeros.map { it.digitToInt() }
+
+        // Calcula o primeiro dígito verificador.
+        var soma = 0
+
+        for (i in 0 until 9) {
+            soma += digitos[i] * (10 - i)
+        }
+
+        val restoPrimeiro = (soma * 10) % 11
+        val primeiroDigito = if (restoPrimeiro == 10) {
+            0
+        } else {
+            restoPrimeiro
+        }
+
+        if (digitos[9] != primeiroDigito) return false
+
+        // Calcula o segundo dígito verificador.
+        soma = 0
+
+        for (i in 0 until 10) {
+            soma += digitos[i] * (11 - i)
+        }
+
+        val restoSegundo = (soma * 10) % 11
+        val segundoDigito = if (restoSegundo == 10) {
+            0
+        } else {
+            restoSegundo
+        }
+
+        return digitos[10] == segundoDigito
+    }
 
 
 
@@ -103,7 +271,93 @@ class CadastroScreenViewModel : ViewModel() {
 
 
 
+    fun erroDataNascimento(): String? {
+        val valor = _dataNascimento.value.orEmpty()
 
+        if (valor.isBlank()) return null
+
+        if (valor.length < 10) {
+            return "Digite a data completa."
+        }
+
+        return if (!dataNascimentoValida()) "Informe uma data válida." else null
+    }
+
+    fun erroCpf(): String? {
+        val valor = _cpf.value.orEmpty()
+
+        if (valor.isBlank()) return null
+
+        if (valor.filter { it.isDigit() }.length < 11) {
+            return "Digite os 11 dígitos do CPF."
+        }
+
+        return if (!cpfValido()) "CPF inválido. Confira os números informados." else null
+    }
+
+
+
+
+
+
+    private fun consultarCep(cep: String) {
+        _consultandoCep.value = true
+        _erroCep.value = null
+
+        val chamada = enderecoService.getEnderecoByCep(cep)
+        chamadaCep = chamada
+
+        chamada.enqueue(object : Callback<Endereco> {
+
+            override fun onResponse(
+                call: Call<Endereco>,
+                response: Response<Endereco>
+            ) {
+                if (_cep.value?.filter { it.isDigit() } != cep) return
+
+                _consultandoCep.value = false
+
+                val enderecoApi = response.body()
+
+                if (
+                    response.isSuccessful &&
+                    enderecoApi != null &&
+                    enderecoApi.erro != true &&
+                    !enderecoApi.cep.isNullOrBlank() &&
+                    !enderecoApi.uf.isNullOrBlank() &&
+                    !enderecoApi.cidade.isNullOrBlank()
+                ) {
+                    _estado.value = enderecoApi.uf
+                    _cidade.value = enderecoApi.cidade
+                    _endereco.value = enderecoApi.logradouro
+                    _cepConsultado.value = true
+                    _erroCep.value = null
+                } else {
+                    _estado.value = ""
+                    _cidade.value = ""
+                    _endereco.value = ""
+                    _cepConsultado.value = false
+                    _erroCep.value = "CEP não encontrado. Confira os números."
+                }
+
+            }
+
+            override fun onFailure(
+                call: Call<Endereco>,
+                t: Throwable
+            ) {
+                if (_cep.value?.filter { it.isDigit() } != cep) return
+
+                _consultandoCep.value = false
+                _cepConsultado.value = false
+
+                if (!call.isCanceled) {
+                    _erroCep.value =
+                        "Não foi possível consultar o CEP. Verifique sua conexão."
+                }
+            }
+        })
+    }
 
     private val _cepConsultado = MutableLiveData(false)
     val cepConsultado: LiveData<Boolean> = _cepConsultado
@@ -122,5 +376,40 @@ class CadastroScreenViewModel : ViewModel() {
                 !(_cidade.value.isNullOrBlank()) &&
                 !(_endereco.value.isNullOrBlank()) &&
                 (_numero.value != null)
+    }
+
+
+
+
+
+    fun podeContinuar(): Boolean {
+        return when (_currentStep.value ?: 0) {
+            0 -> {
+                !_nome.value.isNullOrBlank() &&
+                        dataNascimentoValida() &&
+                        cpfValido() &&
+                        !_telefone.value.isNullOrBlank()
+            }
+
+            1 -> {
+                !(_consultandoCep.value ?: false) &&
+                        (_cepConsultado.value ?: false) &&
+                        !_cep.value.isNullOrBlank() &&
+                        !_estado.value.isNullOrBlank() &&
+                        !_cidade.value.isNullOrBlank() &&
+                        !_endereco.value.isNullOrBlank() &&
+                        _numero.value != null
+            }
+
+            2 -> {
+                !_email.value.isNullOrBlank() &&
+                        !_senha.value.isNullOrBlank() &&
+                        !_confirmarSenha.value.isNullOrBlank() &&
+                        _senha.value == _confirmarSenha.value &&
+                        (_termosAceitos.value ?: false)
+            }
+
+            else -> false
+        }
     }
 }

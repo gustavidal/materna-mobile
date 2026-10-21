@@ -97,7 +97,7 @@ fun OnboardingScreen(
     BoxWithConstraintsCompat(
         modifier = modifier
             .fillMaxSize()
-            .background(colorResource(R.color.background))
+            .background(colorResource(R.color.background_cream))
     ) {
         val compactHeight = maxHeight < 700.dp
         val horizontalPadding = if (maxWidth < 360.dp) 20.dp else 32.dp
@@ -108,7 +108,7 @@ fun OnboardingScreen(
                 .align(Alignment.TopEnd)
                 .padding(top = 8.dp, end = 16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(R.color.background),
+                containerColor = colorResource(R.color.background_cream),
                 contentColor = colorResource(R.color.secundary_gray)
             )
         ) {
@@ -178,7 +178,7 @@ fun OnboardingScreen(
                             .height(8.dp)
                             .clip(CircleShape)
                             .background(
-                                if (selected) colorResource(R.color.main_pink) else colorResource(R.color.background)
+                                if (selected) colorResource(R.color.main_pink) else colorResource(R.color.background_cream)
                             )
                     )
                 }
