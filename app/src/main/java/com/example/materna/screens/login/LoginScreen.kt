@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.materna.R
-import com.example.materna.components.CustomLoginField
+import com.example.materna.components.LoginField
 
 val FieldShape = RoundedCornerShape(28.dp)
 
@@ -126,7 +126,7 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
             )
 
-            CustomLoginField(
+            LoginField(
                 value = email,
                 onValueChange = loginScreenViewModel::onEmailChanged,
                 placeholder = "Digite seu e-mail",
@@ -146,7 +146,7 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
             )
 
-            CustomLoginField(
+            LoginField(
                 value = senha,
                 onValueChange = loginScreenViewModel::onSenhaChanged,
                 placeholder = "Digite sua senha",

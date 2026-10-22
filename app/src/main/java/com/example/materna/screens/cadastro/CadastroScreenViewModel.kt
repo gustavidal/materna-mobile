@@ -12,7 +12,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-class CadastroScreenViewModel : ViewModel() {
+class CadastroScreenViewModel: ViewModel() {
     private val _currentStep = MutableLiveData<Int>()
     val currentStep: LiveData<Int> = _currentStep
 
@@ -351,6 +351,8 @@ class CadastroScreenViewModel : ViewModel() {
                 _consultandoCep.value = false
                 _cepConsultado.value = false
 
+                android.util.Log.e("ViaCEP", "Erro na consulta do CEP", t)
+
                 if (!call.isCanceled) {
                     _erroCep.value =
                         "Não foi possível consultar o CEP. Verifique sua conexão."
@@ -382,6 +384,28 @@ class CadastroScreenViewModel : ViewModel() {
 
 
 
+    fun senhaTemOitoCaracteres(): Boolean {
+        return (_senha.value?.length ?: 0) >= 8
+    }
+
+    fun senhaTemMaiuscula(): Boolean {
+        return _senha.value.orEmpty().any { it.isUpperCase() }
+    }
+
+    fun senhaTemNumero(): Boolean {
+        return _senha.value.orEmpty().any { it.isDigit() }
+    }
+
+    fun senhaTemCaractereEspecial(): Boolean {
+        return _senha.value.orEmpty().any {
+            !it.isLetterOrDigit() && !it.isWhitespace()
+        }
+    }
+
+
+
+
+
     fun podeContinuar(): Boolean {
         return when (_currentStep.value ?: 0) {
             0 -> {
@@ -404,6 +428,7 @@ class CadastroScreenViewModel : ViewModel() {
             2 -> {
                 !_email.value.isNullOrBlank() &&
                         !_senha.value.isNullOrBlank() &&
+                        (_senha.value?.length ?: 0) >= 8 &&
                         !_confirmarSenha.value.isNullOrBlank() &&
                         _senha.value == _confirmarSenha.value &&
                         (_termosAceitos.value ?: false)

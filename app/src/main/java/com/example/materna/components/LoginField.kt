@@ -32,7 +32,7 @@ import com.example.materna.R
 import com.example.materna.screens.login.FieldShape
 
 @Composable
-fun CustomLoginField(
+fun LoginField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
@@ -112,7 +112,7 @@ fun CustomLoginField(
                         if (passwordVisible) {
                             R.drawable.ic_visibility_off
                         } else {
-                            R.drawable.ic_visibility
+                            R.drawable.ic_visibility_on
                         }
                     ),
                     contentDescription = if (passwordVisible) {

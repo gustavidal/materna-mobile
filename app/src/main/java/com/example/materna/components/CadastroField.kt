@@ -2,7 +2,6 @@ package com.example.materna.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,7 +50,7 @@ fun CadastroField(
     icon: Painter? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     isPassword: Boolean = false,
-    trailingText: String? = null,
+    trailingIcon: Painter? = null,
     onTrailingClick: (() -> Unit)? = null,
     enabled: Boolean = true,
     maxLength: Int? = null
@@ -119,13 +119,12 @@ fun CadastroField(
                         if (enabled &&
                             (maxLength == null || newValue.text.length <= maxLength)
                         ) {
-                            val oldText = value
                             val newText = newValue.text
 
                             val addedSlash =
-                                newText.length > oldText.length &&
+                                newText.length > value.length &&
                                         newText.contains("/") &&
-                                        !oldText.contains("/") &&
+                                        !value.contains("/") &&
                                         newText.indexOf("/") == 2
 
                             val cursorPosition = if (addedSlash) {
@@ -159,18 +158,24 @@ fun CadastroField(
                 )
             }
 
-            if (trailingText != null && onTrailingClick != null) {
+            if (trailingIcon != null && onTrailingClick != null) {
                 Spacer(Modifier.width(6.dp))
 
-                Text(
-                    text = trailingText,
-                    color = colorResource(R.color.secundary_gray),
-                    fontSize = 12.sp,
-                    modifier = Modifier.clickable(
-                        enabled = enabled,
-                        onClick = onTrailingClick
+                IconButton(
+                    onClick = onTrailingClick,
+                    modifier = Modifier
+                        .size(25.dp)
+                ) {
+                    Icon(
+                        painter = trailingIcon,
+                        contentDescription = if (isPassword) {
+                            "Ocultar senha"
+                        } else {
+                            "Mostrar senha"
+                        },
+                        tint = colorResource(R.color.border)
                     )
-                )
+                }
             }
         }
     }
