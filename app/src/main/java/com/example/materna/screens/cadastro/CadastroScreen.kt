@@ -22,6 +22,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -42,6 +43,7 @@ import androidx.navigation.NavController
 import com.example.materna.R
 import com.example.materna.components.CadastroField
 import com.example.materna.components.CadastroStepIndicator
+import kotlinx.coroutines.delay
 
 private const val LAST_STEP = 2
 
@@ -64,7 +66,7 @@ fun CadastroScreen(
     val cep                by cadastroScreenViewModel.cep.observeAsState("")
     val estado             by cadastroScreenViewModel.estado.observeAsState("")
     val cidade             by cadastroScreenViewModel.cidade.observeAsState("")
-    val endereco           by cadastroScreenViewModel.endereco.observeAsState("")
+    val endereco           by cadastroScreenViewModel.logradouro.observeAsState("")
     val numero             by cadastroScreenViewModel.numero.observeAsState(null)
     val complemento        by cadastroScreenViewModel.complemento.observeAsState("")
 
@@ -75,6 +77,20 @@ fun CadastroScreen(
 
     val mostrarSenha       by cadastroScreenViewModel.mostrarSenha.observeAsState(false)
     val mostrarConfirmacao by cadastroScreenViewModel.mostrarConfirmacao.observeAsState(false)
+
+    LaunchedEffect(mostrarSenha) {
+        if (mostrarSenha) {
+            delay(3000)
+            cadastroScreenViewModel.ocultarSenha()
+        }
+    }
+
+    LaunchedEffect(mostrarConfirmacao) {
+        if (mostrarConfirmacao) {
+            delay(3000)
+            cadastroScreenViewModel.ocultarConfirmacao()
+        }
+    }
 
     val consultandoCep     by cadastroScreenViewModel.consultandoCep.observeAsState(false)
     val erroCep            by cadastroScreenViewModel.erroCep.observeAsState(null)

@@ -39,8 +39,8 @@ class CadastroScreenViewModel: ViewModel() {
     private val _cidade = MutableLiveData<String>()
     val cidade: LiveData<String> = _cidade
 
-    private val _endereco = MutableLiveData<String>()
-    val endereco: LiveData<String> = _endereco
+    private val _logradouro = MutableLiveData<String>()
+    val logradouro: LiveData<String> = _logradouro
 
     private val _numero = MutableLiveData<Int?>()
     val numero: LiveData<Int?> = _numero
@@ -102,7 +102,7 @@ class CadastroScreenViewModel: ViewModel() {
 
         _estado.value = ""
         _cidade.value = ""
-        _endereco.value = ""
+        _logradouro.value = ""
 
         if (numeros.length == 8) {
             consultarCep(numeros)
@@ -110,7 +110,7 @@ class CadastroScreenViewModel: ViewModel() {
     }
     fun onEstadoChanged(value: String) { _estado.value = value }
     fun onCidadeChanged(value: String) { _cidade.value = value }
-    fun onEnderecoChanged(value: String) { _endereco.value = value }
+    fun onEnderecoChanged(value: String) { _logradouro.value = value }
     fun onNumeroChanged(value: Int?) { _numero.value = value }
     fun onComplementoChanged(value: String) { _complemento.value = value }
 
@@ -247,6 +247,14 @@ class CadastroScreenViewModel: ViewModel() {
         return digitos[10] == segundoDigito
     }
 
+    fun emailValido(): Boolean {
+        val email = _email.value.orEmpty()
+
+        return android.util.Patterns.EMAIL_ADDRESS
+            .matcher(email)
+            .matches()
+    }
+
 
 
 
@@ -257,6 +265,14 @@ class CadastroScreenViewModel: ViewModel() {
 
     fun toggleMostrarConfirmacao() {
         _mostrarConfirmacao.value = !(_mostrarConfirmacao.value ?: false)
+    }
+
+    fun ocultarSenha() {
+        _mostrarSenha.value = false
+    }
+
+    fun ocultarConfirmacao() {
+        _mostrarConfirmacao.value = false
     }
 
     fun avancarEtapa() {
@@ -329,13 +345,13 @@ class CadastroScreenViewModel: ViewModel() {
                 ) {
                     _estado.value = enderecoApi.uf
                     _cidade.value = enderecoApi.cidade
-                    _endereco.value = enderecoApi.logradouro
+                    _logradouro.value = enderecoApi.logradouro
                     _cepConsultado.value = true
                     _erroCep.value = null
                 } else {
                     _estado.value = ""
                     _cidade.value = ""
-                    _endereco.value = ""
+                    _logradouro.value = ""
                     _cepConsultado.value = false
                     _erroCep.value = "CEP não encontrado. Confira os números."
                 }
@@ -369,16 +385,6 @@ class CadastroScreenViewModel: ViewModel() {
 
     private val _erroCep = MutableLiveData<String?>(null)
     val erroCep: LiveData<String?> = _erroCep
-
-    fun podeAvancarEndereco(): Boolean {
-        return !(_consultandoCep.value ?: false) &&
-                (_cepConsultado.value ?: false) &&
-                !(_cep.value.isNullOrBlank()) &&
-                !(_estado.value.isNullOrBlank()) &&
-                !(_cidade.value.isNullOrBlank()) &&
-                !(_endereco.value.isNullOrBlank()) &&
-                (_numero.value != null)
-    }
 
 
 
@@ -421,14 +427,16 @@ class CadastroScreenViewModel: ViewModel() {
                         !_cep.value.isNullOrBlank() &&
                         !_estado.value.isNullOrBlank() &&
                         !_cidade.value.isNullOrBlank() &&
-                        !_endereco.value.isNullOrBlank() &&
+                        !_logradouro.value.isNullOrBlank() &&
                         _numero.value != null
             }
 
             2 -> {
-                !_email.value.isNullOrBlank() &&
-                        !_senha.value.isNullOrBlank() &&
-                        (_senha.value?.length ?: 0) >= 8 &&
+                emailValido() &&
+                        senhaTemOitoCaracteres() &&
+                        senhaTemMaiuscula() &&
+                        senhaTemNumero() &&
+                        senhaTemCaractereEspecial() &&
                         !_confirmarSenha.value.isNullOrBlank() &&
                         _senha.value == _confirmarSenha.value &&
                         (_termosAceitos.value ?: false)

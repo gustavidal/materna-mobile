@@ -22,11 +22,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.materna.R
 import com.example.materna.components.LoginField
+import kotlinx.coroutines.delay
 
 val FieldShape = RoundedCornerShape(28.dp)
 
@@ -54,11 +54,16 @@ fun LoginScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    val email by loginScreenViewModel.email.observeAsState(initial = "")
-    val senha by loginScreenViewModel.senha.observeAsState(initial = "")
+    val email        by loginScreenViewModel.email.observeAsState(initial = "")
+    val senha        by loginScreenViewModel.senha.observeAsState(initial = "")
 
-    var passwordVisible by remember {
-        mutableStateOf(false)
+    val mostrarSenha by loginScreenViewModel.mostrarSenha.observeAsState(false)
+
+    LaunchedEffect(mostrarSenha) {
+        if (mostrarSenha) {
+            delay(3000)
+            loginScreenViewModel.ocultarSenha()
+        }
     }
 
     val textColor       = colorResource(R.color.main_text_color)
@@ -155,9 +160,9 @@ fun LoginScreen(
                 textColor = textColor,
                 keyboardType = KeyboardType.Password,
                 isPassword = true,
-                passwordVisible = passwordVisible,
+                passwordVisible = mostrarSenha,
                 onTogglePassword = {
-                    passwordVisible = !passwordVisible
+                    loginScreenViewModel.toggleMostrarSenha()
                 }
             )
 

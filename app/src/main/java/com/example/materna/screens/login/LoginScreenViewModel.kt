@@ -20,4 +20,15 @@ class LoginScreenViewModel: ViewModel() {
     fun onSenhaChanged( novoValor: String ) {
         _senha.value = novoValor
     }
+
+    private val _mostrarSenha = MutableLiveData<Boolean>()
+    val mostrarSenha: LiveData<Boolean> = _mostrarSenha
+
+    fun toggleMostrarSenha() {
+        _mostrarSenha.value = !(_mostrarSenha.value ?: false)
+    }
+
+    fun ocultarSenha() {
+        _mostrarSenha.value = false
+    }
 }
