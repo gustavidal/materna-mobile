@@ -8,7 +8,5 @@ data class Endereco (
     @SerializedName("localidade") val cidade: String = "",
     val bairro: String = "",
     val uf: String = "",
-    val numero: Int,
-    val complemento: String,
     val erro: Boolean? = false
 )

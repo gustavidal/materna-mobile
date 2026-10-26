@@ -3,8 +3,12 @@ package com.example.materna.screens.cadastro
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.materna.model.CadastroDoadora
+import com.example.materna.model.CadastroDoadoraResponse
 import com.example.materna.model.Endereco
+import com.example.materna.service.MaternaRetrofitFactory
 import com.example.materna.service.RetrofitFactory
+import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -13,6 +17,21 @@ import java.util.Calendar
 import java.util.Locale
 
 class CadastroScreenViewModel: ViewModel() {
+    private val doadoraService = MaternaRetrofitFactory().getDoadoraService()
+
+    private val _cadastrando = MutableLiveData(false)
+    val cadastrando: LiveData<Boolean> = _cadastrando
+
+    private val _mensagemCadastro = MutableLiveData<String?>(null)
+    val mensagemCadastro: LiveData<String?> = _mensagemCadastro
+
+    private val _cadastroConcluido = MutableLiveData(false)
+    val cadastroConcluido: LiveData<Boolean> = _cadastroConcluido
+
+
+
+
+
     private val _currentStep = MutableLiveData<Int>()
     val currentStep: LiveData<Int> = _currentStep
 
@@ -41,6 +60,9 @@ class CadastroScreenViewModel: ViewModel() {
 
     private val _logradouro = MutableLiveData<String>()
     val logradouro: LiveData<String> = _logradouro
+
+    private val _bairro = MutableLiveData<String>()
+    val bairro: LiveData<String> = _bairro
 
     private val _numero = MutableLiveData<Int?>()
     val numero: LiveData<Int?> = _numero
@@ -103,6 +125,7 @@ class CadastroScreenViewModel: ViewModel() {
         _estado.value = ""
         _cidade.value = ""
         _logradouro.value = ""
+        _bairro.value = ""
 
         if (numeros.length == 8) {
             consultarCep(numeros)
@@ -110,7 +133,8 @@ class CadastroScreenViewModel: ViewModel() {
     }
     fun onEstadoChanged(value: String) { _estado.value = value }
     fun onCidadeChanged(value: String) { _cidade.value = value }
-    fun onEnderecoChanged(value: String) { _logradouro.value = value }
+    fun onLogradouroChanged(value: String) { _logradouro.value = value }
+    fun onBairroChanged(value: String) { _bairro.value = value }
     fun onNumeroChanged(value: Int?) { _numero.value = value }
     fun onComplementoChanged(value: String) { _complemento.value = value }
 
@@ -346,6 +370,7 @@ class CadastroScreenViewModel: ViewModel() {
                     _estado.value = enderecoApi.uf
                     _cidade.value = enderecoApi.cidade
                     _logradouro.value = enderecoApi.logradouro
+                    _bairro.value = enderecoApi.bairro
                     _cepConsultado.value = true
                     _erroCep.value = null
                 } else {
@@ -445,4 +470,130 @@ class CadastroScreenViewModel: ViewModel() {
             else -> false
         }
     }
+
+
+
+
+
+    fun cadastrarDoadora() {
+        if (_cadastrando.value == true) return
+
+        val dataOriginal = _dataNascimento.value.orEmpty()
+        val formatoEntrada = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+            isLenient = false
+        }
+
+        val dataConvertida = try {
+            formatoEntrada.parse(dataOriginal)?.let {
+                SimpleDateFormat("yyyy-MM-dd", Locale.US).format(it)
+            }
+        } catch (e: Exception) {
+            null
+        }
+
+        if (dataConvertida == null) {
+            _mensagemCadastro.value = "Informe uma data de nascimento válida."
+            return
+        }
+
+        val numero = _numero.value
+        if (numero == null || numero <= 0) {
+            _mensagemCadastro.value = "Informe um número de endereço válido."
+            return
+        }
+
+        val doadora = CadastroDoadora(
+            nome = _nome.value.orEmpty(),
+            cpf = _cpf.value.orEmpty(),
+            dataNascimento = dataConvertida,
+            email = _email.value.orEmpty(),
+            senha = _senha.value.orEmpty(),
+            telefone = _telefone.value.orEmpty().filter { it.isDigit() },
+            cep = _cep.value.orEmpty(),
+            siglaEstado = _estado.value.orEmpty(),
+            cidade = _cidade.value.orEmpty(),
+            logradouro = _logradouro.value.orEmpty(),
+            bairro = _bairro.value.orEmpty(),
+            numero = numero,
+            complemento = _complemento.value.orEmpty().ifBlank { null }
+        )
+
+        _cadastrando.value = true
+        _mensagemCadastro.value = null
+        _cadastroConcluido.value = false
+
+        doadoraService.cadastrarDoadora(doadora)
+            .enqueue(object : Callback<CadastroDoadoraResponse> {
+
+                override fun onResponse(
+                    call: Call<CadastroDoadoraResponse>,
+                    response: Response<CadastroDoadoraResponse>
+                ) {
+                    _cadastrando.value = false
+
+                    if (response.isSuccessful) {
+                        val resultado = response.body()
+
+                        if (resultado?.status == true) {
+                            _cadastroConcluido.value = true
+                            _mensagemCadastro.value =
+                                resultado.message.ifBlank { "Cadastro realizado com sucesso!" }
+                        } else {
+                            _mensagemCadastro.value =
+                                resultado?.message ?: "Não foi possível concluir o cadastro."
+                        }
+                    } else {
+                        val erro = try {
+                            response.errorBody()?.string()?.let {
+                                Gson().fromJson(
+                                    it,
+                                    CadastroDoadoraResponse::class.java
+                                )
+                            }
+                        } catch (e: Exception) {
+                            null
+                        }
+
+                        _mensagemCadastro.value = when {
+                            !erro?.field.isNullOrBlank() ->
+                                "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}"
+
+                            !erro?.message.isNullOrBlank() ->
+                                erro?.message
+
+                            else ->
+                                "Erro ao cadastrar (HTTP ${response.code()})."
+                        }
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<CadastroDoadoraResponse>,
+                    t: Throwable
+                ) {
+                    _cadastrando.value = false
+                    _mensagemCadastro.value =
+                        "Não foi possível conectar à API. Verifique se o backend está ativo."
+                    android.util.Log.e("CadastroDoadora", "Erro ao cadastrar doadora", t)
+                }
+            })
+    }
+
+
+
+
+    fun preencherEnderecoDeTeste() {
+        _cep.value = "06602-330"
+        _estado.value = "SP"
+        _cidade.value = "São Paulo"
+        _logradouro.value = "Rua João Fiochi"
+        _bairro.value = "Jardim Lindomar"
+        _numero.value = 67
+        _complemento.value = "Casa 2"
+
+        _cepConsultado.value = true
+        _consultandoCep.value = false
+        _erroCep.value = null
+    }
+
 }

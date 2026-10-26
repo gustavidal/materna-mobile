@@ -1,5 +1,11 @@
 package com.example.materna.screens.cadastro
 
+import android.R.attr.fontWeight
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -56,7 +62,7 @@ fun CadastroScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    val currentStep        by cadastroScreenViewModel.currentStep.observeAsState(0)
+    val currentStep        by cadastroScreenViewModel.currentStep.observeAsState(2)
 
     val nome               by cadastroScreenViewModel.nome.observeAsState("")
     val dataNascimento     by cadastroScreenViewModel.dataNascimento.observeAsState("")
@@ -66,7 +72,8 @@ fun CadastroScreen(
     val cep                by cadastroScreenViewModel.cep.observeAsState("")
     val estado             by cadastroScreenViewModel.estado.observeAsState("")
     val cidade             by cadastroScreenViewModel.cidade.observeAsState("")
-    val endereco           by cadastroScreenViewModel.logradouro.observeAsState("")
+    val logradouro         by cadastroScreenViewModel.logradouro.observeAsState("")
+    val bairro             by cadastroScreenViewModel.bairro.observeAsState("")
     val numero             by cadastroScreenViewModel.numero.observeAsState(null)
     val complemento        by cadastroScreenViewModel.complemento.observeAsState("")
 
@@ -77,6 +84,10 @@ fun CadastroScreen(
 
     val mostrarSenha       by cadastroScreenViewModel.mostrarSenha.observeAsState(false)
     val mostrarConfirmacao by cadastroScreenViewModel.mostrarConfirmacao.observeAsState(false)
+
+    val cadastrando        by cadastroScreenViewModel.cadastrando.observeAsState()
+    val mensagemCadastro   by cadastroScreenViewModel.mensagemCadastro.observeAsState()
+    val cadastroConcluido  by cadastroScreenViewModel.cadastroConcluido.observeAsState()
 
     LaunchedEffect(mostrarSenha) {
         if (mostrarSenha) {
@@ -246,6 +257,10 @@ fun CadastroScreen(
                 }
 
                 1 -> {
+                    LaunchedEffect(Unit) {
+                        cadastroScreenViewModel.preencherEnderecoDeTeste()
+                    }
+
                     CadastroField(
                         label = "CEP",
                         value = cep,
@@ -295,10 +310,19 @@ fun CadastroScreen(
                     }
 
                     CadastroField(
-                        label = "Endereço",
-                        value = endereco,
-                        onValueChange = { cadastroScreenViewModel.onEnderecoChanged(it) },
+                        label = "Logradouro",
+                        value = logradouro,
+                        onValueChange = { cadastroScreenViewModel.onLogradouroChanged(it) },
                         placeholder = "Rua, Avenida, etc.",
+                        icon = painterResource(R.drawable.ic_house),
+                        enabled = false
+                    )
+
+                    CadastroField(
+                        label = "Bairro",
+                        value = bairro,
+                        onValueChange = { cadastroScreenViewModel.onBairroChanged(it) },
+                        placeholder = "Seu bairro",
                         icon = painterResource(R.drawable.ic_house),
                         enabled = false
                     )
@@ -353,50 +377,87 @@ fun CadastroScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = "A senha deve conter:",
-                            fontSize = 12.sp,
-                            color = colorResource(R.color.secundary_gray)
-                        )
+                        val senhaValida =
+                            cadastroScreenViewModel.senhaTemOitoCaracteres() &&
+                                    cadastroScreenViewModel.senhaTemMaiuscula() &&
+                                    cadastroScreenViewModel.senhaTemNumero() &&
+                                    cadastroScreenViewModel.senhaTemCaractereEspecial()
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        AnimatedVisibility(
+                            visible = !senhaValida,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
                             Text(
-                                text = if (cadastroScreenViewModel.senhaTemOitoCaracteres()) "✓" else "○",
-                                color = if (cadastroScreenViewModel.senhaTemOitoCaracteres()) colorResource(R.color.green) else colorResource(R.color.secundary_gray),
-                                fontSize = 16.sp
+                                text = "A senha ainda precisa de:",
+                                fontSize = 12.sp,
+                                color = colorResource(R.color.secundary_gray)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Mínimo de 8 caracteres", fontSize = 12.sp)
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        AnimatedVisibility(
+                            visible = !senhaValida &&
+                                    !cadastroScreenViewModel.senhaTemOitoCaracteres(),
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
                             Text(
-                                text = if (cadastroScreenViewModel.senhaTemMaiuscula()) "✓" else "○",
-                                color = if (cadastroScreenViewModel.senhaTemMaiuscula()) colorResource(R.color.green) else colorResource(R.color.secundary_gray),
-                                fontSize = 16.sp
+                                text = "- Mínimo de 8 caracteres",
+                                fontSize = 12.sp,
+                                color = colorResource(R.color.secundary_gray)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Pelo menos 1 letra maiúscula", fontSize = 12.sp)
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        AnimatedVisibility(
+                            visible = !senhaValida &&
+                                    !cadastroScreenViewModel.senhaTemMaiuscula(),
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
                             Text(
-                                text = if (cadastroScreenViewModel.senhaTemNumero()) "✓" else "○",
-                                color = if (cadastroScreenViewModel.senhaTemNumero()) colorResource(R.color.green) else colorResource(R.color.secundary_gray),
-                                fontSize = 16.sp
+                                text = "- 1 letra maiúscula",
+                                fontSize = 12.sp,
+                                color = colorResource(R.color.secundary_gray)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Pelo menos 1 número", fontSize = 12.sp)
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        AnimatedVisibility(
+                            visible = !senhaValida &&
+                                    !cadastroScreenViewModel.senhaTemNumero(),
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
                             Text(
-                                text = if (cadastroScreenViewModel.senhaTemCaractereEspecial()) "✓" else "○",
-                                color = if (cadastroScreenViewModel.senhaTemCaractereEspecial()) colorResource(R.color.green) else colorResource(R.color.secundary_gray),
-                                fontSize = 16.sp
+                                text = "- 1 número",
+                                fontSize = 12.sp,
+                                color = colorResource(R.color.secundary_gray)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Pelo menos 1 caractere especial", fontSize = 12.sp)
+                        }
+
+                        AnimatedVisibility(
+                            visible = !senhaValida &&
+                                    !cadastroScreenViewModel.senhaTemCaractereEspecial(),
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Text(
+                                text = "- 1 caractere especial",
+                                fontSize = 12.sp,
+                                color = colorResource(R.color.secundary_gray)
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = senhaValida,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Text(
+                                text = "Senha válida",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = colorResource(R.color.green)
+                            )
                         }
                     }
 
@@ -413,6 +474,22 @@ fun CadastroScreen(
                         },
                         keyboardType = KeyboardType.Password
                     )
+
+                    val senhasCoincidem = confirmarSenha.isNotEmpty() &&
+                            confirmarSenha == senha
+
+                    AnimatedVisibility(
+                        visible = confirmarSenha.isNotEmpty(),
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Text(
+                            text = if (senhasCoincidem) "Senhas coincidem" else "As senhas não coincidem",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (senhasCoincidem) colorResource(R.color.green) else colorResource(R.color.red)
+                        )
+                    }
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically
@@ -432,6 +509,19 @@ fun CadastroScreen(
             }
         }
 
+        if (mensagemCadastro != null) {
+            Text(
+                text = mensagemCadastro.orEmpty(),
+                color = if (cadastroConcluido == true) {
+                    Color(0xFF2E7D32)
+                } else {
+                    Color.Red
+                },
+                fontSize = 14.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         Spacer(Modifier.height(20.dp))
 
         // Rodapé fixo
@@ -440,13 +530,13 @@ fun CadastroScreen(
                 if (currentStep < LAST_STEP) {
                     cadastroScreenViewModel.avancarEtapa()
                 } else {
-                    // Cadastro real será conectado à API posteriormente.
+                    cadastroScreenViewModel.cadastrarDoadora()
                 }
 
                 focusManager.clearFocus()
                 keyboardController?.hide()
             },
-            enabled = cadastroScreenViewModel.podeContinuar(),
+            enabled = cadastroScreenViewModel.podeContinuar() && cadastrando != true,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -454,10 +544,15 @@ fun CadastroScreen(
             colors = ButtonDefaults.buttonColors(
                 containerColor = colorResource(R.color.main_pink),
                 disabledContainerColor = colorResource(R.color.border)
-            )
+            ),
+
         ) {
             Text(
-                text = "Continuar",
+                text = when {
+                    cadastrando == true -> "Cadastrando..."
+                    currentStep == LAST_STEP -> "Finalizar cadastro"
+                    else -> "Continuar"
+                },
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
