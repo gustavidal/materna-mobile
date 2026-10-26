@@ -62,7 +62,7 @@ fun CadastroScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    val currentStep        by cadastroScreenViewModel.currentStep.observeAsState(2)
+    val currentStep        by cadastroScreenViewModel.currentStep.observeAsState(0)
 
     val nome               by cadastroScreenViewModel.nome.observeAsState("")
     val dataNascimento     by cadastroScreenViewModel.dataNascimento.observeAsState("")
