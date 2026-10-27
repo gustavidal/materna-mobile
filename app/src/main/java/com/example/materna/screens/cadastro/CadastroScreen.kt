@@ -1,6 +1,5 @@
 package com.example.materna.screens.cadastro
 
-import android.R.attr.fontWeight
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -319,7 +317,7 @@ fun CadastroScreen(
                         value = bairro,
                         onValueChange = { cadastroScreenViewModel.onBairroChanged(it) },
                         placeholder = "Seu bairro",
-                        icon = painterResource(R.drawable.ic_house),
+                        icon = painterResource(R.drawable.ic_neighborhood),
                         enabled = false
                     )
 
