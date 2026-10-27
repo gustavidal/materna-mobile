@@ -578,22 +578,4 @@ class CadastroScreenViewModel: ViewModel() {
                 }
             })
     }
-
-
-
-
-    fun preencherEnderecoDeTeste() {
-        _cep.value = "06602-330"
-        _estado.value = "SP"
-        _cidade.value = "São Paulo"
-        _logradouro.value = "Rua João Fiochi"
-        _bairro.value = "Jardim Lindomar"
-        _numero.value = 67
-        _complemento.value = "Casa 2"
-
-        _cepConsultado.value = true
-        _consultandoCep.value = false
-        _erroCep.value = null
-    }
-
 }

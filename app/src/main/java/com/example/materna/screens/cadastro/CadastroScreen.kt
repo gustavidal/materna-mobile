@@ -257,10 +257,6 @@ fun CadastroScreen(
                 }
 
                 1 -> {
-                    LaunchedEffect(Unit) {
-                        cadastroScreenViewModel.preencherEnderecoDeTeste()
-                    }
-
                     CadastroField(
                         label = "CEP",
                         value = cep,
