@@ -17,12 +17,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.materna.data.local.MaternaDatabaseProvider
 import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
+import com.example.materna.screens.confirmacao.ConfirmacaoScreen
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
@@ -124,6 +127,24 @@ class MainActivity : ComponentActivity() {
                                     .padding(innerPadding),
                                 navController = navController,
                                 cadastroScreenViewModel = CadastroScreenViewModel()
+                            )
+                        }
+
+                        composable(
+                            route = "confirmacao/{id_doadora}",
+                            arguments = listOf(
+                                navArgument(name = "id_doadora") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) {
+                            val idDoadora = it.arguments?.getInt("id_doadora")
+
+                            ConfirmacaoScreen(
+                                modifier = Modifier
+                                    .padding(innerPadding),
+                                navController = navController,
+                                id_doadora = idDoadora!!
                             )
                         }
                     }

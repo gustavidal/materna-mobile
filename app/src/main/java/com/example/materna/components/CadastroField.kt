@@ -32,6 +32,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
@@ -49,6 +50,7 @@ fun CadastroField(
     modifier: Modifier = Modifier,
     icon: Painter? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     isPassword: Boolean = false,
     trailingIcon: Painter? = null,
     onTrailingClick: (() -> Unit)? = null,
@@ -147,7 +149,8 @@ fun CadastroField(
                         color = colorResource(R.color.main_text_color)
                     ),
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = keyboardType
+                        keyboardType = keyboardType,
+                        capitalization = capitalization
                     ),
                     visualTransformation = if (isPassword) {
                         PasswordVisualTransformation()

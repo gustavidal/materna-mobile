@@ -314,25 +314,34 @@ class CadastroScreenViewModel: ViewModel() {
     fun erroDataNascimento(): String? {
         val valor = _dataNascimento.value.orEmpty()
 
-        if (valor.isBlank()) return null
-
-        if (valor.length < 10) {
-            return "Digite a data completa."
+        return when {
+            valor.isBlank() -> null
+            valor.length < 10 -> "Digite a data completa."
+            !dataNascimentoValida() -> "Informe uma data válida."
+            else -> null
         }
-
-        return if (!dataNascimentoValida()) "Informe uma data válida." else null
     }
 
     fun erroCpf(): String? {
         val valor = _cpf.value.orEmpty()
 
-        if (valor.isBlank()) return null
-
-        if (valor.filter { it.isDigit() }.length < 11) {
-            return "Digite os 11 dígitos do CPF."
+        return when {
+            valor.isBlank() -> null
+            valor.filter { it.isDigit() }.length < 11 -> "Digite os 11 dígitos do CPF."
+            !cpfValido() -> "CPF inválido. Confira os números informados."
+            else -> null
         }
+    }
 
-        return if (!cpfValido()) "CPF inválido. Confira os números informados." else null
+    fun erroEmail(): String? {
+        val valor = _email.value.orEmpty()
+        val usuario = valor.substringBefore("@")
+
+        return when {
+            valor.isBlank() -> null
+            !emailValido() || usuario.all { it.isDigit() } || usuario.length < 6 || usuario.length > 256 -> "E-mail inválido. Verifique o endereço informado."
+            else -> null
+        }
     }
 
 

@@ -3,10 +3,12 @@ package com.example.materna.screens.onboarding
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,22 +16,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +45,7 @@ import com.example.materna.data.local.MaternaDatabaseProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 
 private const val LAST_STEP = 2
 
@@ -50,13 +54,14 @@ fun OnboardingScreen(
     modifier: Modifier = Modifier,
     navController: NavController
 ) {
-    var currentStep by remember { mutableStateOf(0) }
-    var dragAmount by remember { mutableStateOf(0f) }
-
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
     val settingsDao = remember {
-        MaternaDatabaseProvider.getDatabase(context).appSettingsDao()
+        MaternaDatabaseProvider
+            .getDatabase(context)
+            .appSettingsDao()
     }
 
     val images = listOf(
@@ -88,19 +93,47 @@ fun OnboardingScreen(
             }
 
             navController.navigate("login") {
-                popUpTo("onboarding") { inclusive = true }
+                popUpTo("onboarding") {
+                    inclusive = true
+                }
                 launchSingleTop = true
             }
         }
     }
 
-    BoxWithConstraintsCompat(
+    val currentStep by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val viewportCenter =
+                (layoutInfo.viewportStartOffset +
+                        layoutInfo.viewportEndOffset) / 2
+
+            layoutInfo.visibleItemsInfo
+                .minByOrNull { item ->
+                    abs(
+                        (item.offset + item.size / 2) -
+                                viewportCenter
+                    )
+                }
+                ?.index
+                ?.coerceIn(0, LAST_STEP)
+                ?: 0
+        }
+    }
+
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(colorResource(R.color.background_cream))
     ) {
         val compactHeight = maxHeight < 700.dp
         val horizontalPadding = if (maxWidth < 360.dp) 20.dp else 32.dp
+
+        val availableCardWidth = maxWidth - horizontalPadding * 2
+
+        val cardWidth = availableCardWidth * 0.78f
+
+        val sidePadding = (availableCardWidth - cardWidth) / 2
 
         Button(
             onClick = { completeOnboarding() },
@@ -112,40 +145,44 @@ fun OnboardingScreen(
                 contentColor = colorResource(R.color.secundary_gray)
             )
         ) {
-            Text("Pular", fontSize = 14.sp)
+            Text(
+                text = "Pular",
+                fontSize = 14.sp
+            )
         }
 
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .padding(horizontal = horizontalPadding)
-                .pointerInput(currentStep) {
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { change, drag ->
-                            dragAmount += drag
-                            change.consume()
-                        },
-                        onDragEnd = {
-                            when {
-                                dragAmount < -60f && currentStep < LAST_STEP ->
-                                    currentStep++
-                                dragAmount > 60f && currentStep > 0 ->
-                                    currentStep--
-                            }
-                            dragAmount = 0f
-                        },
-                        onDragCancel = { dragAmount = 0f }
-                    )
-                },
+                .padding(
+                    vertical = if (compactHeight) 8.dp else 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            OnboardingCard(
-                imageRes = images[currentStep],
-                title = titles[currentStep],
-                description = descriptions[currentStep],
-                compact = compactHeight
-            )
+            LazyRow(
+                state = listState,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(
+                    horizontal = horizontalPadding + sidePadding
+                ),
+                horizontalArrangement =
+                    Arrangement.spacedBy(16.dp),
+                flingBehavior = rememberSnapFlingBehavior(
+                    lazyListState = listState
+                ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                itemsIndexed(images) { index, image ->
+                    OnboardingCard(
+                        imageRes = image,
+                        title = titles[index],
+                        description = descriptions[index],
+                        modifier = Modifier.width(cardWidth),
+                        compact = compactHeight
+                    )
+                }
+            }
         }
 
         Column(
@@ -165,8 +202,10 @@ fun OnboardingScreen(
             ) {
                 repeat(3) { index ->
                     val selected = currentStep == index
-                    val width by animateDpAsState(
-                        targetValue = if (selected) 18.dp else 8.dp,
+
+                    val indicatorWidth by animateDpAsState(
+                        targetValue =
+                            if (selected) 18.dp else 8.dp,
                         animationSpec = tween(250),
                         label = "pageIndicator$index"
                     )
@@ -174,28 +213,41 @@ fun OnboardingScreen(
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
-                            .width(width)
+                            .width(indicatorWidth)
                             .height(8.dp)
                             .clip(CircleShape)
                             .background(
-                                if (selected) colorResource(R.color.main_pink) else colorResource(R.color.background_cream)
+                                if (selected) {
+                                    colorResource(R.color.main_pink)
+                                } else {
+                                    colorResource(R.color.background_cream)
+                                }
                             )
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(if (compactHeight) 8.dp else 12.dp))
+            Spacer(
+                modifier = Modifier.height(
+                    if (compactHeight) 8.dp else 12.dp
+                )
+            )
 
             Button(
                 onClick = {
                     if (currentStep < LAST_STEP) {
-                        currentStep++
+                        scope.launch {
+                            listState.animateScrollToItem(
+                                currentStep + 1
+                            )
+                        }
                     } else {
                         completeOnboarding()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.main_pink)
+                    containerColor =
+                        colorResource(R.color.main_pink)
                 ),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
@@ -203,7 +255,11 @@ fun OnboardingScreen(
                     .height(54.dp)
             ) {
                 Text(
-                    text = if (currentStep == LAST_STEP) "Começar" else "Continuar",
+                    text = if (currentStep == LAST_STEP) {
+                        "Começar"
+                    } else {
+                        "Continuar"
+                    },
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
@@ -211,15 +267,4 @@ fun OnboardingScreen(
             }
         }
     }
-}
-
-@Composable
-private fun BoxWithConstraintsCompat(
-    modifier: Modifier = Modifier,
-    content: @Composable androidx.compose.foundation.layout.BoxWithConstraintsScope.() -> Unit
-) {
-    androidx.compose.foundation.layout.BoxWithConstraints(
-        modifier = modifier,
-        content = content
-    )
 }

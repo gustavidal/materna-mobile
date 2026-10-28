@@ -35,17 +35,25 @@ fun OnboardingCard(
     compact: Boolean = false
 ) {
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 360.dp)
-                .aspectRatio(if (compact) 1.25f else 1f)
-                .clip(RoundedCornerShape(32.dp))
-                .background(colorResource(R.color.pink_beige))
-                .padding(if (compact) 16.dp else 24.dp),
+                .aspectRatio(
+                    if (compact) 1.25f else 1f
+                )
+                .clip(
+                    RoundedCornerShape(32.dp)
+                )
+                .background(
+                    colorResource(R.color.pink_beige)
+                )
+                .padding(
+                    if (compact) 16.dp else 24.dp
+                ),
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -56,7 +64,11 @@ fun OnboardingCard(
             )
         }
 
-        Spacer(modifier = Modifier.height(if (compact) 16.dp else 28.dp))
+        Spacer(
+            modifier = Modifier.height(
+                if (compact) 16.dp else 28.dp
+            )
+        )
 
         Text(
             text = title,
@@ -66,7 +78,11 @@ fun OnboardingCard(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(if (compact) 8.dp else 12.dp))
+        Spacer(
+            modifier = Modifier.height(
+                if (compact) 8.dp else 12.dp
+            )
+        )
 
         Text(
             text = description,
