@@ -12,16 +12,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -31,6 +35,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -44,13 +49,32 @@ fun ConfirmacaoScreen(
     idDoadora: Int,
     confirmacaoScreenViewModel: ConfirmacaoScreenViewModel
 ) {
-    val email  by confirmacaoScreenViewModel.email.observeAsState("")
-    val codigo by confirmacaoScreenViewModel.codigo.observeAsState("")
+    val email               by confirmacaoScreenViewModel.email.observeAsState("")
+    val codigo              by confirmacaoScreenViewModel.codigo.observeAsState("")
+
+    val confirmando         by confirmacaoScreenViewModel.confirmando.observeAsState(false)
+
+    val mensagemConfirmacao by confirmacaoScreenViewModel.mensagemConfirmacao.observeAsState()
+
+    val codigoConfirmado    by confirmacaoScreenViewModel.codigoConfirmado.observeAsState(false)
+
+    // Navegação após confirmação bem-sucedida
+    LaunchedEffect(codigoConfirmado) {
+        if (codigoConfirmado) {
+            navController.navigate("login") {
+                popUpTo("confirmacao/{id_doadora}") {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
+        }
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(colorResource(R.color.background_cream))
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -82,7 +106,7 @@ fun ConfirmacaoScreen(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_mail),
-                    contentDescription = "",
+                    contentDescription = null,
                     tint = colorResource(R.color.main_pink),
                     modifier = Modifier.size(26.dp)
                 )
@@ -109,8 +133,8 @@ fun ConfirmacaoScreen(
                     shape = RoundedCornerShape(22.dp)
                 )
                 .background(
-                    color = colorResource(R.color.white),
-                    shape = RoundedCornerShape(22.dp)
+                    colorResource(R.color.white),
+                    RoundedCornerShape(22.dp)
                 )
                 .padding(16.dp)
         ) {
@@ -160,18 +184,14 @@ fun ConfirmacaoScreen(
                     Spacer(modifier = Modifier.height(3.dp))
 
                     Text(
-                        text = if (email.isNotBlank()) {
-                            "E-mail enviado para\n$email"
-                        } else {
-                            "Carregando e-mail..."
-                        },
+                        text = if (email.isNotBlank()) "E-mail enviado para\n$email" else "E-mail não disponível",
                         fontSize = 11.sp,
                         lineHeight = 15.sp,
                         color = colorResource(R.color.secundary_gray)
                     )
                 }
 
-                // Indicador de e-mail selecionado
+                // Indicador de e-mail
                 Box(
                     modifier = Modifier
                         .size(18.dp)
@@ -181,7 +201,8 @@ fun ConfirmacaoScreen(
                     Icon(
                         imageVector = Icons.Default.Check,
                         tint = colorResource(R.color.white),
-                        contentDescription = "Check icon"
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
@@ -197,56 +218,94 @@ fun ConfirmacaoScreen(
                 Text(
                     text = "CÓDIGO RECEBIDO",
                     fontSize = 11.sp,
-                    color = colorResource(R.color.main_text_color)
+                    color = colorResource(
+                        R.color.main_text_color
+                    )
                 )
 
                 Text(
                     text = "Válido por 10 min",
                     fontSize = 11.sp,
-                    color = colorResource(R.color.secundary_gray)
+                    color = colorResource(
+                        R.color.secundary_gray
+                    )
                 )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Campo componentizado
             CodigoVerificacaoField(
                 codigo = codigo,
-                onCodigoChanged = confirmacaoScreenViewModel::onCodigoChanged,
+                onCodigoChanged = {
+                    confirmacaoScreenViewModel.onCodigoChanged(it)
+                },
                 quantidadeDigitos = 6,
+                enabled = !confirmando,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // Mensagem de erro da API
+            if (!mensagemConfirmacao.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = mensagemConfirmacao.orEmpty(),
+                    color = colorResource(R.color.red),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Spacer(modifier = Modifier.height(26.dp))
 
             // Botão de confirmação
             Button(
                 onClick = {
-                    // Futuramente:
-                    // Enviar codigo e id_doadora para a API
+                    confirmacaoScreenViewModel.confirmarCodigo(
+                        idDoadora
+                    )
                 },
-                enabled = confirmacaoScreenViewModel.podeConfirmar(),
+                enabled = codigo.length == 6 &&
+                        email.isNotBlank() &&
+                        !confirmando &&
+                        !codigoConfirmado,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.main_pink),
-                    disabledContainerColor = colorResource(R.color.main_pink).copy(alpha = 0.5f)
+                    containerColor = colorResource(
+                        R.color.main_pink
+                    ),
+                    disabledContainerColor = colorResource(
+                        R.color.main_pink
+                    ).copy(alpha = 0.5f)
                 ),
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = 5.dp
                 )
             ) {
-                Text(
-                    text = "Confirmar e-mail →",
-                    color = colorResource(R.color.white),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
+                if (confirmando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = colorResource(R.color.white),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Confirmar e-mail →",
+                        color = colorResource(R.color.white),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(36.dp))
 
         // Rodapé
         Text(
@@ -260,12 +319,13 @@ fun ConfirmacaoScreen(
         TextButton(
             onClick = {
                 navController.navigate("login") {
-                    popUpTo("cadastro") {
+                    popUpTo("confirmacao/{id_doadora}") {
                         inclusive = true
                     }
                     launchSingleTop = true
                 }
             },
+            enabled = !confirmando,
             colors = ButtonDefaults.textButtonColors(
                 containerColor = colorResource(R.color.background_gray)
             )
