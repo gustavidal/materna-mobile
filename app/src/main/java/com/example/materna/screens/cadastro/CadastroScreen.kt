@@ -580,6 +580,8 @@ fun CadastroScreen(
             }
         }
 
+        Spacer(Modifier.height(20.dp))
+
         // Rodapé fixo: botão principal
         Button(
             onClick = {

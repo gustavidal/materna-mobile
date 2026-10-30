@@ -1,5 +1,6 @@
 package com.example.materna.screens.cadastro
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -353,11 +354,12 @@ class CadastroScreenViewModel: ViewModel() {
         _consultandoCep.value = true
         _erroCep.value = null
 
-        val chamada = enderecoService.getEnderecoByCep(cep)
-        chamadaCep = chamada
+        val call = RetrofitFactory().getEnderecoService()
+            .getEnderecoByCep(cep)
 
-        chamada.enqueue(object : Callback<Endereco> {
+        chamadaCep = call
 
+        call.enqueue(object : Callback<Endereco> {
             override fun onResponse(
                 call: Call<Endereco>,
                 response: Response<Endereco>
@@ -366,49 +368,57 @@ class CadastroScreenViewModel: ViewModel() {
 
                 _consultandoCep.value = false
 
-                val enderecoApi = response.body()
+                val endereco = response.body()
 
                 if (
                     response.isSuccessful &&
-                    enderecoApi != null &&
-                    enderecoApi.erro != true &&
-                    !enderecoApi.cep.isNullOrBlank() &&
-                    !enderecoApi.uf.isNullOrBlank() &&
-                    !enderecoApi.cidade.isNullOrBlank()
+                    endereco != null &&
+                    endereco.erro != true &&
+                    !endereco.cep.isNullOrBlank() &&
+                    !endereco.uf.isNullOrBlank() &&
+                    !endereco.cidade.isNullOrBlank()
                 ) {
-                    _estado.value = enderecoApi.uf
-                    _cidade.value = enderecoApi.cidade
-                    _logradouro.value = enderecoApi.logradouro
-                    _bairro.value = enderecoApi.bairro
+                    _estado.value = endereco.uf
+                    _cidade.value = endereco.cidade
+                    _logradouro.value = endereco.logradouro
+                    _bairro.value = endereco.bairro
+
                     _cepConsultado.value = true
                     _erroCep.value = null
-                } else {
-                    _estado.value = ""
-                    _cidade.value = ""
-                    _logradouro.value = ""
-                    _cepConsultado.value = false
-                    _erroCep.value = "CEP não encontrado. Confira os números."
-                }
 
+                    Log.i("ViaCEP", "Endereço encontrado: $endereco")
+                } else {
+                    limparEndereco()
+
+                    _erroCep.value = "CEP não encontrado. Confira os números."
+
+                    Log.i("ViaCEP", "CEP não encontrado: $cep")
+                }
             }
 
             override fun onFailure(
                 call: Call<Endereco>,
                 t: Throwable
             ) {
+                if (call.isCanceled) return
                 if (_cep.value?.filter { it.isDigit() } != cep) return
 
                 _consultandoCep.value = false
-                _cepConsultado.value = false
+                limparEndereco()
 
-                android.util.Log.e("ViaCEP", "Erro na consulta do CEP", t)
+                _erroCep.value = "Não foi possível consultar o CEP. Verifique sua conexão."
 
-                if (!call.isCanceled) {
-                    _erroCep.value =
-                        "Não foi possível consultar o CEP. Verifique sua conexão."
-                }
+                Log.e("ViaCEP", "Falha: ${t.message}", t)
             }
         })
+    }
+
+    private fun limparEndereco() {
+        _estado.value = ""
+        _cidade.value = ""
+        _logradouro.value = ""
+        _bairro.value = ""
+        _cepConsultado.value = false
     }
 
     private val _cepConsultado = MutableLiveData(false)
