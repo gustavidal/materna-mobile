@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class AppSettings(
     @PrimaryKey
     val id: Int = 1,
-    val onboardingCompleted: Boolean = false
+    val onboardingCompleted: Boolean = false,
+    val emailPendente: String? = null
 )

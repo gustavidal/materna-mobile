@@ -135,7 +135,7 @@ fun LoginScreen(
                 value = email,
                 onValueChange = loginScreenViewModel::onEmailChanged,
                 placeholder = "Digite seu e-mail",
-                iconRes = R.drawable.ic_email,
+                iconRes = R.drawable.ic_mail,
                 borderColor = borderColor,
                 textColor = textColor,
                 keyboardType = KeyboardType.Email

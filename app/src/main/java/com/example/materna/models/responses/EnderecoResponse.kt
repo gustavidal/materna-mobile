@@ -1,4 +1,4 @@
-package com.example.materna.model
+package com.example.materna.models.responses
 
 import com.google.gson.annotations.SerializedName
 

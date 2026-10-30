@@ -21,9 +21,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +44,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -86,7 +88,6 @@ fun CadastroScreen(
 
     val cadastrando        by cadastroScreenViewModel.cadastrando.observeAsState()
     val mensagemCadastro   by cadastroScreenViewModel.mensagemCadastro.observeAsState()
-    val cadastroConcluido  by cadastroScreenViewModel.cadastroConcluido.observeAsState()
 
     val consultandoCep     by cadastroScreenViewModel.consultandoCep.observeAsState(false)
     val erroCep            by cadastroScreenViewModel.erroCep.observeAsState(null)
@@ -94,6 +95,9 @@ fun CadastroScreen(
     val erroDataNascimento =  cadastroScreenViewModel.erroDataNascimento()
     val erroCpf            =  cadastroScreenViewModel.erroCpf()
     val erroEmail          =  cadastroScreenViewModel.erroEmail()
+
+    val cadastroConcluido by cadastroScreenViewModel.cadastroConcluido.observeAsState(false)
+    val idDoadora         by cadastroScreenViewModel.idDoadora.observeAsState(null)
 
     LaunchedEffect(mostrarSenha) {
         if (mostrarSenha) {
@@ -106,6 +110,17 @@ fun CadastroScreen(
         if (mostrarConfirmacao) {
             delay(3000)
             cadastroScreenViewModel.ocultarConfirmacao()
+        }
+    }
+
+    LaunchedEffect(cadastroConcluido, idDoadora) {
+        if (cadastroConcluido && idDoadora != null) {
+            navController.navigate("confirmacao/${idDoadora}") {
+                popUpTo("cadastro") {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
         }
     }
 
@@ -152,13 +167,11 @@ fun CadastroScreen(
                             }
                         },
                     contentAlignment = Alignment.Center,
-
-                    ) {
-                    Text(
-                        text = "‹",
-                        fontSize = 34.sp,
-                        color = colorResource(R.color.main_text_color),
-                        textAlign = TextAlign.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        tint = colorResource(R.color.main_text_color),
+                        contentDescription = "Seta para esquerda (voltar)"
                     )
                 }
 
@@ -166,7 +179,7 @@ fun CadastroScreen(
                     text = "Etapa ${currentStep + 1} de 3",
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(Color(0xFFF5EFEB))
+                        .background(colorResource(R.color.background_gray))
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     fontSize = 13.sp,
                     color = colorResource(R.color.secundary_gray)
@@ -182,7 +195,7 @@ fun CadastroScreen(
             ) {
                 CadastroStepIndicator(
                     currentStep = currentStep,
-                    totalSteps = 3
+                    totalSteps = LAST_STEP + 1
                 )
             }
 
@@ -395,7 +408,7 @@ fun CadastroScreen(
                                 cadastroScreenViewModel.onEmailChanged(it)
                             },
                             placeholder = "seu@email.com",
-                            icon = painterResource(R.drawable.ic_email),
+                            icon = painterResource(R.drawable.ic_mail),
                             keyboardType = KeyboardType.Email
                         )
 

@@ -1,5 +1,6 @@
 package com.example.materna
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +18,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,6 +30,7 @@ import com.example.materna.data.local.MaternaDatabaseProvider
 import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.confirmacao.ConfirmacaoScreen
+import com.example.materna.screens.confirmacao.ConfirmacaoScreenViewModel
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
@@ -37,6 +42,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+    @SuppressLint("ViewModelConstructorInComposable")
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { false }
@@ -88,11 +94,7 @@ class MainActivity : ComponentActivity() {
                                         ?.onboardingCompleted == true
                                 }
 
-                                val destination = if (onboardingCompleted) {
-                                    "login"
-                                } else {
-                                    "onboarding"
-                                }
+                                val destination = if (onboardingCompleted) "login" else "onboarding"
 
                                 navController.navigate(destination) {
                                     popUpTo("splash") {
@@ -106,16 +108,14 @@ class MainActivity : ComponentActivity() {
 
                         composable(route = "onboarding") {
                             OnboardingScreen(
-                                modifier = Modifier
-                                    .padding(innerPadding),
+                                modifier = Modifier.padding(innerPadding),
                                 navController = navController
                             )
                         }
 
                         composable(route = "login") {
                             LoginScreen(
-                                modifier = Modifier
-                                    .padding(innerPadding),
+                                modifier = Modifier.padding(innerPadding),
                                 navController = navController,
                                 loginScreenViewModel = LoginScreenViewModel()
                             )
@@ -123,10 +123,9 @@ class MainActivity : ComponentActivity() {
 
                         composable(route = "cadastro") {
                             CadastroScreen(
-                                modifier = Modifier
-                                    .padding(innerPadding),
+                                modifier = Modifier.padding(innerPadding),
                                 navController = navController,
-                                cadastroScreenViewModel = CadastroScreenViewModel()
+                                cadastroScreenViewModel = remember { CadastroScreenViewModel(settingsDao = settingsDao) }
                             )
                         }
 
@@ -140,11 +139,22 @@ class MainActivity : ComponentActivity() {
                         ) {
                             val idDoadora = it.arguments?.getInt("id_doadora")
 
+                            val confirmacaoScreenViewModel: ConfirmacaoScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return ConfirmacaoScreenViewModel(settingsDao) as T
+                                    }
+                                }
+                            )
+
                             ConfirmacaoScreen(
-                                modifier = Modifier
-                                    .padding(innerPadding),
+                                modifier = Modifier.padding(innerPadding),
                                 navController = navController,
-                                id_doadora = idDoadora!!
+                                idDoadora = idDoadora!!,
+                                confirmacaoScreenViewModel = confirmacaoScreenViewModel
                             )
                         }
                     }

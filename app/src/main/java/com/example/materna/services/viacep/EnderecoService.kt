@@ -1,6 +1,6 @@
-package com.example.materna.service
+package com.example.materna.services.viacep
 
-import com.example.materna.model.Endereco
+import com.example.materna.models.responses.Endereco
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path

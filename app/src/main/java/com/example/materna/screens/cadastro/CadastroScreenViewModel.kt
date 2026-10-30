@@ -4,12 +4,15 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.materna.model.CadastroDoadora
-import com.example.materna.model.CadastroDoadoraResponse
-import com.example.materna.model.Endereco
-import com.example.materna.service.MaternaRetrofitFactory
-import com.example.materna.service.RetrofitFactory
+import androidx.lifecycle.viewModelScope
+import com.example.materna.data.local.AppSettingsDao
+import com.example.materna.models.requests.CadastroDoadora
+import com.example.materna.models.responses.CadastroDoadoraResponse
+import com.example.materna.models.responses.Endereco
+import com.example.materna.services.materna.MaternaRetrofitFactory
+import com.example.materna.services.viacep.RetrofitFactory
 import com.google.gson.Gson
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -17,7 +20,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-class CadastroScreenViewModel: ViewModel() {
+class CadastroScreenViewModel(
+    private val settingsDao: AppSettingsDao
+) : ViewModel() {
     private val doadoraService = MaternaRetrofitFactory().getDoadoraService()
 
     private val _cadastrando = MutableLiveData(false)
@@ -26,8 +31,11 @@ class CadastroScreenViewModel: ViewModel() {
     private val _mensagemCadastro = MutableLiveData<String?>(null)
     val mensagemCadastro: LiveData<String?> = _mensagemCadastro
 
-    private val _cadastroConcluido = MutableLiveData(false)
+    private val _cadastroConcluido = MutableLiveData<Boolean>()
     val cadastroConcluido: LiveData<Boolean> = _cadastroConcluido
+
+    private val _idDoadora = MutableLiveData<Int?>()
+    val idDoadora: LiveData<Int?> = _idDoadora
 
 
 
@@ -105,10 +113,8 @@ class CadastroScreenViewModel: ViewModel() {
     }
 
 
-    private val enderecoService = RetrofitFactory().getEnderecoService()
+
     private var chamadaCep: Call<Endereco>? = null
-
-
     fun onCepChanged(value: String) {
         val numeros = value.filter { it.isDigit() }.take(8)
         val cepFormatado = formatarCep(numeros)
@@ -148,7 +154,6 @@ class CadastroScreenViewModel: ViewModel() {
 
 
 
-
     private fun formatarData(value: String): String {
         val digits = value.filter { it.isDigit() }.take(8)
 
@@ -159,7 +164,6 @@ class CadastroScreenViewModel: ViewModel() {
             }
         }
     }
-
     private fun formatarCpf(value: String): String {
         val digits = value.filter { it.isDigit() }.take(11)
 
@@ -171,7 +175,6 @@ class CadastroScreenViewModel: ViewModel() {
             }
         }
     }
-
     private fun formatarTelefone(value: String): String {
         val digits = value.filter { it.isDigit() }.take(11)
 
@@ -186,7 +189,6 @@ class CadastroScreenViewModel: ViewModel() {
             }
         }
     }
-
     private fun formatarCep(value: String): String {
         val digits = value.filter { it.isDigit() }.take(8)
 
@@ -197,7 +199,6 @@ class CadastroScreenViewModel: ViewModel() {
             }
         }
     }
-
 
 
 
@@ -226,7 +227,6 @@ class CadastroScreenViewModel: ViewModel() {
 
         return !nascimento.after(hoje)
     }
-
     private fun cpfValido(): Boolean {
         val numeros = _cpf.value
             ?.filter { it.isDigit() }
@@ -271,7 +271,6 @@ class CadastroScreenViewModel: ViewModel() {
 
         return digitos[10] == segundoDigito
     }
-
     fun emailValido(): Boolean {
         val email = _email.value.orEmpty()
 
@@ -287,7 +286,6 @@ class CadastroScreenViewModel: ViewModel() {
     fun toggleMostrarSenha() {
         _mostrarSenha.value = !(_mostrarSenha.value ?: false)
     }
-
     fun toggleMostrarConfirmacao() {
         _mostrarConfirmacao.value = !(_mostrarConfirmacao.value ?: false)
     }
@@ -295,7 +293,6 @@ class CadastroScreenViewModel: ViewModel() {
     fun ocultarSenha() {
         _mostrarSenha.value = false
     }
-
     fun ocultarConfirmacao() {
         _mostrarConfirmacao.value = false
     }
@@ -304,7 +301,6 @@ class CadastroScreenViewModel: ViewModel() {
         val step = _currentStep.value ?: 0
         if (step < 2) _currentStep.value = step + 1
     }
-
     fun voltarEtapa() {
         val step = _currentStep.value ?: 0
         if (step > 0) _currentStep.value = step - 1
@@ -322,7 +318,6 @@ class CadastroScreenViewModel: ViewModel() {
             else -> null
         }
     }
-
     fun erroCpf(): String? {
         val valor = _cpf.value.orEmpty()
 
@@ -333,7 +328,6 @@ class CadastroScreenViewModel: ViewModel() {
             else -> null
         }
     }
-
     fun erroEmail(): String? {
         val valor = _email.value.orEmpty()
         val usuario = valor.substringBefore("@")
@@ -437,15 +431,12 @@ class CadastroScreenViewModel: ViewModel() {
     fun senhaTemOitoCaracteres(): Boolean {
         return (_senha.value?.length ?: 0) >= 8
     }
-
     fun senhaTemMaiuscula(): Boolean {
         return _senha.value.orEmpty().any { it.isUpperCase() }
     }
-
     fun senhaTemNumero(): Boolean {
         return _senha.value.orEmpty().any { it.isDigit() }
     }
-
     fun senhaTemCaractereEspecial(): Boolean {
         return _senha.value.orEmpty().any {
             !it.isLetterOrDigit() && !it.isWhitespace()
@@ -464,7 +455,6 @@ class CadastroScreenViewModel: ViewModel() {
                         cpfValido() &&
                         !_telefone.value.isNullOrBlank()
             }
-
             1 -> {
                 !(_consultandoCep.value ?: false) &&
                         (_cepConsultado.value ?: false) &&
@@ -474,7 +464,6 @@ class CadastroScreenViewModel: ViewModel() {
                         !_logradouro.value.isNullOrBlank() &&
                         _numero.value != null
             }
-
             2 -> {
                 emailValido() &&
                         senhaTemOitoCaracteres() &&
@@ -485,7 +474,6 @@ class CadastroScreenViewModel: ViewModel() {
                         _senha.value == _confirmarSenha.value &&
                         (_termosAceitos.value ?: false)
             }
-
             else -> false
         }
     }
@@ -498,7 +486,11 @@ class CadastroScreenViewModel: ViewModel() {
         if (_cadastrando.value == true) return
 
         val dataOriginal = _dataNascimento.value.orEmpty()
-        val formatoEntrada = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+
+        val formatoEntrada = SimpleDateFormat(
+            "dd/MM/yyyy",
+            Locale.getDefault()
+        ).apply {
             isLenient = false
         }
 
@@ -516,6 +508,7 @@ class CadastroScreenViewModel: ViewModel() {
         }
 
         val numero = _numero.value
+
         if (numero == null || numero <= 0) {
             _mensagemCadastro.value = "Informe um número de endereço válido."
             return
@@ -541,60 +534,95 @@ class CadastroScreenViewModel: ViewModel() {
         _mensagemCadastro.value = null
         _cadastroConcluido.value = false
 
-        doadoraService.cadastrarDoadora(doadora)
-            .enqueue(object : Callback<CadastroDoadoraResponse> {
+        val call = MaternaRetrofitFactory().getDoadoraService()
+            .cadastrarDoadora(doadora)
 
-                override fun onResponse(
-                    call: Call<CadastroDoadoraResponse>,
-                    response: Response<CadastroDoadoraResponse>
-                ) {
-                    _cadastrando.value = false
+        call.enqueue(object : Callback<CadastroDoadoraResponse> {
 
-                    if (response.isSuccessful) {
-                        val resultado = response.body()
+            override fun onResponse(
+                call: Call<CadastroDoadoraResponse>,
+                response: Response<CadastroDoadoraResponse>
+            ) {
+                Log.i("CadastroDoadora", "Response: ${response.body()}")
 
-                        if (resultado?.status == true) {
-                            _cadastroConcluido.value = true
-                            _mensagemCadastro.value =
-                                resultado.message.ifBlank { "Cadastro realizado com sucesso!" }
-                        } else {
-                            _mensagemCadastro.value =
-                                resultado?.message ?: "Não foi possível concluir o cadastro."
+                if (response.isSuccessful) {
+                    val resultado = response.body()
+
+                    if (resultado?.status == true) {
+                        val id = resultado.response?.id
+
+                        if (id == null) {
+                            _mensagemCadastro.value = "Cadastro realizado, mas a API não retornou o ID da doadora."
+                            _cadastrando.value = false
+                            return
+                        }
+
+                        viewModelScope.launch {
+                            try {
+                                settingsDao.salvarEmailPendente(doadora.email)
+
+                                _idDoadora.value = id
+                                _cadastroConcluido.value = true
+                            } catch (e: Exception) {
+                                Log.e("CadastroDoadora", "Erro ao salvar e-mail", e)
+                                _mensagemCadastro.value = "Cadastro realizado, mas não foi possível salvar o e-mail."
+                            } finally {
+                                _cadastrando.value = false
+                            }
                         }
                     } else {
-                        val erro = try {
-                            response.errorBody()?.string()?.let {
-                                Gson().fromJson(
-                                    it,
-                                    CadastroDoadoraResponse::class.java
-                                )
-                            }
-                        } catch (e: Exception) {
-                            null
-                        }
-
-                        _mensagemCadastro.value = when {
-                            !erro?.field.isNullOrBlank() ->
-                                "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}"
-
-                            !erro?.message.isNullOrBlank() ->
-                                erro?.message
-
-                            else ->
-                                "Erro ao cadastrar (HTTP ${response.code()})."
-                        }
+                        _cadastrando.value = false
+                        _mensagemCadastro.value = resultado?.message ?: "Não foi possível concluir o cadastro."
                     }
-                }
-
-                override fun onFailure(
-                    call: Call<CadastroDoadoraResponse>,
-                    t: Throwable
-                ) {
+                } else {
                     _cadastrando.value = false
-                    _mensagemCadastro.value =
-                        "Não foi possível conectar à API. Verifique se o backend está ativo."
-                    android.util.Log.e("CadastroDoadora", "Erro ao cadastrar doadora", t)
+
+                    val erro = try {
+                        response.errorBody()?.string()?.let {
+                            Gson().fromJson(
+                                it,
+                                CadastroDoadoraResponse::class.java
+                            )
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    _mensagemCadastro.value = when {
+                        !erro?.field.isNullOrBlank() ->
+                            "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}"
+
+                        !erro?.message.isNullOrBlank() ->
+                            erro?.message
+
+                        else ->
+                            "Erro ao cadastrar (HTTP ${response.code()})."
+                    }
+
+                    Log.e(
+                        "CadastroDoadora",
+                        "Erro HTTP ${response.code()}: ${_mensagemCadastro.value}"
+                    )
                 }
-            })
+            }
+
+            override fun onFailure(
+                call: Call<CadastroDoadoraResponse>,
+                t: Throwable
+            ) {
+                _cadastrando.value = false
+
+                if (call.isCanceled) return
+
+                _mensagemCadastro.value =
+                    "Não foi possível conectar à API. Verifique se o backend está ativo."
+
+                Log.e(
+                    "CadastroDoadora",
+                    "Falha: ${t.message}",
+                    t
+                )
+            }
+        })
     }
 }
