@@ -3,6 +3,7 @@ package com.example.materna.screens.onboarding
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -135,21 +136,19 @@ fun OnboardingScreen(
 
         val sidePadding = (availableCardWidth - cardWidth) / 2
 
-        Button(
-            onClick = { completeOnboarding() },
+        Text(
+            text = "Pular",
+            fontSize = 14.sp,
+            color = colorResource(R.color.secundary_gray),
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 8.dp, end = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(R.color.background_cream),
-                contentColor = colorResource(R.color.secundary_gray)
-            )
-        ) {
-            Text(
-                text = "Pular",
-                fontSize = 14.sp
-            )
-        }
+                .padding(top = 18.dp, end = 26.dp)
+                .clickable {
+                    completeOnboarding()
+                }
+        )
+
 
         Column(
             modifier = Modifier

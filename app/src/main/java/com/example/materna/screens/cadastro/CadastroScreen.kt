@@ -582,7 +582,7 @@ fun CadastroScreen(
             if (mensagemCadastro != null) {
                 Text(
                     text = mensagemCadastro.orEmpty(),
-                    color = if (cadastroConcluido == true) {
+                    color = if (cadastroConcluido) {
                         colorResource(R.color.green)
                     } else {
                         colorResource(R.color.red)
@@ -658,7 +658,7 @@ fun CadastroScreen(
                             }
                             launchSingleTop = true
                         }
-                }
+                    }
             )
         }
     }

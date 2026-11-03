@@ -24,13 +24,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.materna.components.MaternaBottomBar
 import com.example.materna.data.local.MaternaDatabaseProvider
+import com.example.materna.screens.EmDesenvolvimentoScreen
 import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.confirmacao.ConfirmacaoScreen
 import com.example.materna.screens.confirmacao.ConfirmacaoScreenViewModel
+import com.example.materna.screens.dashboard.DashboardScreen
+import com.example.materna.screens.dashboard.DashboardScreenViewModel
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
@@ -59,10 +64,28 @@ class MainActivity : ComponentActivity() {
                     database.appSettingsDao()
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+                val bottomBarRoutes = setOf(
+                    "dashboard",
+                    "jornada",
+                    "servicos",
+                    "perfil"
+                )
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        if (currentRoute in bottomBarRoutes) {
+                            MaternaBottomBar(
+                                navController = navController
+                            )
+                        }
+                    }
+                ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "splash",
+                        startDestination = "dashboard",
                         exitTransition = {
                             slideOutOfContainer(
                                 towards = AnimatedContentTransitionScope.SlideDirection.Left,
@@ -155,6 +178,35 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 idDoadora = idDoadora!!,
                                 confirmacaoScreenViewModel = confirmacaoScreenViewModel
+                            )
+                        }
+
+                        composable(route = "dashboard") {
+                            DashboardScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                dashboardScreenViewModel = DashboardScreenViewModel()
+                            )
+                        }
+
+                        composable(route = "jornada") {
+                            EmDesenvolvimentoScreen(
+                                titulo = "Minha Jornada",
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+
+                        composable(route = "servicos") {
+                            EmDesenvolvimentoScreen(
+                                titulo = "Serviços",
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+
+                        composable(route = "perfil") {
+                            EmDesenvolvimentoScreen(
+                                titulo = "Meu Perfil",
+                                modifier = Modifier.padding(innerPadding)
                             )
                         }
                     }
