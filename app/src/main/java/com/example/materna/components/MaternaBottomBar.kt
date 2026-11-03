@@ -43,12 +43,20 @@ fun MaternaBottomBar(
                 selected = currentRoute == route,
                 onClick = {
                     if (currentRoute != route) {
-                        navController.navigate(route) {
-                            popUpTo("dashboard") {
-                                saveState = true
+                        if (route == "dashboard") {
+                            navController.popBackStack(
+                                route = "dashboard",
+                                inclusive = false
+                            )
+                        } else {
+                            navController.navigate(route) {
+                                popUpTo("dashboard") {
+                                    inclusive = false
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 },

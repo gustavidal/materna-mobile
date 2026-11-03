@@ -267,6 +267,12 @@ fun ConfirmacaoScreen(
                     confirmacaoScreenViewModel.confirmarCodigo(
                         idDoadora
                     )
+                    navController.navigate("dashboard") {
+                        popUpTo("confirmacao/{id_doadora}") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
                 },
                 enabled = codigo.length == 6 &&
                         email.isNotBlank() &&

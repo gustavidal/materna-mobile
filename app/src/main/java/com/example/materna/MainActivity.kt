@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
-                val bottomBarRoutes = setOf(
+                val bottomBarRoutes = listOf(
                     "dashboard",
                     "jornada",
                     "servicos",
@@ -85,16 +85,34 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "dashboard",
-                        exitTransition = {
-                            slideOutOfContainer(
-                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        startDestination = "splash",
+                        enterTransition = {
+                            val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
+                            val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
+
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
+
+                            slideIntoContainer(
+                                towards = direction,
                                 animationSpec = tween(300)
                             )
                         },
-                        enterTransition = {
-                            slideIntoContainer(
-                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        exitTransition = {
+                            val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
+                            val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
+
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
+
+                            slideOutOfContainer(
+                                towards = direction,
                                 animationSpec = tween(300)
                             )
                         }
