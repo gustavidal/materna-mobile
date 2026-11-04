@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "splash",
+                        startDestination = "dashboard",
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
@@ -115,7 +115,38 @@ class MainActivity : ComponentActivity() {
                                 towards = direction,
                                 animationSpec = tween(300)
                             )
+                        },
+                        popEnterTransition = {
+                            val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
+                            val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
+
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
+
+                            slideIntoContainer(
+                                towards = direction,
+                                animationSpec = tween(300)
+                            )
+                        },
+                        popExitTransition = {
+                            val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
+                            val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
+
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
+
+                            slideOutOfContainer(
+                                towards = direction,
+                                animationSpec = tween(300)
+                            )
                         }
+
                     ) {
                         composable(route = "splash") {
                             var progress by remember {
@@ -200,10 +231,12 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(route = "dashboard") {
+                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel()
+
                             DashboardScreen(
                                 modifier = Modifier.padding(innerPadding),
                                 navController = navController,
-                                dashboardScreenViewModel = DashboardScreenViewModel()
+                                dashboardScreenViewModel = dashboardScreenViewModel
                             )
                         }
 
