@@ -65,6 +65,8 @@ fun CadastroScreen(
 
     val currentStep        by cadastroScreenViewModel.currentStep.observeAsState(0)
 
+    val camposVisitados    by cadastroScreenViewModel.camposVisitados.observeAsState(emptySet())
+
     val nome               by cadastroScreenViewModel.nome.observeAsState("")
     val dataNascimento     by cadastroScreenViewModel.dataNascimento.observeAsState("")
     val cpf                by cadastroScreenViewModel.cpf.observeAsState("")
@@ -76,7 +78,7 @@ fun CadastroScreen(
     val logradouro         by cadastroScreenViewModel.logradouro.observeAsState("")
     val bairro             by cadastroScreenViewModel.bairro.observeAsState("")
     val numero             by cadastroScreenViewModel.numero.observeAsState(null)
-    val complemento        by cadastroScreenViewModel.complemento.observeAsState("")
+    val complemento        by cadastroScreenViewModel.complemento.observeAsState(null)
 
     val email              by cadastroScreenViewModel.email.observeAsState("")
     val senha              by cadastroScreenViewModel.senha.observeAsState("")
@@ -86,18 +88,14 @@ fun CadastroScreen(
     val mostrarSenha       by cadastroScreenViewModel.mostrarSenha.observeAsState(false)
     val mostrarConfirmacao by cadastroScreenViewModel.mostrarConfirmacao.observeAsState(false)
 
-    val cadastrando        by cadastroScreenViewModel.cadastrando.observeAsState()
-    val mensagemCadastro   by cadastroScreenViewModel.mensagemCadastro.observeAsState()
+    val cadastrando        by cadastroScreenViewModel.cadastrando.observeAsState(false)
+    val mensagemCadastro   by cadastroScreenViewModel.mensagemCadastro.observeAsState(null)
 
     val consultandoCep     by cadastroScreenViewModel.consultandoCep.observeAsState(false)
     val erroCep            by cadastroScreenViewModel.erroCep.observeAsState(null)
 
-    val erroDataNascimento =  cadastroScreenViewModel.erroDataNascimento()
-    val erroCpf            =  cadastroScreenViewModel.erroCpf()
-    val erroEmail          =  cadastroScreenViewModel.erroEmail()
-
-    val cadastroConcluido by cadastroScreenViewModel.cadastroConcluido.observeAsState(false)
-    val idDoadora         by cadastroScreenViewModel.idDoadora.observeAsState(null)
+    val cadastroConcluido  by cadastroScreenViewModel.cadastroConcluido.observeAsState(false)
+    val idDoadora          by cadastroScreenViewModel.idDoadora.observeAsState(null)
 
     LaunchedEffect(mostrarSenha) {
         if (mostrarSenha) {
@@ -224,7 +222,6 @@ fun CadastroScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 when (currentStep) {
-
                     // ETAPA 1: dados pessoais
                     0 -> {
                         CadastroField(
@@ -235,8 +232,21 @@ fun CadastroScreen(
                             },
                             placeholder = "Maria Silva",
                             icon = painterResource(R.drawable.ic_profile),
-                            capitalization = KeyboardCapitalization.Words
+                            capitalization = KeyboardCapitalization.Words,
+                            maxLength = 100,
+                            onFocusLost = {
+                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.NOME)
+                            }
                         )
+                        if (CadastroCampos.NOME in camposVisitados) {
+                            cadastroScreenViewModel.erroNome()?.let { erro ->
+                                Text(
+                                    text = erro,
+                                    fontSize = 12.sp,
+                                    color = colorResource(R.color.red)
+                                )
+                            }
+                        }
 
                         CadastroField(
                             label = "Data de nascimento",
@@ -246,15 +256,19 @@ fun CadastroScreen(
                             },
                             placeholder = "dd/mm/aaaa",
                             icon = painterResource(R.drawable.ic_calendar),
-                            keyboardType = KeyboardType.Number
+                            keyboardType = KeyboardType.Number,
+                            onFocusLost = {
+                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.DATA_NASCIMENTO)
+                            }
                         )
-
-                        if (erroDataNascimento != null) {
-                            Text(
-                                text = erroDataNascimento,
-                                fontSize = 12.sp,
-                                color = colorResource(R.color.red)
-                            )
+                        if (CadastroCampos.DATA_NASCIMENTO in camposVisitados) {
+                            cadastroScreenViewModel.erroDataNascimento()?.let { erro ->
+                                Text(
+                                    text = erro,
+                                    fontSize = 12.sp,
+                                    color = colorResource(R.color.red)
+                                )
+                            }
                         }
 
                         CadastroField(
@@ -265,15 +279,19 @@ fun CadastroScreen(
                             },
                             placeholder = "000.000.000-00",
                             icon = painterResource(R.drawable.ic_document),
-                            keyboardType = KeyboardType.Number
+                            keyboardType = KeyboardType.Number,
+                            onFocusLost = {
+                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.CPF)
+                            }
                         )
-
-                        if (erroCpf != null) {
-                            Text(
-                                text = erroCpf,
-                                fontSize = 12.sp,
-                                color = colorResource(R.color.red)
-                            )
+                        if (CadastroCampos.CPF in camposVisitados) {
+                            cadastroScreenViewModel.erroCpf()?.let { erro ->
+                                Text(
+                                    text = erro,
+                                    fontSize = 12.sp,
+                                    color = colorResource(R.color.red)
+                                )
+                            }
                         }
 
                         CadastroField(
@@ -284,8 +302,20 @@ fun CadastroScreen(
                             },
                             placeholder = "(11) 90000-0000",
                             icon = painterResource(R.drawable.ic_phone),
-                            keyboardType = KeyboardType.Phone
+                            keyboardType = KeyboardType.Phone,
+                            onFocusLost = {
+                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.TELEFONE)
+                            }
                         )
+                        if (CadastroCampos.TELEFONE in camposVisitados) {
+                            cadastroScreenViewModel.erroTelefone()?.let { erro ->
+                                Text(
+                                    text = erro,
+                                    fontSize = 12.sp,
+                                    color = colorResource(R.color.red)
+                                )
+                            }
+                        }
                     }
 
                     // ETAPA 2: endereço
@@ -298,9 +328,11 @@ fun CadastroScreen(
                             },
                             placeholder = "00000-000",
                             icon = painterResource(R.drawable.ic_pin_location),
-                            keyboardType = KeyboardType.Number
+                            keyboardType = KeyboardType.Number,
+                            onFocusLost = {
+                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.CEP)
+                            }
                         )
-
                         if (consultandoCep) {
                             Text(
                                 text = "Consultando CEP...",
@@ -308,12 +340,20 @@ fun CadastroScreen(
                                 color = colorResource(R.color.secundary_gray)
                             )
                         }
-
+                        if (CadastroCampos.CEP in camposVisitados) {
+                            cadastroScreenViewModel.erroCepPreenchimento()?.let { erro ->
+                                Text(
+                                    text = erro,
+                                    fontSize = 12.sp,
+                                    color = colorResource(R.color.red)
+                                )
+                            }
+                        }
                         if (erroCep != null) {
                             Text(
                                 text = erroCep.orEmpty(),
                                 fontSize = 12.sp,
-                                color = Color.Red
+                                color = colorResource(R.color.red)
                             )
                         }
 
@@ -369,26 +409,45 @@ fun CadastroScreen(
                         )
 
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.Top
                         ) {
-                            Box(Modifier.weight(0.8f)) {
+                            Column(
+                                modifier = Modifier.weight(0.8f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
                                 CadastroField(
                                     label = "Número",
-                                    value = if (numero != null) "$numero" else "",
+                                    value = numero?.toString().orEmpty(),
                                     onValueChange = {
                                         cadastroScreenViewModel.onNumeroChanged(
                                             it.toIntOrNull()
                                         )
                                     },
                                     placeholder = "123",
-                                    keyboardType = KeyboardType.Number
+                                    keyboardType = KeyboardType.Number,
+                                    onFocusLost = {
+                                        cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.NUMERO)
+                                    }
                                 )
+                                if (CadastroCampos.NUMERO in camposVisitados) {
+                                    cadastroScreenViewModel.erroNumero()?.let { erro ->
+                                        Text(
+                                            text = erro,
+                                            fontSize = 12.sp,
+                                            color = colorResource(R.color.red)
+                                        )
+                                    }
+                                }
                             }
 
-                            Box(Modifier.weight(1.6f)) {
+                            Box(
+                                modifier = Modifier.weight(1.6f)
+                            ) {
                                 CadastroField(
                                     label = "Complemento",
-                                    value = complemento,
+                                    value = complemento.orEmpty(),
                                     onValueChange = {
                                         cadastroScreenViewModel.onComplementoChanged(it)
                                     },
@@ -409,15 +468,19 @@ fun CadastroScreen(
                             },
                             placeholder = "seu@email.com",
                             icon = painterResource(R.drawable.ic_mail),
-                            keyboardType = KeyboardType.Email
+                            keyboardType = KeyboardType.Email,
+                            onFocusLost = {
+                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.EMAIL)
+                            }
                         )
-
-                        if (erroEmail != null) {
-                            Text(
-                                text = erroEmail,
-                                fontSize = 12.sp,
-                                color = colorResource(R.color.red)
-                            )
+                        if (CadastroCampos.EMAIL in camposVisitados) {
+                            cadastroScreenViewModel.erroEmail()?.let { erro ->
+                                Text(
+                                    text = erro,
+                                    fontSize = 12.sp,
+                                    color = colorResource(R.color.red)
+                                )
+                            }
                         }
 
                         CadastroField(
@@ -427,9 +490,7 @@ fun CadastroScreen(
                             placeholder = "Digite sua senha",
                             icon = painterResource(R.drawable.ic_lock),
                             isPassword = !mostrarSenha,
-                            trailingIcon = if (mostrarSenha) painterResource(R.drawable.ic_visibility_off) else painterResource(
-                                R.drawable.ic_visibility_on
-                            ),
+                            trailingIcon = if (mostrarSenha) painterResource(R.drawable.ic_visibility_off) else painterResource(R.drawable.ic_visibility_on),
                             onTrailingClick = {
                                 cadastroScreenViewModel.toggleMostrarSenha()
                             },
@@ -535,27 +596,30 @@ fun CadastroScreen(
                             onTrailingClick = {
                                 cadastroScreenViewModel.toggleMostrarConfirmacao()
                             },
-                            keyboardType = KeyboardType.Password
+                            keyboardType = KeyboardType.Password,
+                            onFocusLost = {
+                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.CONFIRMAR_SENHA)
+                            }
                         )
 
-                        val senhasCoincidem = confirmarSenha.isNotEmpty() && confirmarSenha == senha
-
                         AnimatedVisibility(
-                            visible = confirmarSenha.isNotEmpty(),
+                            visible = cadastroScreenViewModel.senhasCoincidem() || (CadastroCampos.CONFIRMAR_SENHA in camposVisitados && cadastroScreenViewModel.erroConfirmarSenha() != null),
                             enter = fadeIn() + expandVertically(),
                             exit = fadeOut() + shrinkVertically()
                         ) {
                             Text(
-                                text = if (senhasCoincidem) {
+                                text = if (cadastroScreenViewModel.senhasCoincidem()) {
                                     "Senhas coincidem"
                                 } else {
-                                    "As senhas não coincidem"
+                                    cadastroScreenViewModel.erroConfirmarSenha().orEmpty()
                                 },
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = if (senhasCoincidem) colorResource(R.color.green) else colorResource(
-                                    R.color.red
-                                )
+                                color = if (cadastroScreenViewModel.senhasCoincidem()) {
+                                    colorResource(R.color.green)
+                                } else {
+                                    colorResource(R.color.red)
+                                }
                             )
                         }
 

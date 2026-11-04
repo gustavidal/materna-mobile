@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.colorResource
@@ -55,13 +56,18 @@ fun CadastroField(
     trailingIcon: Painter? = null,
     onTrailingClick: (() -> Unit)? = null,
     enabled: Boolean = true,
-    maxLength: Int? = null
+    maxLength: Int? = null,
+    onFocusLost: (() -> Unit)? = null
 ) {
     var textFieldValue by remember {
-        mutableStateOf(TextFieldValue(value, selection = TextRange(value.length)))
+        mutableStateOf(
+            TextFieldValue(value, selection = TextRange(value.length))
+        )
     }
 
-    val shape = RoundedCornerShape(17.dp)
+    var recebeuFoco by remember {
+        mutableStateOf(false)
+    }
 
     LaunchedEffect(value) {
         if (textFieldValue.text != value) {
@@ -85,12 +91,12 @@ fun CadastroField(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .clip(shape)
+                .clip(RoundedCornerShape(17.dp))
                 .background(if (enabled) colorResource(R.color.white) else colorResource(R.color.disabled))
                 .border(
                     width = 1.5.dp,
                     color = colorResource(R.color.border),
-                    shape = shape
+                    shape = RoundedCornerShape(17.dp)
                 )
                 .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -157,7 +163,16 @@ fun CadastroField(
                     } else {
                         VisualTransformation.None
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                recebeuFoco = true
+                            } else if (recebeuFoco) {
+                                recebeuFoco = false
+                                onFocusLost?.invoke()
+                            }
+                        }
                 )
             }
 

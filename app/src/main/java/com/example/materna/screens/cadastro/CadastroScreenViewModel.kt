@@ -23,12 +23,10 @@ import java.util.Locale
 class CadastroScreenViewModel(
     private val settingsDao: AppSettingsDao
 ) : ViewModel() {
-    private val doadoraService = MaternaRetrofitFactory().getDoadoraService()
-
-    private val _cadastrando = MutableLiveData(false)
+    private val _cadastrando = MutableLiveData<Boolean>()
     val cadastrando: LiveData<Boolean> = _cadastrando
 
-    private val _mensagemCadastro = MutableLiveData<String?>(null)
+    private val _mensagemCadastro = MutableLiveData<String?>()
     val mensagemCadastro: LiveData<String?> = _mensagemCadastro
 
     private val _cadastroConcluido = MutableLiveData<Boolean>()
@@ -76,8 +74,8 @@ class CadastroScreenViewModel(
     private val _numero = MutableLiveData<Int?>()
     val numero: LiveData<Int?> = _numero
 
-    private val _complemento = MutableLiveData<String>()
-    val complemento: LiveData<String> = _complemento
+    private val _complemento = MutableLiveData<String?>()
+    val complemento: LiveData<String?> = _complemento
 
     private val _email = MutableLiveData<String>()
     val email: LiveData<String> = _email
@@ -101,7 +99,7 @@ class CadastroScreenViewModel(
 
 
 
-    fun onNomeChanged(value: String) { _nome.value = value }
+    fun onNomeChanged(value: String) { _nome.value = value.take(100) }
     fun onDataNascimentoChanged(value: String) {
         _dataNascimento.value = formatarData(value)
     }
@@ -143,11 +141,15 @@ class CadastroScreenViewModel(
     fun onLogradouroChanged(value: String) { _logradouro.value = value }
     fun onBairroChanged(value: String) { _bairro.value = value }
     fun onNumeroChanged(value: Int?) { _numero.value = value }
-    fun onComplementoChanged(value: String) { _complemento.value = value }
+    fun onComplementoChanged(value: String?) { _complemento.value = value }
 
-    fun onEmailChanged(value: String) { _email.value = value }
+    fun onEmailChanged(value: String) {
+        _email.value = value
+    }
     fun onSenhaChanged(value: String) { _senha.value = value }
-    fun onConfirmarSenhaChanged(value: String) { _confirmarSenha.value = value }
+    fun onConfirmarSenhaChanged(value: String) {
+        _confirmarSenha.value = value
+    }
     fun onTermosAceitosChanged(value: Boolean) { _termosAceitos.value = value }
 
 
@@ -180,11 +182,13 @@ class CadastroScreenViewModel(
 
         return buildString {
             digits.forEachIndexed { index, char ->
-                when (index) {
-                    0 -> append('(')
-                    2 -> append(") ")
-                    7 -> append('-')
+                when {
+                    index == 0 -> append('(')
+                    index == 2 -> append(") ")
+                    index == 6 && digits.length <= 10 -> append('-')
+                    index == 7 && digits.length == 11 -> append('-')
                 }
+
                 append(char)
             }
         }
@@ -271,12 +275,21 @@ class CadastroScreenViewModel(
 
         return digitos[10] == segundoDigito
     }
+    fun telefoneValido(): Boolean {
+        val numeros = _telefone.value.orEmpty()
+            .filter { it.isDigit() }
+
+        return numeros.length == 10 || numeros.length == 11
+    }
     fun emailValido(): Boolean {
-        val email = _email.value.orEmpty()
+        val valor = _email.value.orEmpty()
+        val usuario = valor.substringBefore("@")
 
         return android.util.Patterns.EMAIL_ADDRESS
-            .matcher(email)
-            .matches()
+            .matcher(valor)
+            .matches() &&
+                usuario.length in 6..256 &&
+                !usuario.all { it.isDigit() }
     }
 
 
@@ -308,37 +321,84 @@ class CadastroScreenViewModel(
 
 
 
+
+
+    fun erroNome(): String? {
+        val valor = _nome.value.orEmpty().trim()
+
+        return when {
+            valor.isEmpty() -> "Informe seu nome completo."
+            else -> null
+        }
+    }
     fun erroDataNascimento(): String? {
         val valor = _dataNascimento.value.orEmpty()
 
         return when {
-            valor.isBlank() -> null
-            valor.length < 10 -> "Digite a data completa."
+            valor.isEmpty() -> "Informe sua data de nascimento."
+            valor.length < 10 -> "Complete a data de nascimento."
             !dataNascimentoValida() -> "Informe uma data válida."
             else -> null
         }
     }
     fun erroCpf(): String? {
-        val valor = _cpf.value.orEmpty()
+        val numeros = _cpf.value.orEmpty().filter { it.isDigit() }
 
         return when {
-            valor.isBlank() -> null
-            valor.filter { it.isDigit() }.length < 11 -> "Digite os 11 dígitos do CPF."
+            numeros.isEmpty() -> "Informe seu CPF."
+            numeros.length < 11 -> "Complete os 11 dígitos do CPF."
             !cpfValido() -> "CPF inválido. Confira os números informados."
+            else -> null
+        }
+    }
+    fun erroTelefone(): String? {
+        val numeros = _telefone.value.orEmpty().filter { it.isDigit() }
+
+        return when {
+            numeros.isEmpty() -> "Informe seu telefone."
+            !telefoneValido() ->
+                "Informe um telefone com DDD e 8 ou 9 dígitos."
+            else -> null
+        }
+    }
+    fun erroCepPreenchimento(): String? {
+        val numeros = _cep.value.orEmpty().filter { it.isDigit() }
+
+        return when {
+            numeros.isEmpty() -> "Informe seu CEP."
+            numeros.length < 8 -> "Complete os 8 dígitos do CEP."
+            else -> null
+        }
+    }
+    fun erroNumero(): String? {
+        return when {
+            _numero.value == null -> "Informe o número do endereço."
+            _numero.value!! <= 0 -> "Informe um número maior que zero."
             else -> null
         }
     }
     fun erroEmail(): String? {
         val valor = _email.value.orEmpty()
-        val usuario = valor.substringBefore("@")
 
         return when {
-            valor.isBlank() -> null
-            !emailValido() || usuario.all { it.isDigit() } || usuario.length < 6 || usuario.length > 256 -> "E-mail inválido. Verifique o endereço informado."
+            valor.isBlank() -> "Informe seu e-mail."
+            !emailValido() -> "E-mail inválido. Verifique o endereço informado."
             else -> null
         }
     }
+    fun erroConfirmarSenha(): String? {
+        val confirmacao = _confirmarSenha.value.orEmpty()
 
+        return when {
+            confirmacao.isEmpty() -> "Confirme sua senha."
+            confirmacao != _senha.value -> "As senhas não coincidem."
+            else -> null
+        }
+    }
+    fun senhasCoincidem(): Boolean {
+        return !_confirmarSenha.value.isNullOrEmpty() &&
+                _confirmarSenha.value == _senha.value
+    }
 
 
 
@@ -447,13 +507,24 @@ class CadastroScreenViewModel(
 
 
 
+    private val _camposVisitados = MutableLiveData<Set<String>>(emptySet())
+    val camposVisitados: LiveData<Set<String>> = _camposVisitados
+
+    fun onCampoPerdeuFoco(campo: String) {
+        _camposVisitados.value = _camposVisitados.value.orEmpty() + campo
+    }
+
+
+
+
+
     fun podeContinuar(): Boolean {
         return when (_currentStep.value ?: 0) {
             0 -> {
                 !_nome.value.isNullOrBlank() &&
                         dataNascimentoValida() &&
                         cpfValido() &&
-                        !_telefone.value.isNullOrBlank()
+                        telefoneValido()
             }
             1 -> {
                 !(_consultandoCep.value ?: false) &&
@@ -462,7 +533,7 @@ class CadastroScreenViewModel(
                         !_estado.value.isNullOrBlank() &&
                         !_cidade.value.isNullOrBlank() &&
                         !_logradouro.value.isNullOrBlank() &&
-                        _numero.value != null
+                        (_numero.value ?: 0) > 0
             }
             2 -> {
                 emailValido() &&
@@ -514,6 +585,10 @@ class CadastroScreenViewModel(
             return
         }
 
+        if (_complemento.value == "") {
+            onComplementoChanged(null)
+        }
+
         val doadora = CadastroDoadora(
             nome = _nome.value.orEmpty(),
             cpf = _cpf.value.orEmpty(),
@@ -527,7 +602,7 @@ class CadastroScreenViewModel(
             logradouro = _logradouro.value.orEmpty(),
             bairro = _bairro.value.orEmpty(),
             numero = numero,
-            complemento = _complemento.value.orEmpty().ifBlank { null }
+            complemento = _complemento.value.orEmpty()
         )
 
         _cadastrando.value = true
