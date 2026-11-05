@@ -568,7 +568,7 @@ class CadastroScreenViewModel(
         val dataConvertida = try {
             formatoEntrada.parse(dataOriginal)?.let {
                 SimpleDateFormat("yyyy-MM-dd", Locale.US).format(it)
-            }
+            }?.trim()
         } catch (e: Exception) {
             null
         }
@@ -578,9 +578,7 @@ class CadastroScreenViewModel(
             return
         }
 
-        val numero = _numero.value
-
-        if (numero == null || numero <= 0) {
+        if (_numero.value == null || _numero.value!! <= 0) {
             _mensagemCadastro.value = "Informe um número de endereço válido."
             return
         }
@@ -590,19 +588,19 @@ class CadastroScreenViewModel(
         }
 
         val doadora = CadastroDoadora(
-            nome = _nome.value.orEmpty(),
-            cpf = _cpf.value.orEmpty(),
+            nome = _nome.value.orEmpty().trim(),
+            cpf = _cpf.value.orEmpty().trim(),
             dataNascimento = dataConvertida,
-            email = _email.value.orEmpty(),
+            email = _email.value.orEmpty().trim(),
             senha = _senha.value.orEmpty(),
-            telefone = _telefone.value.orEmpty().filter { it.isDigit() },
-            cep = _cep.value.orEmpty(),
-            siglaEstado = _estado.value.orEmpty(),
-            cidade = _cidade.value.orEmpty(),
-            logradouro = _logradouro.value.orEmpty(),
-            bairro = _bairro.value.orEmpty(),
-            numero = numero,
-            complemento = _complemento.value.orEmpty()
+            telefone = _telefone.value.orEmpty().filter { it.isDigit() }.trim(),
+            cep = _cep.value.orEmpty().trim(),
+            siglaEstado = _estado.value.orEmpty().trim(),
+            cidade = _cidade.value.orEmpty().trim(),
+            logradouro = _logradouro.value.orEmpty().trim(),
+            bairro = _bairro.value.orEmpty().trim(),
+            numero = _numero.value!!,
+            complemento = _complemento.value.orEmpty().trim()
         )
 
         _cadastrando.value = true

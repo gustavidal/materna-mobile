@@ -36,6 +36,8 @@ import com.example.materna.screens.confirmacao.ConfirmacaoScreen
 import com.example.materna.screens.confirmacao.ConfirmacaoScreenViewModel
 import com.example.materna.screens.dashboard.DashboardScreen
 import com.example.materna.screens.dashboard.DashboardScreenViewModel
+import com.example.materna.screens.jornada.JornadaScreen
+import com.example.materna.screens.jornada.JornadaScreenViewModel
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
@@ -186,10 +188,12 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(route = "login") {
+                            val loginScreenViewModel: LoginScreenViewModel = viewModel()
+
                             LoginScreen(
                                 modifier = Modifier.padding(innerPadding),
                                 navController = navController,
-                                loginScreenViewModel = LoginScreenViewModel()
+                                loginScreenViewModel = loginScreenViewModel
                             )
                         }
 
@@ -241,11 +245,15 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(route = "jornada") {
-                            EmDesenvolvimentoScreen(
-                                titulo = "Minha Jornada",
-                                modifier = Modifier.padding(innerPadding)
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel()
+
+                            JornadaScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                jornadaScreenViewModel = jornadaScreenViewModel
                             )
                         }
+
 
                         composable(route = "servicos") {
                             EmDesenvolvimentoScreen(

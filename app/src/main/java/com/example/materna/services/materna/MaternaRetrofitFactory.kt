@@ -1,4 +1,3 @@
-
 package com.example.materna.services.materna
 
 import retrofit2.Retrofit
@@ -18,5 +17,9 @@ class MaternaRetrofitFactory {
 
     fun getAuthService(): AuthService {
         return retrofit.create(AuthService::class.java)
+    }
+
+    fun getInstituicaoService(): InstituicaoService {
+        return retrofit.create(InstituicaoService::class.java)
     }
 }

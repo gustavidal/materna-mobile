@@ -5,16 +5,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -42,184 +43,147 @@ fun DashboardScreen(
     val nomeDoadora      by dashboardScreenViewModel.nomeDoadora.observeAsState("")
     val bancoSelecionado by dashboardScreenViewModel.bancoSelecionado.observeAsState(false)
 
-    LazyColumn(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(colorResource(R.color.background_cream)),
-        contentPadding = PaddingValues(
-            start = 24.dp,
-            end = 24.dp,
-            top = 32.dp,
-            bottom = 32.dp
-        ),
+            .background(colorResource(R.color.background_cream))
+            .verticalScroll(rememberScrollState())
+            .padding(
+                start = 24.dp,
+                end = 24.dp,
+                top = 32.dp,
+                bottom = 32.dp
+            ),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Olá,",
+                    fontSize = 16.sp,
+                    color = colorResource(R.color.secundary_gray)
+                )
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                Text(
+                    text = nomeDoadora
+                        .trim()
+                        .substringBefore(" ")
+                        .ifBlank { "Doadora" } + "!",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.main_text_color)
+                )
+            }
+
+            IconButton(
+                onClick = {
+//                    TODO: Navegar para notificações
+                },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        colorResource(R.color.pink_beige),
+                        CircleShape
+                    )
             ) {
-                Column {
-                    Text(
-                        text = "Olá,",
-                        fontSize = 16.sp,
-                        color = colorResource(R.color.secundary_gray)
-                    )
-
-                    Text(
-                        text = nomeDoadora
-                            .trim()
-                            .substringBefore(" ")
-                            .ifBlank { "Doadora" } + "!",
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.main_text_color)
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        // TODO: Navegar para notificações
-                    },
+                Icon(
+                    painter = painterResource(R.drawable.ic_notification),
+                    contentDescription = "Notificações",
+                    tint = colorResource(R.color.main_text_color),
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            colorResource(R.color.pink_beige),
-                            CircleShape
-                        )
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_notification),
-                        contentDescription = "Notificações",
-                        tint = colorResource(R.color.main_text_color),
-                        modifier = Modifier
-                            .size(22.dp)
-                    )
-                }
+                        .size(22.dp)
+                )
             }
         }
 
         if (!bancoSelecionado) {
-            item {
-                DashboardHighlightCard(
-                    onClick = {
-                        // TODO: Navegar para seleção do banco
-                    }
-                )
-            }
+            DashboardHighlightCard(
+                onClick = {
+//                    TODO: Navegar para seleção do banco
+                }
+            )
         }
 
-        item {
+        Text(
+            text = "Como podemos ajudar?",
+            fontSize = 23.sp,
+            fontWeight = FontWeight.Bold,
+            color = colorResource(R.color.main_text_color)
+        )
+
+        DashboardActionCard(
+            titulo = "Quero doar leite",
+            descricao = "Comece ou continue sua jornada",
+            icon = painterResource(R.drawable.ic_milk_bottle),
+            iconColor = colorResource(R.color.white),
+            destaque = true,
+            onClick = {
+                navController.navigate("jornada")
+            }
+        )
+
+        DashboardActionCard(
+            titulo = "Encontrar serviço",
+            descricao = "Bancos de leite próximos",
+            icon = painterResource(R.drawable.ic_pin_location),
+            iconColor = colorResource(R.color.main_pink),
+            onClick = {
+                navController.navigate("servicos")
+            }
+        )
+
+        DashboardActionCard(
+            titulo = "Aprender",
+            descricao = "Informações e cuidados",
+            icon = painterResource(R.drawable.ic_book),
+            iconColor = colorResource(R.color.main_pink),
+            onClick = {
+//                TODO: Navegar para conteúdos educativos
+            }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = "Como podemos ajudar?",
+                text = "Campanhas próximas",
                 fontSize = 23.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(R.color.main_text_color)
             )
-        }
 
-        item {
-            DashboardActionCard(
-                titulo = "Quero doar leite",
-                descricao = "Comece ou continue sua jornada",
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_milk_bottle),
-                        contentDescription = null,
-                        tint = colorResource(R.color.white),
-                        modifier = Modifier
-                            .size(22.dp)
-                    )
-                },
-                destaque = true,
-                onClick = {
-                    navController.navigate("jornada")
+            Text(
+                text = "Ver todas",
+                color = colorResource(R.color.main_pink),
+                modifier = Modifier.clickable {
+//                    TODO: Navegar para campanhas
                 }
             )
         }
 
-        item {
-            DashboardActionCard(
-                titulo = "Encontrar serviço",
-                descricao = "Bancos de leite próximos",
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_pin_location),
-                        contentDescription = null,
-                        tint = colorResource(R.color.main_pink),
-                        modifier = Modifier
-                            .size(22.dp)
-                    )
-                },
-                onClick = {
-                    navController.navigate("servicos")
-                }
+//        TODO: Card de campanha com imagem e dados da API
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(190.dp)
+                .background(
+                    color = colorResource(R.color.pink_beige),
+                    shape = RoundedCornerShape(18.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Campanhas em breve",
+                color = colorResource(R.color.secundary_gray)
             )
-        }
-
-        item {
-            DashboardActionCard(
-                titulo = "Aprender",
-                descricao = "Informações e cuidados",
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_book),
-                        contentDescription = null,
-                        tint = colorResource(R.color.main_pink),
-                        modifier = Modifier
-                            .size(22.dp)
-                    )
-                },
-                onClick = {
-                    // TODO: Navegar para conteúdos educativos
-                }
-            )
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Campanhas próximas",
-                    fontSize = 23.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.main_text_color)
-                )
-
-                Text(
-                    text = "Ver todas",
-                    color = colorResource(R.color.main_pink),
-                    modifier = Modifier.clickable {
-                        // TODO: Navegar para campanhas
-                    }
-                )
-            }
-        }
-
-        item {
-            // TODO: Card de campanha com imagem e dados da API
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp)
-                    .background(
-                        color = colorResource(R.color.pink_beige),
-                        shape = RoundedCornerShape(18.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Campanhas em breve",
-                    color = colorResource(R.color.secundary_gray)
-                )
-            }
         }
     }
 }
