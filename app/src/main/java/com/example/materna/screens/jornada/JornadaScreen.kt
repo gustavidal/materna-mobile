@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,14 +17,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
@@ -51,6 +57,10 @@ fun JornadaScreen(
     val etapas       by jornadaScreenViewModel.etapas.observeAsState(emptyList())
 
     val mensagemErro by jornadaScreenViewModel.mensagemErro.observeAsState("")
+
+    var mostrarDialogoCancelamento by remember {
+        mutableStateOf(false)
+    }
 
     Column(
         modifier = modifier
@@ -90,7 +100,10 @@ fun JornadaScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        color = colorResource(R.color.main_pink),
+                        strokeWidth = 4.dp
+                    )
                 }
             }
 
@@ -112,6 +125,20 @@ fun JornadaScreen(
                 JornadaTimeline(
                     etapas = etapas
                 )
+
+                TextButton(
+                    onClick = {
+                        mostrarDialogoCancelamento = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Cancelar jornada",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colorResource(R.color.main_pink)
+                    )
+                }
             }
 
             JornadaEstado.ERRO -> {
@@ -177,7 +204,66 @@ fun JornadaScreen(
                     }
                 }
             }
-
         }
+    }
+
+    if (mostrarDialogoCancelamento) {
+        AlertDialog(
+            onDismissRequest = {
+                mostrarDialogoCancelamento = false
+            },
+            title = {
+                Text(
+                    text = "Cancelar jornada?",
+                    color = colorResource(R.color.main_text_color)
+                )
+            },
+            text = {
+                Text(
+                    text = "Tem certeza de que deseja cancelar sua jornada? Você poderá perder o progresso realizado.",
+                    color = colorResource(R.color.secundary_gray)
+                )
+            },
+            confirmButton = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        onClick = {
+                            mostrarDialogoCancelamento = false
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Continuar jornada",
+                            color = colorResource(R.color.main_pink),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            mostrarDialogoCancelamento = false
+
+                            // TODO: Integrar cancelamento com a API.
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Sim, cancelar",
+                            color = colorResource(R.color.main_text_color),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        )
     }
 }

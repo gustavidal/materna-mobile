@@ -44,7 +44,7 @@ import com.example.materna.R
 
 @Composable
 fun CadastroField(
-    label: String,
+    label: String? = null,
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
@@ -79,13 +79,15 @@ fun CadastroField(
     }
 
     Column(modifier = modifier) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = colorResource(R.color.main_text_color),
-            modifier = Modifier.padding(start = 2.dp, bottom = 8.dp)
-        )
+        if (!label.isNullOrBlank()) {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = colorResource(R.color.main_text_color),
+                modifier = Modifier.padding(start = 2.dp, bottom = 8.dp)
+            )
+        }
 
         Row(
             modifier = Modifier

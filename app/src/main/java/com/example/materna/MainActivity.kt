@@ -2,6 +2,7 @@ package com.example.materna
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -41,6 +42,8 @@ import com.example.materna.screens.jornada.JornadaScreenViewModel
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
+import com.example.materna.screens.servicos.ServicosScreen
+import com.example.materna.screens.servicos.ServicosScreenViewModel
 import com.example.materna.screens.splash.SplashScreen
 import com.example.materna.ui.theme.MaternaTheme
 import kotlinx.coroutines.Dispatchers
@@ -254,11 +257,24 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-
                         composable(route = "servicos") {
-                            EmDesenvolvimentoScreen(
-                                titulo = "Serviços",
-                                modifier = Modifier.padding(innerPadding)
+                            val servicosScreenViewModel: ServicosScreenViewModel = viewModel()
+
+                            ServicosScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                servicosScreenViewModel = servicosScreenViewModel,
+                                onSelecionarBanco = { idInstituicao ->
+                                    Log.d(
+                                        "Servicos",
+                                        "Instituição selecionada: $idInstituicao"
+                                    )
+                                }
+//                                onSelecionarBanco = { idInstituicao ->
+//                                    navController.navigate(
+//                                        "etapa/conheca_doacao/$idInstituicao"
+//                                    )
+//                                }
                             )
                         }
 
