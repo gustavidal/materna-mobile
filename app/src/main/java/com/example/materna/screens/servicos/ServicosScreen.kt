@@ -228,10 +228,9 @@ fun ServicosScreen(
             }
 
             ServicosEstado.VAZIO -> {
-                Text(
-                    text = "Nenhum banco de leite encontrado para esse CEP.",
-                    fontSize = 14.sp,
-                    color = colorResource(R.color.secundary_gray)
+                ServicosFeedback(
+                    titulo = "Nenhum banco encontrado",
+                    descricao = "Não encontramos bancos de leite próximos a esse CEP. Experimente buscar por outro endereço."
                 )
             }
 
