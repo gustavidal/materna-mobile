@@ -238,7 +238,16 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(route = "dashboard") {
-                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel()
+                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return DashboardScreenViewModel() as T
+                                    }
+                                }
+                            )
 
                             DashboardScreen(
                                 modifier = Modifier.padding(innerPadding),
@@ -248,7 +257,16 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(route = "jornada") {
-                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel()
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return JornadaScreenViewModel() as T
+                                    }
+                                }
+                            )
 
                             JornadaScreen(
                                 modifier = Modifier.padding(innerPadding),
@@ -258,7 +276,16 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(route = "servicos") {
-                            val servicosScreenViewModel: ServicosScreenViewModel = viewModel()
+                            val servicosScreenViewModel: ServicosScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return ServicosScreenViewModel() as T
+                                    }
+                                }
+                            )
 
                             ServicosScreen(
                                 modifier = Modifier.padding(innerPadding),

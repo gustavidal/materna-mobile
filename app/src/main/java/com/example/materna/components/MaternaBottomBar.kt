@@ -43,9 +43,7 @@ fun MaternaBottomBar(
                 selected = currentRoute == route,
                 onClick = {
                     if (currentRoute != route) {
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                        }
+                        navController.navigate(route)
                     }
                 },
                 icon = {

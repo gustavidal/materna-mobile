@@ -163,7 +163,8 @@ fun JornadaScreen(
                         text = "Ops! O leite derramou...",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        color = colorResource(R.color.main_text_color)
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -171,7 +172,8 @@ fun JornadaScreen(
                     Text(
                         text = mensagemErro,
                         fontSize = 14.sp,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        color = colorResource(R.color.secundary_gray)
                     )
 
                     Spacer(modifier = Modifier.height(28.dp))
@@ -199,7 +201,8 @@ fun JornadaScreen(
                         Text(
                             text = "Tentar novamente",
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp
+                            fontSize = 15.sp,
+                            color = colorResource(R.color.white)
                         )
                     }
                 }

@@ -38,13 +38,13 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.materna.R
 import com.example.materna.components.CadastroField
+import com.example.materna.components.ServicosFeedback
 import com.example.materna.models.responses.InstituicaoProxima
 
 @Composable
@@ -135,7 +135,10 @@ fun ServicosScreen(
                 modifier = Modifier.height(52.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.main_pink)
+                    containerColor = colorResource(R.color.main_pink),
+                    contentColor = colorResource(R.color.disabled),
+                    disabledContainerColor = colorResource(R.color.disabled),
+                    disabledContentColor = colorResource(R.color.secundary_gray)
                 )
             ) {
                 Text(
@@ -150,7 +153,7 @@ fun ServicosScreen(
                 .fillMaxWidth()
                 .height(180.dp)
                 .background(
-                    color = Color(0xFFF0EDE8),
+                    color = colorResource(R.color.disabled),
                     shape = RoundedCornerShape(20.dp)
                 ),
             contentAlignment = Alignment.Center
@@ -233,12 +236,12 @@ fun ServicosScreen(
             }
 
             ServicosEstado.ERRO -> {
-                Text(
-                    text = mensagemErro,
-                    fontSize = 14.sp,
-                    color = colorResource(R.color.main_pink),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                ServicosFeedback(
+                    titulo = "Ops! O leite derramou...",
+                    descricao = mensagemErro,
+                    onTentarNovamente = {
+                        servicosScreenViewModel.buscarInstituicoes()
+                    }
                 )
             }
         }
