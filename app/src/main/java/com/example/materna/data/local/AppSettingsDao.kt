@@ -33,4 +33,20 @@ interface AppSettingsDao {
 
     @Query("UPDATE app_settings SET emailPendente = NULL WHERE id = 1")
     suspend fun limparEmailPendente()
+
+    @Transaction
+    suspend fun salvarIdDoadora(idDoadora: Int) {
+        require(idDoadora > 0) {
+            "ID da doadora inválido."
+        }
+
+        val settings = observeSettings().first() ?: AppSettings()
+
+        saveSettings(
+            settings.copy(idDoadora = idDoadora)
+        )
+    }
+
+    @Query("UPDATE app_settings SET idDoadora = NULL WHERE id = 1")
+    suspend fun limparIdDoadora()
 }

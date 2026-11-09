@@ -5,10 +5,9 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [AppSettings::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class MaternaDatabase : RoomDatabase() {
-
     abstract fun appSettingsDao(): AppSettingsDao
 }

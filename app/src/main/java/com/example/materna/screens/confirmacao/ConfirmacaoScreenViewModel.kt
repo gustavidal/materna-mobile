@@ -34,8 +34,6 @@ class ConfirmacaoScreenViewModel(
     private val _codigoConfirmado = MutableLiveData(false)
     val codigoConfirmado: LiveData<Boolean> = _codigoConfirmado
 
-    private val authService = MaternaRetrofitFactory().getAuthService()
-
     init {
         carregarEmail()
     }
@@ -91,7 +89,8 @@ class ConfirmacaoScreenViewModel(
         _mensagemConfirmacao.value = null
         _codigoConfirmado.value = false
 
-        val call = authService.validarCodigo(request)
+        val call = MaternaRetrofitFactory().getAuthService()
+            .validarCodigo(request)
 
         call.enqueue(object : Callback<ValidarCodigoResponse> {
             override fun onResponse(
@@ -106,6 +105,7 @@ class ConfirmacaoScreenViewModel(
                     if (resultado?.status == true) {
                         viewModelScope.launch {
                             try {
+                                settingsDao.salvarIdDoadora(idDoadora)
                                 settingsDao.limparEmailPendente()
 
                                 _mensagemConfirmacao.value =
@@ -115,7 +115,11 @@ class ConfirmacaoScreenViewModel(
 
                                 _codigoConfirmado.value = true
                             } catch (e: Exception) {
-                                Log.e("ConfirmarCodigo", "Erro ao atualizar dados locais", e)
+                                Log.e(
+                                    "ConfirmarCodigo",
+                                    "Erro ao atualizar dados locais",
+                                    e
+                                )
 
                                 _mensagemConfirmacao.value = "Código confirmado, mas houve um erro ao atualizar os dados locais."
                             } finally {
@@ -135,6 +139,11 @@ class ConfirmacaoScreenViewModel(
 
                     val mensagemErro = try {
                         val erro = response.errorBody()?.string()
+
+                        Log.e(
+                            "ConfirmarCodigo",
+                            "HTTP ${response.code()} - Resposta da API: $erro"
+                        )
 
                         if (!erro.isNullOrBlank()) {
                             Gson().fromJson(

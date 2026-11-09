@@ -671,7 +671,7 @@ fun CadastroScreen(
                 focusManager.clearFocus()
                 keyboardController?.hide()
             },
-            enabled = cadastroScreenViewModel.podeContinuar() && cadastrando != true,
+            enabled = cadastroScreenViewModel.podeContinuar() && !cadastrando,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -683,7 +683,7 @@ fun CadastroScreen(
         ) {
             Text(
                 text = when {
-                    cadastrando == true -> "Cadastrando..."
+                    cadastrando -> "Cadastrando..."
                     currentStep == LAST_STEP -> "Finalizar cadastro"
                     else -> "Continuar"
                 },

@@ -30,7 +30,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.materna.components.MaternaBottomBar
 import com.example.materna.data.local.MaternaDatabaseProvider
-import com.example.materna.screens.EmDesenvolvimentoScreen
 import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.confirmacao.ConfirmacaoScreen
@@ -42,6 +41,10 @@ import com.example.materna.screens.jornada.JornadaScreenViewModel
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
+import com.example.materna.screens.perfil.EditarPerfilScreen
+import com.example.materna.screens.perfil.EditarPerfilScreenViewModel
+import com.example.materna.screens.perfil.PerfilScreen
+import com.example.materna.screens.perfil.PerfilScreenViewModel
 import com.example.materna.screens.servicos.ServicosScreen
 import com.example.materna.screens.servicos.ServicosScreenViewModel
 import com.example.materna.screens.splash.SplashScreen
@@ -90,7 +93,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "dashboard",
+                        startDestination = "perfil",
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
@@ -305,12 +308,46 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+
                         composable(route = "perfil") {
-                            EmDesenvolvimentoScreen(
-                                titulo = "Meu Perfil",
-                                modifier = Modifier.padding(innerPadding)
+                            val perfilScreenViewModel: PerfilScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return PerfilScreenViewModel(settingsDao) as T
+                                    }
+                                }
+                            )
+
+                            PerfilScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                perfilScreenViewModel = perfilScreenViewModel
                             )
                         }
+
+
+                        composable(route = "editar_perfil") {
+                            val editarPerfilScreenViewModel: EditarPerfilScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return EditarPerfilScreenViewModel(settingsDao) as T
+                                    }
+                                }
+                            )
+
+                            EditarPerfilScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                editarPerfilScreenViewModel = editarPerfilScreenViewModel
+                            )
+                        }
+
                     }
                 }
             }

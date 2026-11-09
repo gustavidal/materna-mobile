@@ -191,19 +191,19 @@ class JornadaScreenViewModel : ViewModel() {
                 id = "conheca_doacao",
                 titulo = "Conheça a doação",
                 descricao = "Entenda o impacto da doação",
-                status = JornadaStatus.CONCLUIDA
+                status = JornadaStatus.ATUAL
             ),
             JornadaEtapa(
                 id = "orientacoes",
                 titulo = "Orientações",
                 descricao = "Conheça os cuidados necessários",
-                status = JornadaStatus.CONCLUIDA
+                status = JornadaStatus.BLOQUEADA
             ),
             JornadaEtapa(
                 id = "questionario",
                 titulo = "Questionário inicial",
                 descricao = "Responda às perguntas iniciais",
-                status = JornadaStatus.CONCLUIDA
+                status = JornadaStatus.BLOQUEADA
             )
         )
 
@@ -214,7 +214,7 @@ class JornadaScreenViewModel : ViewModel() {
                     id = "instituicao_${etapa.id}",
                     titulo = etapa.titulo,
                     descricao = etapa.descricao,
-                    status = if (index == 0) {
+                    status = if (index == 0 && etapasIniciais[2].status == JornadaStatus.CONCLUIDA) {
                         JornadaStatus.ATUAL
                     } else {
                         JornadaStatus.BLOQUEADA
