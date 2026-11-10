@@ -35,6 +35,38 @@ interface AppSettingsDao {
     suspend fun limparEmailPendente()
 
     @Transaction
+    suspend fun salvarCadastroPendente(idDoadora: Int, email: String) {
+        require(idDoadora > 0) {
+            "ID da doadora inválido."
+        }
+
+        require(email.isNotBlank()) {
+            "E-mail da doadora inválido."
+        }
+
+        val settings = observeSettings().first() ?: AppSettings()
+
+        saveSettings(
+            settings.copy(
+                idDoadoraPendente = idDoadora,
+                emailPendente = email
+            )
+        )
+    }
+
+    @Transaction
+    suspend fun limparCadastroPendente() {
+        val settings = observeSettings().first() ?: return
+
+        saveSettings(
+            settings.copy(
+                idDoadoraPendente = null,
+                emailPendente = null
+            )
+        )
+    }
+
+    @Transaction
     suspend fun salvarIdDoadora(idDoadora: Int) {
         require(idDoadora > 0) {
             "ID da doadora inválido."

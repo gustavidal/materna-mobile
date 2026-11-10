@@ -34,23 +34,29 @@ class PerfilScreenViewModel(
     }
 
     private fun carregarPerfil() {
-        viewModelScope.launch {
-            try {
-                val settings = settingsDao.observeSettings().first()
-                val idDoadora = settings?.idDoadora
+        val idTeste = 11 // ID de uma doadora existente na API
 
-                if (idDoadora != null && idDoadora > 0) {
-                    buscarDoadora(idDoadora)
-                } else {
-                    _mensagemErro.value = "Nenhuma doadora identificada. Faça seu cadastro ou entre na sua conta."
-                }
-            } catch (e: Exception) {
-                Log.e("PerfilDoadora", "Erro ao recuperar ID da doadora", e)
-
-                _mensagemErro.value = "Não foi possível recuperar os dados da doadora."
-            }
-        }
+        buscarDoadora(idTeste)
     }
+
+//    private fun carregarPerfil() {
+//        viewModelScope.launch {
+//            try {
+//                val settings = settingsDao.observeSettings().first()
+//                val idDoadora = settings?.idDoadora
+//
+//                if (idDoadora != null && idDoadora > 0) {
+//                    buscarDoadora(idDoadora)
+//                } else {
+//                    _mensagemErro.value = "Nenhuma doadora identificada. Faça seu cadastro ou entre na sua conta."
+//                }
+//            } catch (e: Exception) {
+//                Log.e("PerfilDoadora", "Erro ao recuperar ID da doadora", e)
+//
+//                _mensagemErro.value = "Não foi possível recuperar os dados da doadora."
+//            }
+//        }
+//    }
 
     fun buscarDoadora(id: Int) {
         if (id <= 0) {

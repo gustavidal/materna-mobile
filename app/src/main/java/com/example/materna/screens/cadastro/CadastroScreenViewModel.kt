@@ -600,7 +600,7 @@ class CadastroScreenViewModel(
             logradouro = _logradouro.value.orEmpty().trim(),
             bairro = _bairro.value.orEmpty().trim(),
             numero = _numero.value!!,
-            complemento = _complemento.value.orEmpty().trim()
+            complemento = _complemento.value?.trim()
         )
 
         _cadastrando.value = true
@@ -611,7 +611,6 @@ class CadastroScreenViewModel(
             .cadastrarDoadora(doadora)
 
         call.enqueue(object : Callback<CadastroDoadoraResponse> {
-
             override fun onResponse(
                 call: Call<CadastroDoadoraResponse>,
                 response: Response<CadastroDoadoraResponse>
@@ -632,7 +631,10 @@ class CadastroScreenViewModel(
 
                         viewModelScope.launch {
                             try {
-                                settingsDao.salvarEmailPendente(doadora.email)
+                                settingsDao.salvarCadastroPendente(
+                                    idDoadora = id,
+                                    email = doadora.email
+                                )
 
                                 _idDoadora.value = id
                                 _cadastroConcluido.value = true
@@ -652,30 +654,19 @@ class CadastroScreenViewModel(
 
                     val erro = try {
                         response.errorBody()?.string()?.let {
-                            Gson().fromJson(
-                                it,
-                                CadastroDoadoraResponse::class.java
-                            )
+                            Gson().fromJson(it, CadastroDoadoraResponse::class.java)
                         }
                     } catch (e: Exception) {
                         null
                     }
 
                     _mensagemCadastro.value = when {
-                        !erro?.field.isNullOrBlank() ->
-                            "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}"
-
-                        !erro?.message.isNullOrBlank() ->
-                            erro?.message
-
-                        else ->
-                            "Erro ao cadastrar (HTTP ${response.code()})."
+                        !erro?.field.isNullOrBlank() -> "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}"
+                        !erro?.message.isNullOrBlank() -> erro?.message
+                        else -> "Erro ao cadastrar (HTTP ${response.code()})."
                     }
 
-                    Log.e(
-                        "CadastroDoadora",
-                        "Erro HTTP ${response.code()}: ${_mensagemCadastro.value}"
-                    )
+                    Log.e("CadastroDoadora", "Erro HTTP ${response.code()}: ${_mensagemCadastro.value}")
                 }
             }
 

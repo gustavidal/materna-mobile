@@ -105,8 +105,7 @@ class ConfirmacaoScreenViewModel(
                     if (resultado?.status == true) {
                         viewModelScope.launch {
                             try {
-                                settingsDao.salvarIdDoadora(idDoadora)
-                                settingsDao.limparEmailPendente()
+                                settingsDao.limparCadastroPendente()
 
                                 _mensagemConfirmacao.value =
                                     resultado.message.ifBlank {

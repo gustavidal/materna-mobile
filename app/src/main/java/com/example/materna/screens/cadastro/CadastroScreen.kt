@@ -1,10 +1,5 @@
 package com.example.materna.screens.cadastro
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -50,6 +45,8 @@ import androidx.navigation.NavController
 import com.example.materna.R
 import com.example.materna.components.CadastroField
 import com.example.materna.components.CadastroStepIndicator
+import com.example.materna.components.SenhaConfirmacao
+import com.example.materna.components.SenhaRequisitos
 import kotlinx.coroutines.delay
 
 private const val LAST_STEP = 2
@@ -496,90 +493,7 @@ fun CadastroScreen(
                             },
                             keyboardType = KeyboardType.Password
                         )
-
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            val senhaValida =
-                                cadastroScreenViewModel.senhaTemOitoCaracteres() &&
-                                        cadastroScreenViewModel.senhaTemMaiuscula() &&
-                                        cadastroScreenViewModel.senhaTemNumero() &&
-                                        cadastroScreenViewModel.senhaTemCaractereEspecial()
-
-                            AnimatedVisibility(
-                                visible = !senhaValida,
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
-                                Text(
-                                    text = "A senha ainda precisa de:",
-                                    fontSize = 12.sp,
-                                    color = colorResource(R.color.secundary_gray)
-                                )
-                            }
-
-                            AnimatedVisibility(
-                                visible = !senhaValida && !cadastroScreenViewModel.senhaTemOitoCaracteres(),
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
-                                Text(
-                                    text = "- Mínimo de 8 caracteres",
-                                    fontSize = 12.sp,
-                                    color = colorResource(R.color.secundary_gray)
-                                )
-                            }
-
-                            AnimatedVisibility(
-                                visible = !senhaValida && !cadastroScreenViewModel.senhaTemMaiuscula(),
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
-                                Text(
-                                    text = "- 1 letra maiúscula",
-                                    fontSize = 12.sp,
-                                    color = colorResource(R.color.secundary_gray)
-                                )
-                            }
-
-                            AnimatedVisibility(
-                                visible = !senhaValida && !cadastroScreenViewModel.senhaTemNumero(),
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
-                                Text(
-                                    text = "- 1 número",
-                                    fontSize = 12.sp,
-                                    color = colorResource(R.color.secundary_gray)
-                                )
-                            }
-
-                            AnimatedVisibility(
-                                visible = !senhaValida && !cadastroScreenViewModel.senhaTemCaractereEspecial(),
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
-                                Text(
-                                    text = "- 1 caractere especial",
-                                    fontSize = 12.sp,
-                                    color = colorResource(R.color.secundary_gray)
-                                )
-                            }
-
-                            AnimatedVisibility(
-                                visible = senhaValida,
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
-                                Text(
-                                    text = "Senha válida",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = colorResource(R.color.green)
-                                )
-                            }
-                        }
+                        SenhaRequisitos(senha = senha)
 
                         CadastroField(
                             label = "Confirmar senha",
@@ -601,27 +515,13 @@ fun CadastroScreen(
                                 cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.CONFIRMAR_SENHA)
                             }
                         )
+                        SenhaConfirmacao(
+                            senha = senha,
+                            confirmacao = confirmarSenha,
+                            campoVisitado = CadastroCampos.CONFIRMAR_SENHA in camposVisitados
+                        )
 
-                        AnimatedVisibility(
-                            visible = cadastroScreenViewModel.senhasCoincidem() || (CadastroCampos.CONFIRMAR_SENHA in camposVisitados && cadastroScreenViewModel.erroConfirmarSenha() != null),
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Text(
-                                text = if (cadastroScreenViewModel.senhasCoincidem()) {
-                                    "Senhas coincidem"
-                                } else {
-                                    cadastroScreenViewModel.erroConfirmarSenha().orEmpty()
-                                },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (cadastroScreenViewModel.senhasCoincidem()) {
-                                    colorResource(R.color.green)
-                                } else {
-                                    colorResource(R.color.red)
-                                }
-                            )
-                        }
+
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically

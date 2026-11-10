@@ -1,11 +1,9 @@
 package com.example.materna.screens.perfil
 
 import android.util.Log
-import android.util.Patterns
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.materna.data.local.AppSettingsDao
 import com.example.materna.models.requests.AtualizarDoadoraRequest
 import com.example.materna.models.responses.AtualizarDoadoraResponse
@@ -14,15 +12,12 @@ import com.example.materna.models.responses.PerfilDoadora
 import com.example.materna.models.responses.PerfilDoadoraResponse
 import com.example.materna.services.materna.MaternaRetrofitFactory
 import com.example.materna.services.viacep.RetrofitFactory
+import com.example.materna.utils.ErroCampos
 import com.example.materna.utils.FormatadorCampos
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import com.example.materna.utils.ValidadorCampos
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 class EditarPerfilScreenViewModel(
     private val settingsDao: AppSettingsDao
@@ -30,58 +25,67 @@ class EditarPerfilScreenViewModel(
     private val _idDoadora = MutableLiveData<Int?>(null)
     val idDoadora: LiveData<Int?> = _idDoadora
 
-    private val _nome = MutableLiveData("")
+    private val _nome = MutableLiveData<String>()
     val nome: LiveData<String> = _nome
 
-    private val _cpf = MutableLiveData("")
+    private val _cpf = MutableLiveData<String>()
     val cpf: LiveData<String> = _cpf
 
-    private val _dataNascimento = MutableLiveData("")
+    private val _dataNascimento = MutableLiveData<String>()
     val dataNascimento: LiveData<String> = _dataNascimento
 
-    private val _email = MutableLiveData("")
+    private val _email = MutableLiveData<String>()
     val email: LiveData<String> = _email
 
-    private val _telefone = MutableLiveData("")
+    private val _telefone = MutableLiveData<String>()
     val telefone: LiveData<String> = _telefone
 
-    private val _cep = MutableLiveData("")
+    private val _cep = MutableLiveData<String>()
     val cep: LiveData<String> = _cep
 
-    private val _siglaEstado = MutableLiveData("")
+    private val _siglaEstado = MutableLiveData<String>()
     val siglaEstado: LiveData<String> = _siglaEstado
 
-    private val _cidade = MutableLiveData("")
+    private val _cidade = MutableLiveData<String>()
     val cidade: LiveData<String> = _cidade
 
-    private val _bairro = MutableLiveData("")
+    private val _bairro = MutableLiveData<String>()
     val bairro: LiveData<String> = _bairro
 
-    private val _logradouro = MutableLiveData("")
+    private val _logradouro = MutableLiveData<String>()
     val logradouro: LiveData<String> = _logradouro
 
-    private val _numero = MutableLiveData("")
+    private val _numero = MutableLiveData<String>()
     val numero: LiveData<String> = _numero
 
-    private val _complemento = MutableLiveData("")
+    private val _complemento = MutableLiveData<String>()
     val complemento: LiveData<String> = _complemento
 
-    private val _senha = MutableLiveData("")
+    private val _senha = MutableLiveData<String>()
     val senha: LiveData<String> = _senha
 
-    private val _confirmarSenha = MutableLiveData("")
+    private val _confirmarSenha = MutableLiveData<String>()
     val confirmarSenha: LiveData<String> = _confirmarSenha
 
-    private val _carregando = MutableLiveData(false)
+    private val _mostrarSenha = MutableLiveData<Boolean>()
+    val mostrarSenha: LiveData<Boolean> = _mostrarSenha
+
+    private val _mostrarConfirmacao = MutableLiveData<Boolean>()
+    val mostrarConfirmacao: LiveData<Boolean> = _mostrarConfirmacao
+
+    private val _carregando = MutableLiveData<Boolean>()
     val carregando: LiveData<Boolean> = _carregando
 
-    private val _salvando = MutableLiveData(false)
+    private val _perfilCarregado = MutableLiveData<Boolean>()
+    val perfilCarregado: LiveData<Boolean> = _perfilCarregado
+
+    private val _salvando = MutableLiveData<Boolean>()
     val salvando: LiveData<Boolean> = _salvando
 
-    private val _mensagemErro = MutableLiveData<String?>(null)
+    private val _mensagemErro = MutableLiveData<String?>()
     val mensagemErro: LiveData<String?> = _mensagemErro
 
-    private val _atualizacaoConcluida = MutableLiveData(false)
+    private val _atualizacaoConcluida = MutableLiveData<Boolean>()
     val atualizacaoConcluida: LiveData<Boolean> = _atualizacaoConcluida
 
     private var chamadaAtualizacao: Call<AtualizarDoadoraResponse>? = null
@@ -90,43 +94,138 @@ class EditarPerfilScreenViewModel(
 
     private var chamadaCep: Call<Endereco>? = null
 
-    private val _consultandoCep = MutableLiveData(false)
+    private val _consultandoCep = MutableLiveData<Boolean>()
     val consultandoCep: LiveData<Boolean> = _consultandoCep
 
-    private val _cepConsultado = MutableLiveData(false)
+    private val _cepConsultado = MutableLiveData<Boolean>()
     val cepConsultado: LiveData<Boolean> = _cepConsultado
 
-    private val _erroCep = MutableLiveData<String?>(null)
+    private val _erroCep = MutableLiveData<String?>()
     val erroCep: LiveData<String?> = _erroCep
+
+    private val _camposVisitados = MutableLiveData<Set<String>>()
+    val camposVisitados: LiveData<Set<String>> = _camposVisitados
+
+    fun onCampoPerdeuFoco(campo: String) {
+        _camposVisitados.value =
+            _camposVisitados.value.orEmpty() + campo
+    }
+
+
+
+
+
+    fun erroNome(): String? {
+        return ErroCampos.nome(_nome.value.orEmpty())
+    }
+
+    fun erroDataNascimento(): String? {
+        return ErroCampos.dataNascimento(
+            _dataNascimento.value.orEmpty()
+        )
+    }
+
+    fun erroCpf(): String? {
+        return ErroCampos.cpf(_cpf.value.orEmpty())
+    }
+
+    fun erroTelefone(): String? {
+        return ErroCampos.telefone(_telefone.value.orEmpty())
+    }
+
+    fun erroEmail(): String? {
+        return ErroCampos.email(_email.value.orEmpty())
+    }
+
+    fun senhaTemOitoCaracteres(): Boolean {
+        return ValidadorCampos.senhaTemOitoCaracteres(
+            _senha.value.orEmpty()
+        )
+    }
+
+    fun senhaTemMaiuscula(): Boolean {
+        return ValidadorCampos.senhaTemMaiuscula(
+            _senha.value.orEmpty()
+        )
+    }
+
+    fun senhaTemNumero(): Boolean {
+        return ValidadorCampos.senhaTemNumero(
+            _senha.value.orEmpty()
+        )
+    }
+
+    fun senhaTemCaractereEspecial(): Boolean {
+        return ValidadorCampos.senhaTemCaractereEspecial(
+            _senha.value.orEmpty()
+        )
+    }
+
+    fun erroConfirmarSenha(): String? {
+        return ErroCampos.confirmarSenha(
+            _senha.value.orEmpty(),
+            _confirmarSenha.value.orEmpty()
+        )
+    }
+
+    fun erroCepPreenchimento(): String? {
+        return ErroCampos.cep(_cep.value.orEmpty())
+    }
+
+    fun erroNumero(): String? {
+        return ErroCampos.numero(_numero.value.orEmpty())
+    }
+
+
+
+
 
     init {
         carregarPerfil()
     }
 
     private fun carregarPerfil() {
-        viewModelScope.launch {
-            try {
-                val settings = settingsDao.observeSettings().first()
-                val id = settings?.idDoadora
+        val idTeste = 11
 
-                if (id != null && id > 0) {
-                    _idDoadora.value = id
-                    buscarDoadora(id)
-                } else {
-                    _mensagemErro.value = "Nenhuma doadora identificada."
-                }
-            } catch (e: Exception) {
-                Log.e("EditarPerfil", "Erro ao recuperar ID", e)
-                _mensagemErro.value = "Não foi possível identificar a doadora."
-            }
+        _idDoadora.value = idTeste
+        buscarDoadora(idTeste)
+    }
+
+    fun recarregarPerfil() {
+        val id = _idDoadora.value
+
+        if (id != null && id > 0) {
+            buscarDoadora(id)
+        } else {
+            carregarPerfil()
         }
     }
+
+//    private fun carregarPerfil() {
+//        viewModelScope.launch {
+//            try {
+//                val settings = settingsDao.observeSettings().first()
+//                val id = settings?.idDoadora
+//
+//                if (id != null && id > 0) {
+//                    _idDoadora.value = id
+//                    buscarDoadora(id)
+//                } else {
+//                    _mensagemErro.value = "Nenhuma doadora identificada."
+//                }
+//            } catch (e: Exception) {
+//                Log.e("EditarPerfil", "Erro ao recuperar ID", e)
+//                _mensagemErro.value = "Não foi possível identificar a doadora."
+//            }
+//        }
+//    }
 
     private fun buscarDoadora(id: Int) {
         chamadaAtual?.cancel()
 
         _carregando.value = true
         _mensagemErro.value = null
+        _perfilCarregado.value = false
 
         val call = MaternaRetrofitFactory().getDoadoraService()
             .buscarDoadora(id)
@@ -151,6 +250,7 @@ class EditarPerfilScreenViewModel(
 
                     if (doadora != null) {
                         preencherCampos(doadora)
+                        _perfilCarregado.value = true
                     } else {
                         _mensagemErro.value = "Doadora não encontrada."
                     }
@@ -174,6 +274,8 @@ class EditarPerfilScreenViewModel(
         })
     }
 
+
+
     private fun preencherCampos(doadora: PerfilDoadora) {
         _nome.value = doadora.nome
         _cpf.value = FormatadorCampos.cpf(doadora.cpf)
@@ -195,8 +297,10 @@ class EditarPerfilScreenViewModel(
         _confirmarSenha.value = ""
     }
 
+
+
     fun onNomeChanged(value: String) {
-        _nome.value = value
+        _nome.value = value.take(100)
     }
 
     fun onCpfChanged(value: String) {
@@ -210,7 +314,6 @@ class EditarPerfilScreenViewModel(
     fun onTelefoneChanged(value: String) {
         _telefone.value = FormatadorCampos.telefone(value)
     }
-
 
     fun onCepChanged(value: String) {
         val numeros = value.filter { it.isDigit() }.take(8)
@@ -258,7 +361,7 @@ class EditarPerfilScreenViewModel(
     }
 
     fun onComplementoChanged(value: String) {
-        _complemento.value = value
+        _complemento.value = value.take(50)
     }
 
     fun onSenhaChanged(value: String) {
@@ -269,13 +372,30 @@ class EditarPerfilScreenViewModel(
         _confirmarSenha.value = value
     }
 
-    fun podeConfirmar(): Boolean {
-        val numeroValido = _numero.value.orEmpty()
-            .toIntOrNull()
-            ?.let { it > 0 } == true
+    fun toggleMostrarSenha() {
+        _mostrarSenha.value = !(_mostrarSenha.value ?: false)
+    }
 
-        val enderecoValido =
-            _cep.value.orEmpty().filter { it.isDigit() }.length == 8 &&
+    fun toggleMostrarConfirmacao() {
+        _mostrarConfirmacao.value = !(_mostrarConfirmacao.value ?: false)
+    }
+
+    fun ocultarSenha() {
+        _mostrarSenha.value = false
+    }
+
+    fun ocultarConfirmacao() {
+        _mostrarConfirmacao.value = false
+    }
+
+
+
+    fun podeConfirmar(): Boolean {
+        val numeroValido = ValidadorCampos.numeroValido(
+            _numero.value.orEmpty().toIntOrNull()
+        )
+
+        val enderecoValido = ValidadorCampos.cepValido(_cep.value.orEmpty()) &&
                     _cepConsultado.value == true &&
                     _consultandoCep.value != true &&
                     _erroCep.value == null &&
@@ -285,18 +405,21 @@ class EditarPerfilScreenViewModel(
                     !_logradouro.value.isNullOrBlank() &&
                     numeroValido
 
-        return _idDoadora.value != null &&
-                !_nome.value.isNullOrBlank() &&
-                cpfValido() &&
-                dataNascimentoValida() &&
-                emailValido() &&
-                telefoneValido() &&
+        return _perfilCarregado.value == true &&
+                _idDoadora.value != null &&
+                ValidadorCampos.nomeValido(_nome.value.orEmpty()) &&
+                ValidadorCampos.cpfValido(_cpf.value.orEmpty()) &&
+                ValidadorCampos.dataNascimentoValida(_dataNascimento.value.orEmpty()) &&
+                ValidadorCampos.emailValido(_email.value.orEmpty()) &&
+                ValidadorCampos.telefoneValido(_telefone.value.orEmpty()) &&
                 enderecoValido &&
-                senhaValida() &&
-                erroConfirmarSenha() == null &&
+                ValidadorCampos.senhaValida(_senha.value.orEmpty()) &&
+                ValidadorCampos.senhasCoincidem(_senha.value.orEmpty(), _confirmarSenha.value.orEmpty()) &&
                 _carregando.value != true &&
                 _salvando.value != true
     }
+
+
 
     private fun consultarCep(cep: String) {
         _consultandoCep.value = true
@@ -368,93 +491,6 @@ class EditarPerfilScreenViewModel(
 
 
 
-    private fun cpfValido(): Boolean {
-        val numeros = _cpf.value.orEmpty().filter { it.isDigit() }
-
-        if (numeros.length != 11) return false
-        if (numeros.all { it == numeros[0] }) return false
-
-        val digitos = numeros.map { it.digitToInt() }
-
-        val somaPrimeiro = (0 until 9).sumOf {
-            digitos[it] * (10 - it)
-        }
-
-        val restoPrimeiro = (somaPrimeiro * 10) % 11
-        val primeiro = if (restoPrimeiro == 10) 0 else restoPrimeiro
-
-        if (digitos[9] != primeiro) return false
-
-        val somaSegundo = (0 until 10).sumOf {
-            digitos[it] * (11 - it)
-        }
-
-        val restoSegundo = (somaSegundo * 10) % 11
-        val segundo = if (restoSegundo == 10) 0 else restoSegundo
-
-        return digitos[10] == segundo
-    }
-
-    private fun dataNascimentoValida(): Boolean {
-        val valor = _dataNascimento.value.orEmpty()
-
-        if (!valor.matches(Regex("\\d{2}/\\d{2}/\\d{4}"))) {
-            return false
-        }
-
-        val formato = SimpleDateFormat(
-            "dd/MM/yyyy",
-            Locale.getDefault()
-        ).apply {
-            isLenient = false
-        }
-
-        val data = try {
-            formato.parse(valor)
-        } catch (e: Exception) {
-            null
-        } ?: return false
-
-        return !data.after(Calendar.getInstance().time)
-    }
-
-    private fun telefoneValido(): Boolean {
-        val numeros = _telefone.value.orEmpty().filter { it.isDigit() }
-        return numeros.length == 10 || numeros.length == 11
-    }
-
-    private fun emailValido(): Boolean {
-        val valor = _email.value.orEmpty()
-        val usuario = valor.substringBefore("@")
-
-        return Patterns.EMAIL_ADDRESS.matcher(valor).matches() &&
-                usuario.length in 6..256 &&
-                !usuario.all { it.isDigit() }
-    }
-
-    private fun senhaValida(): Boolean {
-        val valor = _senha.value.orEmpty()
-
-        return valor.length >= 8 &&
-                valor.any { it.isUpperCase() } &&
-                valor.any { it.isDigit() } &&
-                valor.any { !it.isLetterOrDigit() && !it.isWhitespace() }
-    }
-
-    fun erroConfirmarSenha(): String? {
-        val senha = _senha.value.orEmpty()
-        val confirmacao = _confirmarSenha.value.orEmpty()
-
-        return when {
-            confirmacao.isBlank() -> "Confirme sua senha."
-            senha != confirmacao -> "As senhas não coincidem."
-            else -> null
-        }
-    }
-
-
-
-
 
     fun atualizarDoadora() {
         if (_salvando.value == true) return
@@ -506,10 +542,6 @@ class EditarPerfilScreenViewModel(
                 if (response.isSuccessful && resultado?.status == true) {
                     _atualizacaoConcluida.value = true
                     _mensagemErro.value = null
-
-                    // Não manter a senha preenchida após o sucesso.
-                    _senha.value = ""
-                    _confirmarSenha.value = ""
 
                     Log.i(
                         "EditarPerfil",

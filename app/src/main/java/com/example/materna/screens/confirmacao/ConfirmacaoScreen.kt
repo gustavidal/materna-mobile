@@ -336,11 +336,26 @@ fun ConfirmacaoScreen(
                 containerColor = colorResource(R.color.background_gray)
             )
         ) {
-            Text(
-                text = "➜ Fazer login",
-                color = colorResource(R.color.main_pink),
-                fontSize = 13.sp
-            )
+            Row(
+                modifier = Modifier,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .size(20.dp),
+                    painter = painterResource(R.drawable.ic_login),
+                    tint = colorResource(R.color.main_pink),
+                    contentDescription = null
+                )
+
+                Spacer(modifier = Modifier.width(7.dp))
+
+                Text(
+                    text = "Fazer login",
+                    color = colorResource(R.color.main_pink),
+                    fontSize = 14.sp
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(28.dp))

@@ -9,5 +9,6 @@ data class AppSettings(
     val id: Int = 1,
     val onboardingCompleted: Boolean = false,
     val emailPendente: String? = null,
-    val idDoadora: Int? = null
+    val idDoadora: Int? = null,
+    val idDoadoraPendente: Int? = null
 )

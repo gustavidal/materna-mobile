@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +39,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.materna.R
 import com.example.materna.components.CadastroField
+import com.example.materna.components.MaternaErrorDialog
+import com.example.materna.components.SenhaConfirmacao
+import com.example.materna.components.SenhaRequisitos
+import com.example.materna.screens.cadastro.CadastroCampos
+import kotlinx.coroutines.delay
 
 @Composable
 fun EditarPerfilScreen(
@@ -61,15 +65,35 @@ fun EditarPerfilScreen(
     val telefone             by editarPerfilScreenViewModel.telefone.observeAsState("")
     val senha                by editarPerfilScreenViewModel.senha.observeAsState("")
     val confirmarSenha       by editarPerfilScreenViewModel.confirmarSenha.observeAsState("")
+    val mostrarSenha         by editarPerfilScreenViewModel.mostrarSenha.observeAsState(false)
+    val mostrarConfirmacao   by editarPerfilScreenViewModel.mostrarConfirmacao.observeAsState(false)
 
     val consultandoCep       by editarPerfilScreenViewModel.consultandoCep.observeAsState(false)
     val erroCep              by editarPerfilScreenViewModel.erroCep.observeAsState(null)
 
     val carregando           by editarPerfilScreenViewModel.carregando.observeAsState(false)
+    val perfilCarregado      by editarPerfilScreenViewModel.perfilCarregado.observeAsState(false)
     val salvando             by editarPerfilScreenViewModel.salvando.observeAsState(false)
     val mensagemErro         by editarPerfilScreenViewModel.mensagemErro.observeAsState(null)
 
     val atualizacaoConcluida by editarPerfilScreenViewModel.atualizacaoConcluida.observeAsState(false)
+
+    val camposVisitados      by editarPerfilScreenViewModel.camposVisitados.observeAsState(emptySet())
+
+
+
+    LaunchedEffect(mostrarSenha) {
+        if (mostrarSenha) {
+            delay(3000)
+            editarPerfilScreenViewModel.ocultarSenha()
+        }
+    }
+    LaunchedEffect(mostrarConfirmacao) {
+        if (mostrarConfirmacao) {
+            delay(3000)
+            editarPerfilScreenViewModel.ocultarConfirmacao()
+        }
+    }
 
     LaunchedEffect(atualizacaoConcluida) {
         if (atualizacaoConcluida) {
@@ -80,6 +104,19 @@ fun EditarPerfilScreen(
             navController.popBackStack()
         }
     }
+    if (!carregando && !perfilCarregado && mensagemErro != null) {
+        MaternaErrorDialog(
+            titulo = "Não foi possível carregar seu perfil",
+            mensagem = mensagemErro.orEmpty(),
+            onTentarNovamente = {
+                editarPerfilScreenViewModel.recarregarPerfil()
+            },
+            onVoltar = {
+                navController.popBackStack()
+            }
+        )
+    }
+
 
     Column(
         modifier = modifier
@@ -132,213 +169,367 @@ fun EditarPerfilScreen(
 
         Spacer(Modifier.height(28.dp))
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            CadastroField(
-                label = "Nome completo",
-                value = nome,
-                onValueChange = editarPerfilScreenViewModel::onNomeChanged,
-                placeholder = "Nome completo",
-                icon = painterResource(R.drawable.ic_profile),
-                capitalization = KeyboardCapitalization.Words,
-                maxLength = 100
-            )
-
-            CadastroField(
-                label = "E-mail",
-                value = email,
-                onValueChange = editarPerfilScreenViewModel::onEmailChanged,
-                placeholder = "seu@email.com",
-                icon = painterResource(R.drawable.ic_mail),
-                keyboardType = KeyboardType.Email
-            )
-
-            CadastroField(
-                label = "CPF",
-                value = cpf,
-                onValueChange = editarPerfilScreenViewModel::onCpfChanged,
-                placeholder = "000.000.000-00",
-                icon = painterResource(R.drawable.ic_document),
-                keyboardType = KeyboardType.Number
-            )
-
-            CadastroField(
-                label = "CEP",
-                value = cep,
-                onValueChange = editarPerfilScreenViewModel::onCepChanged,
-                placeholder = "00000-000",
-                icon = painterResource(R.drawable.ic_pin_location),
-                keyboardType = KeyboardType.Number
-            )
-            if (consultandoCep) {
-                Text(
-                    text = "Consultando CEP...",
-                    fontSize = 12.sp,
-                    color = colorResource(R.color.secundary_gray)
-                )
-            }
-            if (erroCep != null) {
-                Text(
-                    text = erroCep.orEmpty(),
-                    fontSize = 12.sp,
-                    color = colorResource(R.color.red)
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(Modifier.weight(0.8f)) {
-                    CadastroField(
-                        label = "Estado",
-                        value = estado,
-                        onValueChange = editarPerfilScreenViewModel::onSiglaEstadoChanged,
-                        placeholder = "UF",
-                        enabled = false
-                    )
-                }
-
-                Box(Modifier.weight(1.6f)) {
-                    CadastroField(
-                        label = "Cidade",
-                        value = cidade,
-                        onValueChange = editarPerfilScreenViewModel::onCidadeChanged,
-                        placeholder = "Sua cidade",
-                        icon = painterResource(R.drawable.ic_building),
-                        enabled = false
-                    )
-                }
-            }
-
-            CadastroField(
-                label = "Bairro",
-                value = bairro,
-                onValueChange = editarPerfilScreenViewModel::onBairroChanged,
-                placeholder = "Seu bairro",
-                icon = painterResource(R.drawable.ic_neighborhood),
-                enabled = false
-            )
-
-            CadastroField(
-                label = "Endereço",
-                value = logradouro,
-                onValueChange = editarPerfilScreenViewModel::onLogradouroChanged,
-                placeholder = "Rua, Avenida, etc.",
-                icon = painterResource(R.drawable.ic_house),
-                enabled = false
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(Modifier.weight(0.8f)) {
-                    CadastroField(
-                        label = "Número",
-                        value = numero,
-                        onValueChange = editarPerfilScreenViewModel::onNumeroChanged,
-                        placeholder = "123",
-                        keyboardType = KeyboardType.Number
-                    )
-                }
-
-                Box(Modifier.weight(1.6f)) {
-                    CadastroField(
-                        label = "Complemento",
-                        value = complemento,
-                        onValueChange = editarPerfilScreenViewModel::onComplementoChanged,
-                        placeholder = "Apto, Bloco, etc.",
-                        capitalization = KeyboardCapitalization.Words
-                    )
-                }
-            }
-
-            CadastroField(
-                label = "Data de nascimento",
-                value = dataNascimento,
-                onValueChange = editarPerfilScreenViewModel::onDataNascimentoChanged,
-                placeholder = "dd/mm/aaaa",
-                icon = painterResource(R.drawable.ic_calendar),
-                keyboardType = KeyboardType.Number
-            )
-
-            CadastroField(
-                label = "Telefone",
-                value = telefone,
-                onValueChange = editarPerfilScreenViewModel::onTelefoneChanged,
-                placeholder = "(11) 90000-0000",
-                icon = painterResource(R.drawable.ic_phone),
-                keyboardType = KeyboardType.Phone
-            )
-
-            CadastroField(
-                label = "Senha",
-                value = senha,
-                onValueChange = editarPerfilScreenViewModel::onSenhaChanged,
-                placeholder = "Digite sua senha",
-                icon = painterResource(R.drawable.ic_lock),
-                isPassword = true,
-                keyboardType = KeyboardType.Password
-            )
-
-            CadastroField(
-                label = "Confirmar senha",
-                value = confirmarSenha,
-                onValueChange = editarPerfilScreenViewModel::onConfirmarSenhaChanged,
-                placeholder = "Confirme sua senha",
-                icon = painterResource(R.drawable.ic_lock),
-                isPassword = true,
-                keyboardType = KeyboardType.Password
-            )
-
-
-            if (mensagemErro != null) {
-                Text(
-                    text = mensagemErro.orEmpty(),
-                    fontSize = 13.sp,
-                    color = colorResource(R.color.red)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    editarPerfilScreenViewModel.atualizarDoadora()
-                },
-                enabled = editarPerfilScreenViewModel.podeConfirmar(),
+        if (carregando) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.main_pink),
-                    contentColor = colorResource(R.color.main_pink),
-                    disabledContainerColor = colorResource(R.color.main_pink).copy(alpha = 0.4f),
-                    disabledContentColor = colorResource(R.color.disabled)
-                )
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center
             ) {
-                if (salvando) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = colorResource(R.color.main_pink),
-                        strokeWidth = 2.dp
-                    )
-                } else {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    color = colorResource(R.color.main_pink)
+                )
+            }
+        } else if (perfilCarregado) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                CadastroField(
+                    label = "Nome completo",
+                    value = nome,
+                    onValueChange = editarPerfilScreenViewModel::onNomeChanged,
+                    placeholder = "Nome completo",
+                    icon = painterResource(R.drawable.ic_profile),
+                    capitalization = KeyboardCapitalization.Words,
+                    maxLength = 100,
+                    onFocusLost = {
+                        editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                            CadastroCampos.NOME
+                        )
+                    }
+                )
+                if (CadastroCampos.NOME in camposVisitados) {
+                    editarPerfilScreenViewModel.erroNome()?.let { erro ->
+                        Text(
+                            text = erro,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
+                }
+
+
+
+                CadastroField(
+                    label = "E-mail",
+                    value = email,
+                    onValueChange = editarPerfilScreenViewModel::onEmailChanged,
+                    placeholder = "seu@email.com",
+                    icon = painterResource(R.drawable.ic_mail),
+                    keyboardType = KeyboardType.Email,
+                    onFocusLost = {
+                        editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                            CadastroCampos.EMAIL
+                        )
+                    }
+                )
+                if (CadastroCampos.EMAIL in camposVisitados) {
+                    editarPerfilScreenViewModel.erroEmail()?.let { erro ->
+                        Text(
+                            text = erro,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
+                }
+
+
+
+                CadastroField(
+                    label = "CPF",
+                    value = cpf,
+                    onValueChange = editarPerfilScreenViewModel::onCpfChanged,
+                    placeholder = "000.000.000-00",
+                    icon = painterResource(R.drawable.ic_document),
+                    keyboardType = KeyboardType.Number,
+                    onFocusLost = {
+                        editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                            CadastroCampos.CPF
+                        )
+                    }
+                )
+                if (CadastroCampos.CPF in camposVisitados) {
+                    editarPerfilScreenViewModel.erroCpf()?.let { erro ->
+                        Text(
+                            text = erro,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
+                }
+
+
+
+                CadastroField(
+                    label = "CEP",
+                    value = cep,
+                    onValueChange = editarPerfilScreenViewModel::onCepChanged,
+                    placeholder = "00000-000",
+                    icon = painterResource(R.drawable.ic_pin_location),
+                    keyboardType = KeyboardType.Number,
+                    onFocusLost = {
+                        editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                            CadastroCampos.CEP
+                        )
+                    }
+                )
+                if (CadastroCampos.CEP in camposVisitados) {
+                    editarPerfilScreenViewModel.erroCepPreenchimento()?.let { erro ->
+                        Text(
+                            text = erro,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
+                }
+                erroCep?.let { erro ->
                     Text(
-                        text = "Confirmar",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text = erro,
+                        fontSize = 12.sp,
+                        color = colorResource(R.color.red)
                     )
                 }
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(Modifier.weight(0.8f)) {
+                        CadastroField(
+                            label = "Estado",
+                            value = estado,
+                            onValueChange = editarPerfilScreenViewModel::onSiglaEstadoChanged,
+                            placeholder = "UF",
+                            enabled = false
+                        )
+                    }
+
+                    Box(Modifier.weight(1.6f)) {
+                        CadastroField(
+                            label = "Cidade",
+                            value = cidade,
+                            onValueChange = editarPerfilScreenViewModel::onCidadeChanged,
+                            placeholder = "Sua cidade",
+                            icon = painterResource(R.drawable.ic_building),
+                            enabled = false
+                        )
+                    }
+                }
+
+                CadastroField(
+                    label = "Bairro",
+                    value = bairro,
+                    onValueChange = editarPerfilScreenViewModel::onBairroChanged,
+                    placeholder = "Seu bairro",
+                    icon = painterResource(R.drawable.ic_neighborhood),
+                    enabled = false
+                )
+
+                CadastroField(
+                    label = "Endereço",
+                    value = logradouro,
+                    onValueChange = editarPerfilScreenViewModel::onLogradouroChanged,
+                    placeholder = "Rua, Avenida, etc.",
+                    icon = painterResource(R.drawable.ic_house),
+                    enabled = false
+                )
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(
+                        modifier = Modifier.weight(0.8f)
+                    ) {
+                        CadastroField(
+                            label = "Número",
+                            value = numero,
+                            onValueChange = editarPerfilScreenViewModel::onNumeroChanged,
+                            placeholder = "123",
+                            keyboardType = KeyboardType.Number,
+                            onFocusLost = {
+                                editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                                    CadastroCampos.NUMERO
+                                )
+                            }
+                        )
+                        if (CadastroCampos.NUMERO in camposVisitados) {
+                            editarPerfilScreenViewModel.erroNumero()?.let { erro ->
+                                Text(
+                                    text = erro,
+                                    fontSize = 12.sp,
+                                    color = colorResource(R.color.red)
+                                )
+                            }
+                        }
+                    }
+
+
+
+                    Box(
+                        modifier = Modifier.weight(1.6f)
+                    ) {
+                        CadastroField(
+                            label = "Complemento",
+                            value = complemento,
+                            onValueChange = editarPerfilScreenViewModel::onComplementoChanged,
+                            placeholder = "Apto, Bloco, etc.",
+                            capitalization = KeyboardCapitalization.Words,
+                            maxLength = 50
+                        )
+                    }
+                }
+
+
+
+                CadastroField(
+                    label = "Data de nascimento",
+                    value = dataNascimento,
+                    onValueChange = editarPerfilScreenViewModel::onDataNascimentoChanged,
+                    placeholder = "dd/mm/aaaa",
+                    icon = painterResource(R.drawable.ic_calendar),
+                    keyboardType = KeyboardType.Number,
+                    onFocusLost = {
+                        editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                            CadastroCampos.DATA_NASCIMENTO
+                        )
+                    }
+                )
+                if (CadastroCampos.DATA_NASCIMENTO in camposVisitados) {
+                    editarPerfilScreenViewModel.erroDataNascimento()?.let { erro ->
+                        Text(
+                            text = erro,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
+                }
+
+
+
+                CadastroField(
+                    label = "Telefone",
+                    value = telefone,
+                    onValueChange = editarPerfilScreenViewModel::onTelefoneChanged,
+                    placeholder = "(11) 90000-0000",
+                    icon = painterResource(R.drawable.ic_phone),
+                    keyboardType = KeyboardType.Phone,
+                    onFocusLost = {
+                        editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                            CadastroCampos.TELEFONE
+                        )
+                    }
+                )
+                if (CadastroCampos.TELEFONE in camposVisitados) {
+                    editarPerfilScreenViewModel.erroTelefone()?.let { erro ->
+                        Text(
+                            text = erro,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.red)
+                        )
+                    }
+                }
+
+
+
+
+                CadastroField(
+                    label = "Senha",
+                    value = senha,
+                    onValueChange = editarPerfilScreenViewModel::onSenhaChanged,
+                    placeholder = "Digite sua senha",
+                    icon = painterResource(R.drawable.ic_lock),
+                    isPassword = !mostrarSenha,
+                    trailingIcon = if (mostrarSenha) {
+                        painterResource(R.drawable.ic_visibility_off)
+                    } else {
+                        painterResource(R.drawable.ic_visibility_on)
+                    },
+                    onTrailingClick = {
+                        editarPerfilScreenViewModel.toggleMostrarSenha()
+                    },
+                    keyboardType = KeyboardType.Password
+                )
+                SenhaRequisitos(senha = senha)
+
+
+
+
+                CadastroField(
+                    label = "Confirmar senha",
+                    value = confirmarSenha,
+                    onValueChange = editarPerfilScreenViewModel::onConfirmarSenhaChanged,
+                    placeholder = "Confirme sua senha",
+                    icon = painterResource(R.drawable.ic_lock),
+                    isPassword = !mostrarConfirmacao,
+                    trailingIcon = if (mostrarConfirmacao) painterResource(R.drawable.ic_visibility_off) else painterResource(R.drawable.ic_visibility_on),
+                    onTrailingClick = {
+                        editarPerfilScreenViewModel.toggleMostrarConfirmacao()
+                    },
+                    keyboardType = KeyboardType.Password,
+                    onFocusLost = {
+                        editarPerfilScreenViewModel.onCampoPerdeuFoco(
+                            CadastroCampos.CONFIRMAR_SENHA
+                        )
+                    }
+                )
+                SenhaConfirmacao(
+                    senha = senha,
+                    confirmacao = confirmarSenha,
+                    campoVisitado = CadastroCampos.CONFIRMAR_SENHA in camposVisitados
+                )
+
+
+
+                if (mensagemErro != null) {
+                    Text(
+                        text = mensagemErro.orEmpty(),
+                        fontSize = 13.sp,
+                        color = colorResource(R.color.red)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        editarPerfilScreenViewModel.atualizarDoadora()
+                    },
+                    enabled = editarPerfilScreenViewModel.podeConfirmar(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorResource(R.color.main_pink),
+                        contentColor = colorResource(R.color.white),
+                        disabledContainerColor = colorResource(R.color.main_pink).copy(alpha = 0.4f),
+                        disabledContentColor = colorResource(R.color.disabled)
+                    )
+                ) {
+                    if (salvando) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = colorResource(R.color.white),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Confirmar",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
         }
     }
 }

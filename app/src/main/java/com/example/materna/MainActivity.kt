@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "perfil",
+                        startDestination = "splash",
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
@@ -166,20 +166,32 @@ class MainActivity : ComponentActivity() {
                                     delay(30)
                                     progress = (progress + 0.01f).coerceAtMost(1f)
                                 }
+
                                 delay(200)
 
-                                val onboardingCompleted = withContext(Dispatchers.IO) {
-                                    settingsDao.observeSettings()
-                                        .first()
-                                        ?.onboardingCompleted == true
+                                val settings = withContext(Dispatchers.IO) {
+                                    settingsDao.observeSettings().first()
                                 }
 
-                                val destination = if (onboardingCompleted) "login" else "onboarding"
+                                val idDoadoraPendente = settings?.idDoadoraPendente
+
+                                val destination = when {
+                                    idDoadoraPendente != null && idDoadoraPendente > 0 && !settings.emailPendente.isNullOrBlank() -> {
+                                        "confirmacao/$idDoadoraPendente"
+                                    }
+                                    settings?.onboardingCompleted == true -> {
+                                        "login"
+                                    }
+                                    else -> {
+                                        "onboarding"
+                                    }
+                                }
 
                                 navController.navigate(destination) {
                                     popUpTo("splash") {
                                         inclusive = true
                                     }
+                                    launchSingleTop = true
                                 }
                             }
 

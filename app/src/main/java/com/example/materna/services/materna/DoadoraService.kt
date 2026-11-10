@@ -20,6 +20,7 @@ interface DoadoraService {
         @Body doadora: CadastroDoadora
     ): Call<CadastroDoadoraResponse>
 
+    @Headers("Content-Type: application/json")
     @PUT("doadora/{id}")
     fun atualizarDoadora(
         @Path("id") idDoadora: Int,

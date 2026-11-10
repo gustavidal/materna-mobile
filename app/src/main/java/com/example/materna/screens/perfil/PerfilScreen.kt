@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.materna.R
 import com.example.materna.components.PerfilIndicador
 import com.example.materna.components.PerfilOpcao
@@ -47,9 +49,21 @@ fun PerfilScreen(
     navController: NavController,
     perfilScreenViewModel: PerfilScreenViewModel = viewModel()
 ) {
-    val doadora      by perfilScreenViewModel.doadora.observeAsState(null)
-    val carregando   by perfilScreenViewModel.carregando.observeAsState(false)
-    val mensagemErro by perfilScreenViewModel.mensagemErro.observeAsState(null)
+    val doadora          by perfilScreenViewModel.doadora.observeAsState(null)
+    val carregando       by perfilScreenViewModel.carregando.observeAsState(false)
+    val mensagemErro     by perfilScreenViewModel.mensagemErro.observeAsState(null)
+
+    val backStackEntry   by navController.currentBackStackEntryAsState()
+    val perfilAtualizado  = backStackEntry?.savedStateHandle?.get<Boolean>("perfil_atualizado") == true
+
+    LaunchedEffect(perfilAtualizado) {
+        if (perfilAtualizado) {
+            doadora?.id?.let { id ->
+                perfilScreenViewModel.buscarDoadora(id)
+            }
+            backStackEntry?.savedStateHandle?.remove<Boolean>("perfil_atualizado")
+        }
+    }
 
     Column(
         modifier = modifier
