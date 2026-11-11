@@ -17,11 +17,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -81,12 +83,36 @@ fun ConfirmacaoScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Cabeçalho
-        Text(
-            text = "Confirmar E-mail",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.main_text_color)
-        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            IconButton(
+                onClick = {
+                    navController.navigate("login") {
+                        popUpTo("confirmacao/{id_doadora}") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                enabled = !confirmando,
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Voltar para o login",
+                    tint = colorResource(R.color.main_text_color)
+                )
+            }
+
+            Text(
+                text = "Confirmar E-mail",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorResource(R.color.main_text_color)
+            )
+        }
 
         Spacer(modifier = Modifier.height(28.dp))
 
@@ -264,9 +290,7 @@ fun ConfirmacaoScreen(
             // Botão de confirmação
             Button(
                 onClick = {
-                    confirmacaoScreenViewModel.confirmarCodigo(
-                        idDoadora
-                    )
+                    confirmacaoScreenViewModel.confirmarCodigo(idDoadora)
                     navController.navigate("dashboard") {
                         popUpTo("confirmacao/{id_doadora}") {
                             inclusive = true

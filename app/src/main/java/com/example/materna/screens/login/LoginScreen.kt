@@ -111,7 +111,7 @@ fun LoginScreen(
             )
 
             Text(
-                text = "Bem-vinda de volta",
+                text = "Bem-vinda",
                 fontSize = 13.sp,
                 color = secondaryColor
             )

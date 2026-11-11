@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "splash",
+                        startDestination = "dashboard",
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
@@ -177,7 +177,8 @@ class MainActivity : ComponentActivity() {
 
                                 val destination = when {
                                     idDoadoraPendente != null && idDoadoraPendente > 0 && !settings.emailPendente.isNullOrBlank() -> {
-                                        "confirmacao/$idDoadoraPendente"
+//                                        "confirmacao/$idDoadoraPendente"
+                                        "dashboard"
                                     }
                                     settings?.onboardingCompleted == true -> {
                                         "login"

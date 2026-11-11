@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.materna.R
@@ -46,7 +47,7 @@ fun DashboardHighlightCard(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Icon(
@@ -55,6 +56,7 @@ fun DashboardHighlightCard(
                     tint = Color.White,
                     modifier = Modifier
                         .size(40.dp)
+                        .padding(bottom = 5.dp)
                 )
 
                 Column {
@@ -66,7 +68,7 @@ fun DashboardHighlightCard(
                     )
 
                     Text(
-                        text = "Escolha seu Banco de Leite",
+                        text = "Escolha seu\nBanco de Leite",
                         color = Color.White,
                         fontSize = 21.sp,
                         fontWeight = FontWeight.Bold
@@ -78,7 +80,8 @@ fun DashboardHighlightCard(
                 text = "Selecione o ponto de atendimento ou coleta mais próximo de você para iniciar sua jornada de doação com suporte e segurança.",
                 color = Color.White,
                 fontSize = 15.sp,
-                lineHeight = 24.sp
+                lineHeight = 24.sp,
+                textAlign = TextAlign.Justify
             )
 
             Button(
