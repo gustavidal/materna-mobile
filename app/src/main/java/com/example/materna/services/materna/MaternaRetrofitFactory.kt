@@ -11,12 +11,16 @@ class MaternaRetrofitFactory {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    fun getDoadoraService(): DoadoraService {
-        return retrofit.create(DoadoraService::class.java)
-    }
-
     fun getAuthService(): AuthService {
         return retrofit.create(AuthService::class.java)
+    }
+
+    fun getCampanhaService(): CampanhaService {
+        return retrofit.create(CampanhaService::class.java)
+    }
+
+    fun getDoadoraService(): DoadoraService {
+        return retrofit.create(DoadoraService::class.java)
     }
 
     fun getInstituicaoService(): InstituicaoService {

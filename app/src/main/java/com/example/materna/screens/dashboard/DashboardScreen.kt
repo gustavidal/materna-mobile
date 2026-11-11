@@ -12,14 +12,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -27,10 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.materna.R
+import com.example.materna.components.CampanhaCard
 import com.example.materna.components.DashboardActionCard
 import com.example.materna.components.DashboardHighlightCard
 
@@ -40,8 +46,16 @@ fun DashboardScreen(
     navController: NavController,
     dashboardScreenViewModel: DashboardScreenViewModel
 ) {
-    val nomeDoadora      by dashboardScreenViewModel.nomeDoadora.observeAsState("")
-    val bancoSelecionado by dashboardScreenViewModel.bancoSelecionado.observeAsState(false)
+    val nomeDoadora         by dashboardScreenViewModel.nomeDoadora.observeAsState("")
+    val bancoSelecionado    by dashboardScreenViewModel.bancoSelecionado.observeAsState(false)
+
+    val campanhas           by dashboardScreenViewModel.campanhas.observeAsState(emptyList())
+    val carregandoCampanhas by dashboardScreenViewModel.carregandoCampanhas.observeAsState(false)
+    val mensagemCampanhas   by dashboardScreenViewModel.mensagemCampanhas.observeAsState(null)
+
+    LaunchedEffect(dashboardScreenViewModel) {
+        dashboardScreenViewModel.buscarCampanhas()
+    }
 
     Column(
         modifier = modifier
@@ -169,21 +183,72 @@ fun DashboardScreen(
             )
         }
 
-//        TODO: Card de campanha com imagem e dados da API
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(190.dp)
-                .background(
-                    color = colorResource(R.color.pink_beige),
-                    shape = RoundedCornerShape(18.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Campanhas em breve",
-                color = colorResource(R.color.secundary_gray)
-            )
+        when {
+            carregandoCampanhas -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(190.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = colorResource(R.color.main_pink)
+                    )
+                }
+            }
+
+            mensagemCampanhas != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(190.dp)
+                        .background(
+                            colorResource(R.color.pink_beige),
+                            RoundedCornerShape(18.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = mensagemCampanhas.orEmpty(),
+                        color = colorResource(R.color.secundary_gray),
+                        modifier = Modifier.padding(20.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            campanhas.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(190.dp)
+                        .background(
+                            colorResource(R.color.pink_beige),
+                            RoundedCornerShape(18.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Nenhuma campanha disponível no momento.",
+                        color = colorResource(R.color.secundary_gray)
+                    )
+                }
+            }
+
+            else -> {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(
+                        items = campanhas,
+                        key = { it.id }
+                    ) { campanha ->
+                        CampanhaCard(
+                            campanha = campanha
+                        )
+                    }
+                }
+            }
         }
     }
 }
