@@ -1,4 +1,4 @@
-package com.example.materna.screens.confirmacao
+package com.example.materna.screens.confirmaremail
 
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -15,7 +15,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class ConfirmacaoScreenViewModel(
+class ConfirmarEmailScreenViewModel(
     private val settingsDao: AppSettingsDao
 ) : ViewModel() {
 
@@ -82,7 +82,7 @@ class ConfirmacaoScreenViewModel(
 
         val request = ValidarCodigoRequest(
             idDoadora = idDoadora,
-            codigo = codigoDigitado
+            codigo = codigoDigitado.toInt()
         )
 
         _confirmando.value = true
@@ -102,15 +102,14 @@ class ConfirmacaoScreenViewModel(
                 if (response.isSuccessful) {
                     val resultado = response.body()
 
-                    if (resultado?.status == true) {
+                    if (
+                        resultado?.status == true &&
+                        resultado.response?.isValidado == true &&
+                        resultado.response.idDoadora == idDoadora
+                    ) {
                         viewModelScope.launch {
                             try {
                                 settingsDao.limparCadastroPendente()
-
-                                _mensagemConfirmacao.value =
-                                    resultado.message.ifBlank {
-                                        "E-mail confirmado com sucesso!"
-                                    }
 
                                 _codigoConfirmado.value = true
                             } catch (e: Exception) {
@@ -136,31 +135,32 @@ class ConfirmacaoScreenViewModel(
                 } else {
                     _confirmando.value = false
 
-                    val mensagemErro = try {
-                        val erro = response.errorBody()?.string()
-
-                        Log.e(
-                            "ConfirmarCodigo",
-                            "HTTP ${response.code()} - Resposta da API: $erro"
-                        )
-
-                        if (!erro.isNullOrBlank()) {
+                    val erro = try {
+                        response.errorBody()?.string()?.let {
                             Gson().fromJson(
-                                erro,
+                                it,
                                 ValidarCodigoResponse::class.java
-                            )?.message
-                        } else {
-                            null
+                            )
                         }
                     } catch (e: Exception) {
                         Log.e("ConfirmarCodigo", "Erro ao interpretar resposta", e)
                         null
                     }
 
-                    _mensagemConfirmacao.value =
-                        mensagemErro?.takeIf {
-                            it.isNotBlank()
-                        } ?: "Não foi possível confirmar o código. HTTP ${response.code()}."
+                    _mensagemConfirmacao.value = when {
+                        response.code() == 400 && erro?.field?.contains(
+                            "CODIGO",
+                            ignoreCase = true
+                        ) == true -> "Código incorreto. Confira os seis dígitos e tente novamente."
+
+                        response.code() == 404 -> "Não foi possível localizar os dados da confirmação."
+
+                        !erro?.field.isNullOrBlank() -> "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}".trim()
+
+                        !erro?.message.isNullOrBlank() -> erro?.message
+
+                        else -> "Não foi possível confirmar o código. HTTP ${response.code()}."
+                    }
                 }
             }
 

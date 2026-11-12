@@ -2,7 +2,7 @@ package com.example.materna.models.responses
 
 import com.google.gson.annotations.SerializedName
 
-data class ValidarCodigoResponse (
+data class ValidarCodigoResponse(
     @SerializedName("api_description")
     val apiDescription: String? = null,
 
@@ -12,6 +12,7 @@ data class ValidarCodigoResponse (
     val response: AuthCodigoResponse? = null,
 
     val status: Boolean,
+
     @SerializedName("status_code")
     val statusCode: Int,
 
@@ -19,6 +20,10 @@ data class ValidarCodigoResponse (
     val field: String? = null
 )
 
-data class AuthCodigoResponse (
-    val codigo: Any
+data class AuthCodigoResponse(
+    @SerializedName("id_doadora")
+    val idDoadora: Int,
+
+    @SerializedName("is_validado")
+    val isValidado: Boolean
 )

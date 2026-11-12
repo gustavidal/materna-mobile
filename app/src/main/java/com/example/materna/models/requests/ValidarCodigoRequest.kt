@@ -6,5 +6,5 @@ data class ValidarCodigoRequest(
     @SerializedName("id_doadora")
     val idDoadora: Int,
 
-    val codigo: String
+    val codigo: Int
 )

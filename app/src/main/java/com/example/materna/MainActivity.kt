@@ -2,7 +2,6 @@ package com.example.materna
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -35,8 +34,8 @@ import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.campanhas.CampanhaScreen
 import com.example.materna.screens.campanhas.CampanhasScreen
-import com.example.materna.screens.confirmacao.ConfirmacaoScreen
-import com.example.materna.screens.confirmacao.ConfirmacaoScreenViewModel
+import com.example.materna.screens.confirmaremail.ConfirmarEmailScreen
+import com.example.materna.screens.confirmaremail.ConfirmarEmailScreenViewModel
 import com.example.materna.screens.dashboard.DashboardScreen
 import com.example.materna.screens.dashboard.DashboardScreenViewModel
 import com.example.materna.screens.jornada.JornadaScreen
@@ -82,6 +81,7 @@ class MainActivity : ComponentActivity() {
                     "campanhas",
                     "campanha/{id}",
                     "jornada",
+                    "jornada/{id_instituicao}",
                     "servicos",
                     "perfil"
                 )
@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "splash",
+                        startDestination = "dashboard",
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
@@ -181,10 +181,9 @@ class MainActivity : ComponentActivity() {
                                 val idDoadoraPendente = settings?.idDoadoraPendente
 
                                 val destination = when {
-//                                    idDoadoraPendente != null && idDoadoraPendente > 0 && !settings.emailPendente.isNullOrBlank() -> {
-////                                        "confirmacao/$idDoadoraPendente"
-//                                        "dashboard"
-//                                    }
+                                    idDoadoraPendente != null && idDoadoraPendente > 0 && !settings.emailPendente.isNullOrBlank() -> {
+                                        "confirmacao/$idDoadoraPendente"
+                                    }
                                     settings?.onboardingCompleted == true -> {
                                         "login"
                                     }
@@ -230,7 +229,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(
-                            route = "confirmacao/{id_doadora}",
+                            route = "confirmar-email/{id_doadora}",
                             arguments = listOf(
                                 navArgument(name = "id_doadora") {
                                     type = NavType.IntType
@@ -239,22 +238,22 @@ class MainActivity : ComponentActivity() {
                         ) {
                             val idDoadora = it.arguments?.getInt("id_doadora")
 
-                            val confirmacaoScreenViewModel: ConfirmacaoScreenViewModel = viewModel(
+                            val confirmarEmailScreenViewModel: ConfirmarEmailScreenViewModel = viewModel(
                                 factory = object : ViewModelProvider.Factory {
                                     @Suppress("UNCHECKED_CAST")
                                     override fun <T : ViewModel> create(
                                         modelClass: Class<T>
                                     ): T {
-                                        return ConfirmacaoScreenViewModel(settingsDao) as T
+                                        return ConfirmarEmailScreenViewModel(settingsDao) as T
                                     }
                                 }
                             )
 
-                            ConfirmacaoScreen(
+                            ConfirmarEmailScreen(
                                 modifier = Modifier.padding(innerPadding),
                                 navController = navController,
                                 idDoadora = idDoadora!!,
-                                confirmacaoScreenViewModel = confirmacaoScreenViewModel
+                                confirmarEmailScreenViewModel = confirmarEmailScreenViewModel
                             )
                         }
 
@@ -355,6 +354,30 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        composable(
+                            route = "jornada/{id_instituicao}",
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
+                                }
+                            )
+                            ) { backStackEntry ->
+
+                            val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
+
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel()
+
+                            LaunchedEffect(idInstituicao) {
+                                jornadaScreenViewModel.carregarInstituicao(idInstituicao)
+                            }
+
+                            JornadaScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                jornadaScreenViewModel = jornadaScreenViewModel
+                            )
+                        }
+
 
 
 
@@ -376,16 +399,10 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 servicosScreenViewModel = servicosScreenViewModel,
                                 onSelecionarBanco = { idInstituicao ->
-                                    Log.d(
-                                        "Servicos",
-                                        "Instituição selecionada: $idInstituicao"
-                                    )
+                                    navController.navigate("jornada/$idInstituicao") {
+                                        launchSingleTop = true
+                                    }
                                 }
-//                                onSelecionarBanco = { idInstituicao ->
-//                                    navController.navigate(
-//                                        "etapa/conheca_doacao/$idInstituicao"
-//                                    )
-//                                }
                             )
                         }
 

@@ -1,4 +1,4 @@
-package com.example.materna.screens.confirmacao
+package com.example.materna.screens.confirmaremail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,26 +45,26 @@ import com.example.materna.R
 import com.example.materna.components.CodigoVerificacaoField
 
 @Composable
-fun ConfirmacaoScreen(
+fun ConfirmarEmailScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
     idDoadora: Int,
-    confirmacaoScreenViewModel: ConfirmacaoScreenViewModel
+    confirmarEmailScreenViewModel: ConfirmarEmailScreenViewModel
 ) {
-    val email               by confirmacaoScreenViewModel.email.observeAsState("")
-    val codigo              by confirmacaoScreenViewModel.codigo.observeAsState("")
+    val email               by confirmarEmailScreenViewModel.email.observeAsState("")
+    val codigo              by confirmarEmailScreenViewModel.codigo.observeAsState("")
 
-    val confirmando         by confirmacaoScreenViewModel.confirmando.observeAsState(false)
+    val confirmando         by confirmarEmailScreenViewModel.confirmando.observeAsState(false)
 
-    val mensagemConfirmacao by confirmacaoScreenViewModel.mensagemConfirmacao.observeAsState()
+    val mensagemConfirmacao by confirmarEmailScreenViewModel.mensagemConfirmacao.observeAsState()
 
-    val codigoConfirmado    by confirmacaoScreenViewModel.codigoConfirmado.observeAsState(false)
+    val codigoConfirmado    by confirmarEmailScreenViewModel.codigoConfirmado.observeAsState(false)
 
     // Navegação após confirmação bem-sucedida
     LaunchedEffect(codigoConfirmado) {
         if (codigoConfirmado) {
             navController.navigate("login") {
-                popUpTo("confirmacao/{id_doadora}") {
+                popUpTo("confirmar-email/{id_doadora}") {
                     inclusive = true
                 }
                 launchSingleTop = true
@@ -264,7 +264,7 @@ fun ConfirmacaoScreen(
             CodigoVerificacaoField(
                 codigo = codigo,
                 onCodigoChanged = {
-                    confirmacaoScreenViewModel.onCodigoChanged(it)
+                    confirmarEmailScreenViewModel.onCodigoChanged(it)
                 },
                 quantidadeDigitos = 6,
                 enabled = !confirmando,
@@ -290,13 +290,7 @@ fun ConfirmacaoScreen(
             // Botão de confirmação
             Button(
                 onClick = {
-                    confirmacaoScreenViewModel.confirmarCodigo(idDoadora)
-                    navController.navigate("dashboard") {
-                        popUpTo("confirmacao/{id_doadora}") {
-                            inclusive = true
-                        }
-                        launchSingleTop = true
-                    }
+                    confirmarEmailScreenViewModel.confirmarCodigo(idDoadora)
                 },
                 enabled = codigo.length == 6 &&
                         email.isNotBlank() &&

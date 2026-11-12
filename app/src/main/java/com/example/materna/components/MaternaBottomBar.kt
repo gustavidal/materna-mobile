@@ -1,6 +1,5 @@
 package com.example.materna.components
 
-import android.net.http.SslCertificate.saveState
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -14,7 +13,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.materna.R
 
@@ -24,9 +22,11 @@ fun MaternaBottomBar(
 ) {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
 
-    val currentRoute = navBackStackEntry?.destination?.route
-    val selectedRoute = when (currentRoute) {
+    val selectedRoute = when (
+        val currentRoute = navBackStackEntry?.destination?.route
+    ) {
         "campanhas", "campanha/{id}" -> "dashboard"
+        "jornada/{id_instituicao}" -> "jornada"
         else -> currentRoute
     }
 
@@ -48,16 +48,9 @@ fun MaternaBottomBar(
             NavigationBarItem(
                 selected = selectedRoute == route,
                 onClick = {
-                    if (currentRoute != route) {
+                    if (selectedRoute != route) {
                         navController.navigate(route) {
-                            popUpTo(
-                                navController.graph.findStartDestination().id
-                            ) {
-                                saveState = true
-                            }
-
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 },

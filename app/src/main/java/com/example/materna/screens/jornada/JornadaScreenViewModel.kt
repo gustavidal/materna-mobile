@@ -96,10 +96,9 @@ class JornadaScreenViewModel : ViewModel() {
         _progresso.value = (concluidas * 100) / lista.size
     }
 
-
-    private fun testarBuscaInstituicao() {
+    private fun testarBuscaInstituicao(idInstituicao: Int) {
         val call = MaternaRetrofitFactory().getInstituicaoService()
-            .buscarInstituicao(1)
+            .buscarInstituicao(idInstituicao)
 
         call.enqueue(object : Callback<InstituicaoApiResponse> {
             override fun onResponse(
@@ -121,46 +120,28 @@ class JornadaScreenViewModel : ViewModel() {
 
                     if (jornadasAtivas.size == 1) {
                         val jornada = jornadasAtivas.first()
-
                         _etapas.value = montarEtapasJornada(jornada)
 
                         calcularProgresso()
 
                         _estado.value = JornadaEstado.COM_BANCO
-
-                        Log.i(
-                            "Jornada",
-                            "Timeline carregada: ${_etapas.value?.size} etapas"
-                        )
+                        Log.i("Jornada", "Timeline carregada: ${_etapas.value?.size} etapas")
                     } else {
                         _mensagemErro.value = "Este banco de leite ainda não possui uma jornada disponível."
-
                         _estado.value = JornadaEstado.ERRO
-
-                        Log.e(
-                            "Jornada",
-                            "Nenhuma jornada ativa encontrada."
-                        )
+                        Log.e("Jornada", "Nenhuma jornada ativa encontrada.")
                     }
 
                     Log.i("Jornada", "Instituição: ${instituicao?.nome}")
                     Log.i("Jornada", "Jornadas ativas: ${jornadasAtivas.size}")
 
                     jornadasAtivas.forEach { jornada ->
-                        Log.i(
-                            "Jornada",
-                            "Jornada: ${jornada.nome} | Etapas: ${jornada.etapas.size}"
-                        )
+                        Log.i("Jornada", "Jornada: ${jornada.nome} | Etapas: ${jornada.etapas.size}")
                     }
                 } else {
                     _mensagemErro.value = "Não foi possível carregar sua jornada. Tente novamente."
-
                     _estado.value = JornadaEstado.ERRO
-
-                    Log.e(
-                        "Jornada",
-                        "Erro HTTP ${response.code()}: ${response.body()?.message}"
-                    )
+                    Log.e("Jornada", "Erro HTTP ${response.code()}: ${response.body()?.message}")
                 }
             }
 
@@ -170,12 +151,8 @@ class JornadaScreenViewModel : ViewModel() {
                 t: Throwable
             ) {
                 if (call.isCanceled) return
-
-                _mensagemErro.value = "Não foi possível conectar ao servidor. " +
-                        "Verifique sua conexão."
-
+                _mensagemErro.value = "Não foi possível conectar ao servidor. " + "Verifique sua conexão."
                 _estado.value = JornadaEstado.ERRO
-
                 Log.e("Jornada", "Falha: ${t.message}", t)
             }
         })
@@ -232,19 +209,39 @@ class JornadaScreenViewModel : ViewModel() {
         return etapasIniciais + etapasInstituicao + etapaFinal
     }
 
+    private var idInstituicaoSelecionada: Int? = null
+
+    fun carregarInstituicao(idInstituicao: Int) {
+        if (idInstituicao <= 0) return
+
+        if (
+            idInstituicaoSelecionada == idInstituicao &&
+            _estado.value == JornadaEstado.COM_BANCO
+        ) return
+
+        idInstituicaoSelecionada = idInstituicao
+
+        _estado.value = JornadaEstado.CARREGANDO
+        _mensagemErro.value = ""
+
+        testarBuscaInstituicao(idInstituicao)
+    }
+
     fun recarregarJornada() {
+        val idInstituicao = idInstituicaoSelecionada ?: run {
+            _estado.value = JornadaEstado.SEM_BANCO
+            return
+        }
+
         if (_estado.value == JornadaEstado.CARREGANDO) return
 
         _estado.value = JornadaEstado.CARREGANDO
         _mensagemErro.value = ""
 
-        Log.i("Jornada", "Tentando carregar jornada novamente...")
-
-        testarBuscaInstituicao()
+        testarBuscaInstituicao(idInstituicao)
     }
 
     init {
-        _estado.value = JornadaEstado.CARREGANDO
-        testarBuscaInstituicao()
+        _estado.value = JornadaEstado.SEM_BANCO
     }
 }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -213,14 +212,14 @@ fun ServicosScreen(
             }
 
             ServicosEstado.SUCESSO -> {
-                LazyColumn(
+                Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(instituicoes.size) {
+                    instituicoes.forEach { instituicao ->
                         BancoLeiteCard(
-                            instituicao = instituicoes[it],
+                            instituicao = instituicao,
                             onSelecionar = {
-                                onSelecionarBanco(instituicoes[it].id)
+                                onSelecionarBanco(instituicao.id)
                             }
                         )
                     }

@@ -110,7 +110,7 @@ fun CadastroScreen(
 
     LaunchedEffect(cadastroConcluido, idDoadora) {
         if (cadastroConcluido && idDoadora != null) {
-            navController.navigate("confirmacao/${idDoadora}") {
+            navController.navigate("confirmar-email/${idDoadora}") {
                 popUpTo("cadastro") {
                     inclusive = true
                 }
