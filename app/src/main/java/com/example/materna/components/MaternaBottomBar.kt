@@ -1,5 +1,6 @@
 package com.example.materna.components
 
+import android.net.http.SslCertificate.saveState
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -13,6 +14,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.materna.R
 
@@ -23,6 +25,10 @@ fun MaternaBottomBar(
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
 
     val currentRoute = navBackStackEntry?.destination?.route
+    val selectedRoute = when (currentRoute) {
+        "campanhas", "campanha/{id}" -> "dashboard"
+        else -> currentRoute
+    }
 
     val mainPink = colorResource(R.color.main_pink)
     val secondaryGray = colorResource(R.color.secundary_gray)
@@ -40,18 +46,26 @@ fun MaternaBottomBar(
 
         items.forEach { (route, label, icon) ->
             NavigationBarItem(
-                selected = currentRoute == route,
+                selected = selectedRoute == route,
                 onClick = {
                     if (currentRoute != route) {
-                        navController.navigate(route)
+                        navController.navigate(route) {
+                            popUpTo(
+                                navController.graph.findStartDestination().id
+                            ) {
+                                saveState = true
+                            }
+
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 },
                 icon = {
                     Icon(
                         painter = icon,
                         contentDescription = label,
-                        modifier = Modifier
-                            .size(22.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 },
                 label = {

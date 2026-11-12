@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,6 +33,8 @@ import com.example.materna.components.MaternaBottomBar
 import com.example.materna.data.local.MaternaDatabaseProvider
 import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
+import com.example.materna.screens.campanhas.CampanhaScreen
+import com.example.materna.screens.campanhas.CampanhasScreen
 import com.example.materna.screens.confirmacao.ConfirmacaoScreen
 import com.example.materna.screens.confirmacao.ConfirmacaoScreenViewModel
 import com.example.materna.screens.dashboard.DashboardScreen
@@ -76,6 +79,8 @@ class MainActivity : ComponentActivity() {
                 val currentRoute = navBackStackEntry?.destination?.route
                 val bottomBarRoutes = listOf(
                     "dashboard",
+                    "campanhas",
+                    "campanha/{id}",
                     "jornada",
                     "servicos",
                     "perfil"
@@ -93,7 +98,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "dashboard",
+                        startDestination = "splash",
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
@@ -176,10 +181,10 @@ class MainActivity : ComponentActivity() {
                                 val idDoadoraPendente = settings?.idDoadoraPendente
 
                                 val destination = when {
-                                    idDoadoraPendente != null && idDoadoraPendente > 0 && !settings.emailPendente.isNullOrBlank() -> {
-//                                        "confirmacao/$idDoadoraPendente"
-                                        "dashboard"
-                                    }
+//                                    idDoadoraPendente != null && idDoadoraPendente > 0 && !settings.emailPendente.isNullOrBlank() -> {
+////                                        "confirmacao/$idDoadoraPendente"
+//                                        "dashboard"
+//                                    }
                                     settings?.onboardingCompleted == true -> {
                                         "login"
                                     }
@@ -253,6 +258,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+
+
+
+
                         composable(route = "dashboard") {
                             val dashboardScreenViewModel: DashboardScreenViewModel = viewModel(
                                 factory = object : ViewModelProvider.Factory {
@@ -272,6 +281,61 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        composable(route = "campanhas") {
+                            val dashboardEntry = remember(it) {
+                                navController.getBackStackEntry("dashboard")
+                            }
+
+                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel(
+                                viewModelStoreOwner = dashboardEntry
+                            )
+
+                            CampanhasScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                dashboardScreenViewModel = dashboardScreenViewModel
+                            )
+                        }
+
+                        composable(
+                            route = "campanha/{id}",
+                            arguments = listOf(
+                                navArgument("id") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+
+                            val idCampanha = backStackEntry.arguments?.getInt("id")
+
+                            val dashboardEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry("dashboard")
+                            }
+
+                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel(
+                                viewModelStoreOwner = dashboardEntry
+                            )
+
+                            val campanhas by dashboardScreenViewModel.campanhas
+                                .observeAsState(emptyList())
+
+                            val campanha = campanhas.find {
+                                it.id == idCampanha
+                            }
+
+                            if (campanha != null) {
+                                CampanhaScreen(
+                                    modifier = Modifier.padding(innerPadding),
+                                    navController = navController,
+                                    campanha = campanha
+                                )
+                            }
+                        }
+
+
+
+
+
                         composable(route = "jornada") {
                             val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
                                 factory = object : ViewModelProvider.Factory {
@@ -290,6 +354,10 @@ class MainActivity : ComponentActivity() {
                                 jornadaScreenViewModel = jornadaScreenViewModel
                             )
                         }
+
+
+
+
 
                         composable(route = "servicos") {
                             val servicosScreenViewModel: ServicosScreenViewModel = viewModel(
@@ -340,7 +408,6 @@ class MainActivity : ComponentActivity() {
                                 perfilScreenViewModel = perfilScreenViewModel
                             )
                         }
-
 
                         composable(route = "editar_perfil") {
                             val editarPerfilScreenViewModel: EditarPerfilScreenViewModel = viewModel(

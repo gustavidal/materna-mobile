@@ -11,6 +11,8 @@ import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.time.Instant
+import java.time.format.DateTimeParseException
 
 class DashboardScreenViewModel : ViewModel() {
     private val _nomeDoadora = MutableLiveData<String>()
@@ -36,6 +38,21 @@ class DashboardScreenViewModel : ViewModel() {
 
     fun atualizarBancoSelecionado(selecionado: Boolean) {
         _bancoSelecionado.value = selecionado
+    }
+
+    private fun campanhaVigente(campanha: CampanhaResponse): Boolean {
+        return try {
+            val agora = Instant.now()
+            val inicio = Instant.parse(campanha.dataInicio)
+            val fim = Instant.parse(campanha.dataFim)
+
+            campanha.isAtivo == 1 &&
+                    !agora.isBefore(inicio) &&
+                    !agora.isAfter(fim)
+        } catch (e: DateTimeParseException) {
+            Log.e("Campanhas", "Data inválida na campanha ${campanha.id}", e)
+            false
+        }
     }
 
     fun buscarCampanhas() {
@@ -67,7 +84,8 @@ class DashboardScreenViewModel : ViewModel() {
                         _campanhas.value = resultado.response
                             ?.campanha
                             .orEmpty()
-                            .filter { it.isAtivo == 1 }
+                            .filter { campanhaVigente(it) }
+                            .sortedByDescending { it.dataInicio }
 
                         _mensagemCampanhas.value = null
                     } else {

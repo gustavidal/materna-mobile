@@ -178,7 +178,7 @@ fun DashboardScreen(
                 text = "Ver todas",
                 color = colorResource(R.color.main_pink),
                 modifier = Modifier.clickable {
-//                    TODO: Navegar para campanhas
+                    navController.navigate("campanhas")
                 }
             )
         }
@@ -236,17 +236,14 @@ fun DashboardScreen(
             }
 
             else -> {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = campanhas,
-                        key = { it.id }
-                    ) { campanha ->
-                        CampanhaCard(
-                            campanha = campanha
-                        )
-                    }
+                campanhas.firstOrNull()?.let { campanha ->
+                    CampanhaCard(
+                        campanha = campanha,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            navController.navigate("campanha/${campanha.id}")
+                        }
+                    )
                 }
             }
         }
