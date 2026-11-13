@@ -19,10 +19,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,10 +32,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,8 +52,13 @@ fun ConfirmarBancoScreen(
     onVoltar: () -> Unit,
     onConfirmar: () -> Unit,
     onVoltarInicio: () -> Unit,
+    confirmarBancoScreenViewModel: ConfirmarBancoScreenViewModel,
     modifier: Modifier = Modifier
 ) {
+    val estado       by confirmarBancoScreenViewModel.estado.observeAsState(ConfirmarBancoEstado.INICIAL)
+
+    val mensagemErro by confirmarBancoScreenViewModel.mensagemErro.observeAsState("")
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -59,43 +69,43 @@ fun ConfirmarBancoScreen(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(top = 32.dp),
+                .padding(top = 36.dp),
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.Top
             ) {
                 IconButton(
                     onClick = onVoltar,
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            Color(0xFFF1EAE7),
-                            CircleShape
-                        )
+                        .size(44.dp)
+                        .background(colorResource(R.color.background_gray), CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar",
-                        tint = colorResource(R.color.main_text_color)
+                        tint = colorResource(R.color.main_text_color),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
                 Column(
+                    modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = "Confirmar Banco de Leite",
-                        fontSize = 24.sp,
+                        fontSize = 22.sp,
+                        lineHeight = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = colorResource(R.color.main_text_color)
                     )
 
                     Text(
                         text = "Confirme seu ponto de referência para coleta e suporte durante a doação.",
-                        fontSize = 15.sp,
-                        lineHeight = 23.sp,
+                        fontSize = 14.sp,
+                        lineHeight = 22.sp,
                         color = colorResource(R.color.main_text_color)
                     )
                 }
@@ -105,11 +115,11 @@ fun ConfirmarBancoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        Color.White,
-                        RoundedCornerShape(28.dp)
+                        colorResource(R.color.white),
+                        RoundedCornerShape(30.dp)
                     )
-                    .padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -119,75 +129,109 @@ fun ConfirmarBancoScreen(
                         modifier = Modifier
                             .size(52.dp)
                             .background(
-                                Color(0xFFFFEFF1),
+                                colorResource(R.color.pink_beige),
                                 CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.LocationOn,
+                            painter = painterResource(R.drawable.ic_hospital),
                             contentDescription = null,
                             tint = colorResource(R.color.main_pink),
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(27.dp)
                         )
                     }
 
-                    Column {
-                        Text(
-                            text = "Banco de leite selecionado",
-                            fontSize = 12.sp,
-                            color = Color(0xFF36865C)
-                        )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .background(
+                                        color = colorResource(R.color.success_green),
+                                        shape = CircleShape
+                                    )
+                            )
+
+                            Text(
+                                text = "Ponto de referência selecionado",
+                                fontSize = 11.sp,
+                                color = colorResource(R.color.success_green)
+                            )
+                        }
 
                         Text(
                             text = instituicao.nome,
-                            fontSize = 19.sp,
+                            fontSize = 18.sp,
+                            lineHeight = 23.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = colorResource(R.color.main_text_color)
                         )
                     }
                 }
 
-                HorizontalDivider(color = Color(0xFFF0E5E5))
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = colorResource(R.color.border)
+                )
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Top
                 ) {
                     Icon(
-                        imageVector = Icons.Default.LocationOn,
+                        imageVector = Icons.Outlined.LocationOn,
                         contentDescription = null,
                         tint = colorResource(R.color.main_pink),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
 
                     Text(
-                        text = "${instituicao.logradouro}, ${instituicao.numero} - " +
-                                "${instituicao.bairro} • " +
+                        text = "${instituicao.logradouro}, " +
+                                "${instituicao.numero} • " +
                                 String.format(
                                     Locale("pt", "BR"),
-                                    "%.1f km",
+                                    "%.1f km de você",
                                     instituicao.distanciaKm
                                 ),
-                        fontSize = 13.sp,
-                        lineHeight = 20.sp,
+                        fontSize = 12.sp,
+                        lineHeight = 18.sp,
                         color = colorResource(R.color.main_text_color)
                     )
                 }
 
                 Surface(
-                    color = Color(0xFFF3EFED),
-                    shape = RoundedCornerShape(50.dp)
+                    shape = RoundedCornerShape(50.dp),
+                    color = colorResource(R.color.background_gray)
                 ) {
-                    Text(
-                        text = instituicao.tipoColeta,
+                    Row(
                         modifier = Modifier.padding(
-                            horizontal = 14.dp,
-                            vertical = 8.dp
+                            horizontal = 12.dp,
+                            vertical = 7.dp
                         ),
-                        fontSize = 12.sp,
-                        color = colorResource(R.color.main_text_color)
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CheckCircle,
+                            contentDescription = null,
+                            tint = colorResource(R.color.success_green),
+                            modifier = Modifier.size(15.dp)
+                        )
+
+                        Text(
+                            text = instituicao.tipoColeta,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = colorResource(R.color.main_text_color)
+                        )
+                    }
                 }
             }
 
@@ -195,23 +239,27 @@ fun ConfirmarBancoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        Color(0xFFF3F1EF),
-                        RoundedCornerShape(26.dp)
+                        colorResource(R.color.background_gray),
+                        RoundedCornerShape(28.dp)
                     )
-                    .padding(20.dp),
+                    .padding(
+                        horizontal = 20.dp,
+                        vertical = 22.dp
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Info,
+                    imageVector = Icons.Outlined.Info,
                     contentDescription = null,
-                    tint = colorResource(R.color.main_pink)
+                    tint = colorResource(R.color.main_pink),
+                    modifier = Modifier.size(22.dp)
                 )
 
                 Text(
                     text = "A doação de leite humano é um gesto de solidariedade que contribui para a saúde e o desenvolvimento de bebês que precisam desse cuidado.",
-                    fontSize = 14.sp,
-                    lineHeight = 23.sp,
+                    fontSize = 13.sp,
+                    lineHeight = 21.sp,
                     color = colorResource(R.color.main_text_color)
                 )
             }
@@ -220,38 +268,88 @@ fun ConfirmarBancoScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 24.dp),
+                .padding(
+                    top = 16.dp,
+                    bottom = 24.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             Button(
-                onClick = onConfirmar,
+                onClick = {
+                    confirmarBancoScreenViewModel.verificarVinculo(
+                        idDoadora = 1, // Temporário para testes
+                        idInstituicao = instituicao.id
+                    )
+                },
+                enabled = estado != ConfirmarBancoEstado.CARREGANDO,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp),
+                    .height(62.dp)
+                    .shadow(
+                        elevation = 10.dp,
+                        shape = RoundedCornerShape(50.dp),
+                        ambientColor = colorResource(R.color.main_pink).copy(alpha = 0.18f),
+                        spotColor = colorResource(R.color.main_pink).copy(alpha = 0.28f)
+                    ),
                 shape = RoundedCornerShape(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.main_pink)
+                    containerColor = colorResource(R.color.main_pink),
+                    contentColor = colorResource(R.color.white)
                 )
             ) {
-                Text(
-                    text = "Iniciar minha jornada de doação",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                if (estado == ConfirmarBancoEstado.CARREGANDO) {
+                    CircularProgressIndicator(
+                        color = colorResource(R.color.main_pink),
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Iniciar minha jornada de doação",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
 
-                Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(8.dp))
 
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null
-                )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            when (estado) {
+                ConfirmarBancoEstado.OUTRO_BANCO -> {
+                    Text(
+                        text = "Você já possui uma jornada ativa em outro banco de leite. " +
+                                "Será necessário encerrar o vínculo anterior antes de iniciar uma nova jornada.",
+                        color = colorResource(R.color.main_text_color),
+                        fontSize = 13.sp,
+                        lineHeight = 20.sp
+                    )
+                }
+
+                ConfirmarBancoEstado.ERRO -> {
+                    Text(
+                        text = mensagemErro,
+                        color = colorResource(R.color.red),
+                        fontSize = 13.sp,
+                        lineHeight = 20.sp
+                    )
+                }
+
+                else -> Unit
             }
 
             TextButton(onClick = onVoltarInicio) {
                 Text(
                     text = "Voltar para o início",
-                    color = colorResource(R.color.main_text_color)
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colorResource(R.color.main_pink)
                 )
             }
         }

@@ -26,4 +26,8 @@ class MaternaRetrofitFactory {
     fun getInstituicaoService(): InstituicaoService {
         return retrofit.create(InstituicaoService::class.java)
     }
+
+    fun getVinculoEtapaDoadoraService(): VinculoEtapaDoadoraService {
+        return retrofit.create(VinculoEtapaDoadoraService::class.java)
+    }
 }

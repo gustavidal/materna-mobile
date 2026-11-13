@@ -27,6 +27,7 @@ fun MaternaBottomBar(
     ) {
         "campanhas", "campanha/{id}" -> "dashboard"
         "jornada/{id_instituicao}" -> "jornada"
+        "confirmar_banco/{id_instituicao}" -> "servicos"
         else -> currentRoute
     }
 

@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -43,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.materna.R
 import com.example.materna.components.CadastroField
+import com.example.materna.components.MapaBancosLeite
 import com.example.materna.components.ServicosFeedback
 import com.example.materna.models.responses.InstituicaoProxima
 
@@ -150,36 +152,17 @@ fun ServicosScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
-                .background(
-                    color = colorResource(R.color.disabled),
-                    shape = RoundedCornerShape(20.dp)
-                ),
-            contentAlignment = Alignment.Center
+                .height(220.dp)
+                .clip(RoundedCornerShape(20.dp))
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = colorResource(R.color.main_pink),
-                    modifier = Modifier.size(32.dp)
-                )
-
-                Text(
-                    text = "Mapa dos bancos de leite",
-                    fontSize = 14.sp,
-                    color = colorResource(R.color.main_text_color)
-                )
-
-                Text(
-                    text = "Em breve",
-                    fontSize = 12.sp,
-                    color = colorResource(R.color.secundary_gray)
-                )
-            }
+            MapaBancosLeite(
+                instituicoes = if (estado == ServicosEstado.SUCESSO) {
+                    instituicoes
+                } else {
+                    emptyList()
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
 
         Text(

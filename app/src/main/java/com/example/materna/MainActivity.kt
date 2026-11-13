@@ -34,6 +34,9 @@ import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.campanhas.CampanhaScreen
 import com.example.materna.screens.campanhas.CampanhasScreen
+import com.example.materna.screens.confirmarbanco.ConfirmarBancoEstado
+import com.example.materna.screens.confirmarbanco.ConfirmarBancoScreen
+import com.example.materna.screens.confirmarbanco.ConfirmarBancoScreenViewModel
 import com.example.materna.screens.confirmaremail.ConfirmarEmailScreen
 import com.example.materna.screens.confirmaremail.ConfirmarEmailScreenViewModel
 import com.example.materna.screens.dashboard.DashboardScreen
@@ -83,6 +86,7 @@ class MainActivity : ComponentActivity() {
                     "jornada",
                     "jornada/{id_instituicao}",
                     "servicos",
+                    "confirmar_banco/{id_instituicao}",
                     "perfil"
                 )
 
@@ -228,8 +232,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        composable(
-                            route = "confirmar-email/{id_doadora}",
+                        composable(route = "confirmar-email/{id_doadora}",
                             arguments = listOf(
                                 navArgument(name = "id_doadora") {
                                     type = NavType.IntType
@@ -399,12 +402,83 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 servicosScreenViewModel = servicosScreenViewModel,
                                 onSelecionarBanco = { idInstituicao ->
-                                    navController.navigate("jornada/$idInstituicao") {
+                                    navController.navigate("confirmar_banco/$idInstituicao") {
                                         launchSingleTop = true
                                     }
                                 }
                             )
                         }
+
+                        composable(
+                            route = "confirmar_banco/{id_instituicao}",
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
+
+                            val servicosEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry("servicos")
+                            }
+
+                            val servicosScreenViewModel: ServicosScreenViewModel = viewModel(
+                                viewModelStoreOwner = servicosEntry
+                            )
+
+                            val instituicoes by servicosScreenViewModel.instituicoes.observeAsState(emptyList())
+
+                            val instituicao = instituicoes.firstOrNull {
+                                it.id == idInstituicao
+                            }
+
+                            val confirmarBancoScreenViewModel: ConfirmarBancoScreenViewModel = viewModel()
+
+                            val estadoConfirmacao by confirmarBancoScreenViewModel.estado.observeAsState(
+                                ConfirmarBancoEstado.INICIAL
+                            )
+
+                            LaunchedEffect(estadoConfirmacao) {
+                                when (estadoConfirmacao) {
+                                    ConfirmarBancoEstado.SEM_VINCULO,
+                                    ConfirmarBancoEstado.MESMO_BANCO -> {
+                                        navController.navigate("jornada/$idInstituicao") {
+                                            launchSingleTop = true
+                                        }
+                                    }
+
+                                    else -> Unit
+                                }
+                            }
+
+                            if (instituicao != null) {
+                                ConfirmarBancoScreen(
+                                    modifier = Modifier.padding(innerPadding),
+                                    instituicao = instituicao,
+                                    confirmarBancoScreenViewModel = confirmarBancoScreenViewModel,
+                                    onVoltar = {
+                                        navController.popBackStack()
+                                    },
+                                    onConfirmar = {
+                                        navController.navigate("jornada/$idInstituicao") {
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    onVoltarInicio = {
+                                        navController.navigate("dashboard") {
+                                            popUpTo("dashboard") {
+                                                inclusive = false
+                                            }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                )
+                            }
+                        }
+
+
+
 
 
                         composable(route = "perfil") {

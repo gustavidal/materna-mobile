@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -528,6 +529,10 @@ fun CadastroScreen(
                         ) {
                             Checkbox(
                                 checked = termosAceitos,
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = colorResource(R.color.main_pink),
+                                    uncheckedColor = colorResource(R.color.background_gray)
+                                ),
                                 onCheckedChange = {
                                     cadastroScreenViewModel.onTermosAceitosChanged(it)
                                 }

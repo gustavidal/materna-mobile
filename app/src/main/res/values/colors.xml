@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<!-- main colors-->
+    <!-- main colors-->
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
     <color name="green">#FF2E7D32</color>
     <color name="red">#FFFF0000</color>
 
-<!-- background color-->
+    <!-- background color-->
     <color name="background_cream">#FFFFF9F6</color>
     <color name="background_gray">#FFF5EFEB</color>
 
-<!-- content colors -->
+    <!-- content colors -->
     <color name="main_pink">#FFC85B63</color>
     <color name="pink_beige">#FFFCEAE8</color>
     <color name="disabled">#FFF2EFED</color>
+    <color name="success_green">#FF36865C</color>
 
-<!-- text colors -->
+    <!-- text colors -->
     <color name="main_text_color">#FF2D2121</color>
     <color name="secundary_gray">#FF8A7B76</color>
 
-<!-- text boxes -->
+    <!-- text boxes -->
     <color name="border">#FFEEDCD6</color>
 </resources>
