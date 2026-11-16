@@ -1,6 +1,7 @@
 package com.example.materna
 
 import android.annotation.SuppressLint
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -69,6 +71,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaternaTheme {
                 val navController = rememberNavController()
+
+                val servicosCompartilhado: ServicosScreenViewModel = viewModel(
+                    viewModelStoreOwner = this@MainActivity
+                )
+
                 val context = LocalContext.current
                 val database = remember {
                     MaternaDatabaseProvider.getDatabase(context)
@@ -103,6 +110,7 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = "dashboard",
+                        modifier = Modifier.padding(innerPadding),
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
@@ -209,7 +217,7 @@ class MainActivity : ComponentActivity() {
 
                         composable(route = "onboarding") {
                             OnboardingScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController
                             )
                         }
@@ -218,7 +226,7 @@ class MainActivity : ComponentActivity() {
                             val loginScreenViewModel: LoginScreenViewModel = viewModel()
 
                             LoginScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 loginScreenViewModel = loginScreenViewModel
                             )
@@ -226,7 +234,7 @@ class MainActivity : ComponentActivity() {
 
                         composable(route = "cadastro") {
                             CadastroScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 cadastroScreenViewModel = remember { CadastroScreenViewModel(settingsDao = settingsDao) }
                             )
@@ -253,7 +261,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             ConfirmarEmailScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 idDoadora = idDoadora!!,
                                 confirmarEmailScreenViewModel = confirmarEmailScreenViewModel
@@ -276,8 +284,34 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
 
+                            val context = LocalContext.current
+
+                            val appSettingsDao = remember(context) {
+                                MaternaDatabaseProvider
+                                    .getDatabase(context)
+                                    .appSettingsDao()
+                            }
+
+                            val appSettings by remember(appSettingsDao) {
+                                appSettingsDao.observeSettings()
+                            }.collectAsState(initial = null)
+
+                            val isDebug = (
+                                    context.applicationInfo.flags and
+                                            ApplicationInfo.FLAG_DEBUGGABLE
+                                    ) != 0
+
+                            val idDoadora = appSettings?.idDoadora
+                                ?: if (isDebug) 1 else null
+
+                            LaunchedEffect(idDoadora) {
+                                idDoadora?.let {
+                                    servicosCompartilhado.buscarLocalizacaoDoadora(it)
+                                }
+                            }
+
                             DashboardScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 dashboardScreenViewModel = dashboardScreenViewModel
                             )
@@ -293,7 +327,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             CampanhasScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 dashboardScreenViewModel = dashboardScreenViewModel
                             )
@@ -327,7 +361,7 @@ class MainActivity : ComponentActivity() {
 
                             if (campanha != null) {
                                 CampanhaScreen(
-                                    modifier = Modifier.padding(innerPadding),
+                                    modifier = Modifier,
                                     navController = navController,
                                     campanha = campanha
                                 )
@@ -351,7 +385,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             JornadaScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 jornadaScreenViewModel = jornadaScreenViewModel
                             )
@@ -375,7 +409,7 @@ class MainActivity : ComponentActivity() {
                             }
 
                             JornadaScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 jornadaScreenViewModel = jornadaScreenViewModel
                             )
@@ -386,21 +420,10 @@ class MainActivity : ComponentActivity() {
 
 
                         composable(route = "servicos") {
-                            val servicosScreenViewModel: ServicosScreenViewModel = viewModel(
-                                factory = object : ViewModelProvider.Factory {
-                                    @Suppress("UNCHECKED_CAST")
-                                    override fun <T : ViewModel> create(
-                                        modelClass: Class<T>
-                                    ): T {
-                                        return ServicosScreenViewModel() as T
-                                    }
-                                }
-                            )
-
                             ServicosScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
-                                servicosScreenViewModel = servicosScreenViewModel,
+                                servicosScreenViewModel = servicosCompartilhado,
                                 onSelecionarBanco = { idInstituicao ->
                                     navController.navigate("confirmar_banco/$idInstituicao") {
                                         launchSingleTop = true
@@ -419,15 +442,7 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
 
-                            val servicosEntry = remember(backStackEntry) {
-                                navController.getBackStackEntry("servicos")
-                            }
-
-                            val servicosScreenViewModel: ServicosScreenViewModel = viewModel(
-                                viewModelStoreOwner = servicosEntry
-                            )
-
-                            val instituicoes by servicosScreenViewModel.instituicoes.observeAsState(emptyList())
+                            val instituicoes by servicosCompartilhado.instituicoes.observeAsState(emptyList())
 
                             val instituicao = instituicoes.firstOrNull {
                                 it.id == idInstituicao
@@ -454,7 +469,7 @@ class MainActivity : ComponentActivity() {
 
                             if (instituicao != null) {
                                 ConfirmarBancoScreen(
-                                    modifier = Modifier.padding(innerPadding),
+                                    modifier = Modifier,
                                     instituicao = instituicao,
                                     confirmarBancoScreenViewModel = confirmarBancoScreenViewModel,
                                     onVoltar = {
@@ -494,7 +509,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             PerfilScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 perfilScreenViewModel = perfilScreenViewModel
                             )
@@ -513,7 +528,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             EditarPerfilScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier,
                                 navController = navController,
                                 editarPerfilScreenViewModel = editarPerfilScreenViewModel
                             )

@@ -16,6 +16,9 @@
     <color name="disabled">#FFF2EFED</color>
     <color name="success_green">#FF36865C</color>
 
+    <!-- map colors -->
+    <color name="route_blue">#FF247B9A</color>
+
     <!-- text colors -->
     <color name="main_text_color">#FF2D2121</color>
     <color name="secundary_gray">#FF8A7B76</color>

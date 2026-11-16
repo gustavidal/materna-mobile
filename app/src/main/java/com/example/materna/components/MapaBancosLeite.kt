@@ -1,14 +1,19 @@
 package com.example.materna.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import android.util.Log
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.materna.R
 import com.example.materna.models.responses.InstituicaoProxima
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -16,13 +21,25 @@ import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 
 @Composable
 fun MapaBancosLeite(
     instituicoes: List<InstituicaoProxima>,
+    localizacaoDoadora: Pair<Double, Double>?,
+    onInstituicaoClick: (InstituicaoProxima) -> Unit = {},
+    pontosRota: List<GeoPoint> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(localizacaoDoadora) {
+        Log.d(
+            "MaternaMapa",
+            "Localização da doadora: $localizacaoDoadora"
+        )
+    }
 
     val mapView = remember(context) {
         Configuration.getInstance().apply {
@@ -32,79 +49,156 @@ fun MapaBancosLeite(
         MapView(context).apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
-
             controller.setZoom(12.0)
-            controller.setCenter(
-                GeoPoint(-23.5505, -46.6333)
+        }
+    }
+
+    val linhaRota = remember(mapView) {
+        Polyline(mapView).apply {
+            outlinePaint.color = ContextCompat.getColor(
+                context,
+                R.color.route_blue
             )
+            outlinePaint.strokeWidth = 8f
+        }
+    }
+
+    // Acompanha o ciclo de vida da tela.
+    DisposableEffect(mapView, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                else -> Unit
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        if (
+            lifecycleOwner.lifecycle.currentState
+                .isAtLeast(Lifecycle.State.RESUMED)
+        ) {
+            mapView.onResume()
+        }
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            mapView.onPause()
         }
     }
 
     DisposableEffect(mapView) {
-        mapView.onResume()
-
         onDispose {
-            mapView.onPause()
             mapView.onDetach()
         }
     }
 
-    AndroidView(
-        factory = { mapView },
-        modifier = modifier
-            .fillMaxWidth()
-            .height(220.dp),
-        update = { mapa ->
+    LaunchedEffect(mapView, localizacaoDoadora, instituicoes) {
+        // Remove os marcadores anteriores para evitar duplicações.
+        mapView.overlays
+            .filterIsInstance<Marker>()
+            .toList()
+            .forEach { mapView.overlays.remove(it) }
 
-            mapa.overlays
-                .filterIsInstance<Marker>()
-                .toList()
-                .forEach { mapa.overlays.remove(it) }
+        val pontosBancos = mutableListOf<GeoPoint>()
+        val todosOsPontos = mutableListOf<GeoPoint>()
 
-            val pontos = mutableListOf<GeoPoint>()
+        // Marcador da casa da doadora.
+        localizacaoDoadora?.let { (latitude, longitude) ->
+            if (
+                latitude.isFinite() &&
+                longitude.isFinite() &&
+                latitude in -90.0..90.0 &&
+                longitude in -180.0..180.0
+            ) {
+                val pontoDoadora = GeoPoint(latitude, longitude)
+                todosOsPontos.add(pontoDoadora)
 
-            instituicoes.forEach { instituicao ->
+                val marcadorDoadora = Marker(mapView).apply {
+                    position = pontoDoadora
+                    title = "Meu endereço cadastrado"
+                    snippet = "Localização aproximada da doadora"
 
-                val latitude = instituicao.latitude.toDoubleOrNull()
-                val longitude = instituicao.longitude.toDoubleOrNull()
+                    icon = ContextCompat.getDrawable(
+                        context,
+                        R.drawable.ic_pin_doadora
+                    )?.mutate()
 
-                if (
-                    latitude != null &&
-                    longitude != null &&
-                    latitude in -90.0..90.0 &&
-                    longitude in -180.0..180.0
-                ) {
-                    val ponto = GeoPoint(latitude, longitude)
-                    pontos.add(ponto)
+                    setAnchor(
+                        Marker.ANCHOR_CENTER,
+                        Marker.ANCHOR_BOTTOM
+                    )
+                }
 
-                    Marker(mapa).apply {
-                        position = ponto
-                        title = instituicao.nome
-                        snippet = "${instituicao.logradouro}, " +
-                                "${instituicao.numero} - ${instituicao.bairro}"
+                mapView.overlays.add(marcadorDoadora)
+            }
+        }
 
-                        setAnchor(
-                            Marker.ANCHOR_CENTER,
-                            Marker.ANCHOR_BOTTOM
-                        )
+        // Marcadores dos bancos de leite.
+        instituicoes.forEach { instituicao ->
+            val latitude = instituicao.latitude.toDoubleOrNull()
+            val longitude = instituicao.longitude.toDoubleOrNull()
 
-                        mapa.overlays.add(this)
+            if (
+                latitude != null &&
+                longitude != null &&
+                latitude.isFinite() &&
+                longitude.isFinite() &&
+                latitude in -90.0..90.0 &&
+                longitude in -180.0..180.0
+            ) {
+                val ponto = GeoPoint(latitude, longitude)
+                pontosBancos.add(ponto)
+                todosOsPontos.add(ponto)
+
+                val marcadorBanco = Marker(mapView).apply {
+                    position = ponto
+                    title = instituicao.nome
+                    snippet = "${instituicao.logradouro}, " +
+                            "${instituicao.numero} - ${instituicao.bairro}"
+
+                    icon = ContextCompat.getDrawable(
+                        context,
+                        R.drawable.ic_pin_banco
+                    )?.mutate()
+
+                    setAnchor(
+                        Marker.ANCHOR_CENTER,
+                        Marker.ANCHOR_BOTTOM
+                    )
+
+                    setOnMarkerClickListener { marker, _ ->
+                        onInstituicaoClick(instituicao)
+                        true
                     }
                 }
+
+                mapView.overlays.add(marcadorBanco)
             }
+        }
 
-            when (pontos.size) {
-                0 -> Unit
+        // Define a posição inicial da câmera.
+        localizacaoDoadora?.let { (latitude, longitude) ->
+            if (
+                latitude.isFinite() &&
+                longitude.isFinite() &&
+                latitude in -90.0..90.0 &&
+                longitude in -180.0..180.0
+            ) {
+                mapView.controller.setCenter(
+                    GeoPoint(latitude, longitude)
+                )
+            }
+        }
 
-                1 -> {
-                    mapa.controller.setZoom(15.0)
-                    mapa.controller.setCenter(pontos.first())
-                }
-
-                else -> {
-                    mapa.post {
-                        mapa.zoomToBoundingBox(
-                            BoundingBox.fromGeoPoints(pontos),
+        // Define o enquadramento do mapa.
+        when {
+            todosOsPontos.size > 1 -> {
+                mapView.post {
+                    if (mapView.width > 0 && mapView.height > 0) {
+                        mapView.zoomToBoundingBox(
+                            BoundingBox.fromGeoPoints(todosOsPontos),
                             true,
                             60
                         )
@@ -112,7 +206,28 @@ fun MapaBancosLeite(
                 }
             }
 
-            mapa.invalidate()
+            todosOsPontos.size == 1 -> {
+                mapView.controller.setZoom(15.0)
+                mapView.controller.setCenter(todosOsPontos.first())
+            }
         }
+
+        mapView.invalidate()
+    }
+
+    LaunchedEffect(mapView, pontosRota) {
+        mapView.overlays.remove(linhaRota)
+
+        if (pontosRota.size >= 2) {
+            linhaRota.setPoints(pontosRota)
+            mapView.overlays.add(0, linhaRota)
+        }
+
+        mapView.invalidate()
+    }
+
+    AndroidView(
+        factory = { mapView },
+        modifier = modifier.fillMaxSize()
     )
 }
