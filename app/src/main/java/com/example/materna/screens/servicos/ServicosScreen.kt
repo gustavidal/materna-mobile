@@ -3,7 +3,6 @@ package com.example.materna.screens.servicos
 import android.content.pm.ApplicationInfo
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -110,8 +108,6 @@ fun ServicosScreen(
     }
 
     val localizacaoDoadora by servicosScreenViewModel.localizacaoDoadora.observeAsState(null)
-
-    var mapaAtivo by remember { mutableStateOf(false) }
 
     val bottomSheetState = rememberStandardBottomSheetState(
         initialValue = SheetValue.PartiallyExpanded,
@@ -243,14 +239,6 @@ fun ServicosScreen(
                 )
             }
 
-            if (!mapaAtivo) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { mapaAtivo = true }
-                )
-            }
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -313,20 +301,6 @@ fun ServicosScreen(
                     ) {
                         Text("Buscar")
                     }
-                }
-            }
-
-            if (mapaAtivo) {
-                TextButton(
-                    onClick = { mapaAtivo = false },
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(16.dp),
-                    colors = ButtonDefaults.textButtonColors(
-                        containerColor = Color.White
-                    )
-                ) {
-                    Text("Concluir", color = Color.Black)
                 }
             }
         }
