@@ -1,5 +1,6 @@
 package com.example.materna.screens.cadastro
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -553,7 +554,7 @@ class CadastroScreenViewModel(
 
 
 
-    fun cadastrarDoadora() {
+    fun cadastrarDoadora(context: Context) {
         if (_cadastrando.value == true) return
 
         val dataOriginal = _dataNascimento.value.orEmpty()
@@ -607,7 +608,8 @@ class CadastroScreenViewModel(
         _mensagemCadastro.value = null
         _cadastroConcluido.value = false
 
-        val call = MaternaRetrofitFactory().getDoadoraService()
+        val call = MaternaRetrofitFactory(context.applicationContext)
+            .getDoadoraService()
             .cadastrarDoadora(doadora)
 
         call.enqueue(object : Callback<CadastroDoadoraResponse> {

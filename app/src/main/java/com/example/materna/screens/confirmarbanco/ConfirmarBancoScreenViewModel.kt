@@ -1,5 +1,6 @@
 package com.example.materna.screens.confirmarbanco
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -19,7 +20,11 @@ enum class ConfirmarBancoEstado {
     ERRO
 }
 
-class ConfirmarBancoScreenViewModel : ViewModel() {
+class ConfirmarBancoScreenViewModel(
+    context: Context
+) : ViewModel() {
+    private val applicationContext = context.applicationContext
+
     private val _estado = MutableLiveData(
         ConfirmarBancoEstado.INICIAL
     )
@@ -45,7 +50,8 @@ class ConfirmarBancoScreenViewModel : ViewModel() {
         _estado.value = ConfirmarBancoEstado.CARREGANDO
         _mensagemErro.value = ""
 
-        val call = MaternaRetrofitFactory().getVinculoEtapaDoadoraService()
+        val call = MaternaRetrofitFactory(applicationContext)
+            .getVinculoEtapaDoadoraService()
             .buscarVinculosDoadora(idDoadora)
 
         chamadaAtual = call

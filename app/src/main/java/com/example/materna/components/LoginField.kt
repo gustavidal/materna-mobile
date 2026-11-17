@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
@@ -29,7 +30,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.materna.R
-import com.example.materna.screens.login.FieldShape
 
 @Composable
 fun LoginField(
@@ -44,18 +44,16 @@ fun LoginField(
     passwordVisible: Boolean = false,
     onTogglePassword: (() -> Unit)? = null
 ) {
-    val shape = FieldShape
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(58.dp)
-            .clip(shape)
+            .clip(RoundedCornerShape(28.dp))
             .background(Color.White)
             .border(
                 width = 2.dp,
                 color = borderColor,
-                shape = shape
+                shape = RoundedCornerShape(28.dp)
             )
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically

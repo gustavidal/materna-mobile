@@ -33,6 +33,14 @@ object MaternaDatabaseProvider {
         }
     }
 
+    private val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE app_settings ADD COLUMN emailDoadora TEXT"
+            )
+        }
+    }
+
     fun getDatabase(context: Context): MaternaDatabase {
         return INSTANCE ?: synchronized(this) {
             INSTANCE ?: Room.databaseBuilder(
@@ -43,7 +51,8 @@ object MaternaDatabaseProvider {
                 .addMigrations(
                     MIGRATION_1_2,
                     MIGRATION_2_3,
-                    MIGRATION_3_4
+                    MIGRATION_3_4,
+                    MIGRATION_4_5
                 )
                 .build()
                 .also { database ->

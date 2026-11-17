@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
@@ -94,6 +95,8 @@ fun CadastroScreen(
 
     val cadastroConcluido  by cadastroScreenViewModel.cadastroConcluido.observeAsState(false)
     val idDoadora          by cadastroScreenViewModel.idDoadora.observeAsState(null)
+
+    val context = LocalContext.current
 
     LaunchedEffect(mostrarSenha) {
         if (mostrarSenha) {
@@ -570,7 +573,7 @@ fun CadastroScreen(
                 if (currentStep < LAST_STEP) {
                     cadastroScreenViewModel.avancarEtapa()
                 } else {
-                    cadastroScreenViewModel.cadastrarDoadora()
+                    cadastroScreenViewModel.cadastrarDoadora(context)
                 }
 
                 focusManager.clearFocus()

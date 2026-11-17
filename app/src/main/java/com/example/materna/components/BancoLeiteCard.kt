@@ -35,18 +35,49 @@ import com.example.materna.models.responses.InstituicaoProxima
 @Composable
 fun BancoLeiteCard(
     instituicao: InstituicaoProxima,
+    selecionado: Boolean = false,
     onSelecionar: () -> Unit
 ) {
+    val corFundo = if (selecionado) {
+        colorResource(R.color.golden_august_background)
+    } else {
+        colorResource(R.color.white)
+    }
+
+    val corBorda = if (selecionado) {
+        colorResource(R.color.golden_august)
+    } else {
+        colorResource(R.color.border)
+    }
+
+    val corDestaque = if (selecionado) {
+        colorResource(R.color.golden_august)
+    } else {
+        colorResource(R.color.main_pink)
+    }
+
+    val corFundoIcone = if (selecionado) {
+        colorResource(R.color.golden_august_background)
+    } else {
+        colorResource(R.color.background_cream)
+    }
+
+    val corBotao = if (selecionado) {
+        colorResource(R.color.golden_august_dark)
+    } else {
+        colorResource(R.color.main_pink)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = Color.White,
+                color = corFundo,
                 shape = RoundedCornerShape(18.dp)
             )
             .border(
-                width = 1.dp,
-                color = Color(0xFFF0E5E5),
+                width = if (selecionado) 2.dp else 1.dp,
+                color = corBorda,
                 shape = RoundedCornerShape(18.dp)
             )
             .padding(16.dp),
@@ -60,7 +91,7 @@ fun BancoLeiteCard(
                 modifier = Modifier
                     .size(44.dp)
                     .background(
-                        color = Color(0xFFFFEFF1),
+                        color = corFundoIcone,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -68,7 +99,7 @@ fun BancoLeiteCard(
                 Icon(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = null,
-                    tint = colorResource(R.color.main_pink),
+                    tint = corDestaque,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -98,7 +129,7 @@ fun BancoLeiteCard(
                     Text(
                         text = "${instituicao.distanciaKm} km",
                         fontSize = 12.sp,
-                        color = colorResource(R.color.main_pink)
+                        color = corDestaque
                     )
 
                     Text(
@@ -117,7 +148,7 @@ fun BancoLeiteCard(
                 .height(44.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(R.color.main_pink)
+                containerColor = corBotao
             )
         ) {
             Text(

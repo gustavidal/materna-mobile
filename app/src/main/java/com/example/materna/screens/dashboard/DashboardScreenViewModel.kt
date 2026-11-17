@@ -1,5 +1,6 @@
 package com.example.materna.screens.dashboard
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -14,7 +15,11 @@ import retrofit2.Response
 import java.time.Instant
 import java.time.format.DateTimeParseException
 
-class DashboardScreenViewModel : ViewModel() {
+class DashboardScreenViewModel(
+    context: Context
+) : ViewModel() {
+    private val applicationContext = context.applicationContext
+
     private val _nomeDoadora = MutableLiveData<String>()
     val nomeDoadora: LiveData<String> = _nomeDoadora
 
@@ -61,7 +66,8 @@ class DashboardScreenViewModel : ViewModel() {
         _carregandoCampanhas.value = true
         _mensagemCampanhas.value = null
 
-        val call = MaternaRetrofitFactory().getCampanhaService()
+        val call = MaternaRetrofitFactory(applicationContext)
+            .getCampanhaService()
             .listarCampanhas()
 
         chamadaCampanhas = call

@@ -1,5 +1,6 @@
 package com.example.materna.screens.perfil
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -16,8 +17,11 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class PerfilScreenViewModel(
-    private val settingsDao: AppSettingsDao
+    private val settingsDao: AppSettingsDao,
+    context: Context
 ) : ViewModel() {
+    private val applicationContext = context.applicationContext
+
     private val _doadora = MutableLiveData<PerfilDoadora?>()
     val doadora: LiveData<PerfilDoadora?> = _doadora
 
@@ -34,29 +38,23 @@ class PerfilScreenViewModel(
     }
 
     private fun carregarPerfil() {
-        val idTeste = 11 // ID de uma doadora existente na API
+        viewModelScope.launch {
+            try {
+                val settings = settingsDao.observeSettings().first()
+                val idDoadora = settings?.idDoadora
 
-        buscarDoadora(idTeste)
+                if (idDoadora != null && idDoadora > 0) {
+                    buscarDoadora(idDoadora)
+                } else {
+                    _mensagemErro.value = "Nenhuma doadora identificada. Faça seu cadastro ou entre na sua conta."
+                }
+            } catch (e: Exception) {
+                Log.e("PerfilDoadora", "Erro ao recuperar ID da doadora", e)
+
+                _mensagemErro.value = "Não foi possível recuperar os dados da doadora."
+            }
+        }
     }
-
-//    private fun carregarPerfil() {
-//        viewModelScope.launch {
-//            try {
-//                val settings = settingsDao.observeSettings().first()
-//                val idDoadora = settings?.idDoadora
-//
-//                if (idDoadora != null && idDoadora > 0) {
-//                    buscarDoadora(idDoadora)
-//                } else {
-//                    _mensagemErro.value = "Nenhuma doadora identificada. Faça seu cadastro ou entre na sua conta."
-//                }
-//            } catch (e: Exception) {
-//                Log.e("PerfilDoadora", "Erro ao recuperar ID da doadora", e)
-//
-//                _mensagemErro.value = "Não foi possível recuperar os dados da doadora."
-//            }
-//        }
-//    }
 
     fun buscarDoadora(id: Int) {
         if (id <= 0) {
@@ -69,7 +67,7 @@ class PerfilScreenViewModel(
         _carregando.value = true
         _mensagemErro.value = null
 
-        val call = MaternaRetrofitFactory().getDoadoraService()
+        val call = MaternaRetrofitFactory(applicationContext).getDoadoraService()
             .buscarDoadora(id)
 
         chamadaAtual = call

@@ -1,9 +1,11 @@
 package com.example.materna.screens.perfil
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.materna.data.local.AppSettingsDao
 import com.example.materna.models.requests.AtualizarDoadoraRequest
 import com.example.materna.models.responses.AtualizarDoadoraResponse
@@ -15,13 +17,18 @@ import com.example.materna.services.viacep.RetrofitFactory
 import com.example.materna.utils.ErroCampos
 import com.example.materna.utils.FormatadorCampos
 import com.example.materna.utils.ValidadorCampos
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class EditarPerfilScreenViewModel(
-    private val settingsDao: AppSettingsDao
+    private val settingsDao: AppSettingsDao,
+    context: Context
 ) : ViewModel() {
+    private val applicationContext = context.applicationContext
+
     private val _idDoadora = MutableLiveData<Int?>(null)
     val idDoadora: LiveData<Int?> = _idDoadora
 
@@ -184,13 +191,6 @@ class EditarPerfilScreenViewModel(
         carregarPerfil()
     }
 
-    private fun carregarPerfil() {
-        val idTeste = 11
-
-        _idDoadora.value = idTeste
-        buscarDoadora(idTeste)
-    }
-
     fun recarregarPerfil() {
         val id = _idDoadora.value
 
@@ -201,24 +201,24 @@ class EditarPerfilScreenViewModel(
         }
     }
 
-//    private fun carregarPerfil() {
-//        viewModelScope.launch {
-//            try {
-//                val settings = settingsDao.observeSettings().first()
-//                val id = settings?.idDoadora
-//
-//                if (id != null && id > 0) {
-//                    _idDoadora.value = id
-//                    buscarDoadora(id)
-//                } else {
-//                    _mensagemErro.value = "Nenhuma doadora identificada."
-//                }
-//            } catch (e: Exception) {
-//                Log.e("EditarPerfil", "Erro ao recuperar ID", e)
-//                _mensagemErro.value = "Não foi possível identificar a doadora."
-//            }
-//        }
-//    }
+    private fun carregarPerfil() {
+        viewModelScope.launch {
+            try {
+                val settings = settingsDao.observeSettings().first()
+                val id = settings?.idDoadora
+
+                if (id != null && id > 0) {
+                    _idDoadora.value = id
+                    buscarDoadora(id)
+                } else {
+                    _mensagemErro.value = "Nenhuma doadora identificada."
+                }
+            } catch (e: Exception) {
+                Log.e("EditarPerfil", "Erro ao recuperar ID", e)
+                _mensagemErro.value = "Não foi possível identificar a doadora."
+            }
+        }
+    }
 
     private fun buscarDoadora(id: Int) {
         chamadaAtual?.cancel()
@@ -227,7 +227,8 @@ class EditarPerfilScreenViewModel(
         _mensagemErro.value = null
         _perfilCarregado.value = false
 
-        val call = MaternaRetrofitFactory().getDoadoraService()
+        val call = MaternaRetrofitFactory(applicationContext)
+            .getDoadoraService()
             .buscarDoadora(id)
 
         chamadaAtual = call
@@ -523,7 +524,8 @@ class EditarPerfilScreenViewModel(
         _mensagemErro.value = null
         _atualizacaoConcluida.value = false
 
-        val call = MaternaRetrofitFactory().getDoadoraService()
+        val call = MaternaRetrofitFactory(applicationContext)
+            .getDoadoraService()
             .atualizarDoadora(id, request)
 
         chamadaAtualizacao = call

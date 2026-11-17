@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,10 +56,10 @@ fun ConfirmarEmailScreen(
     val codigo              by confirmarEmailScreenViewModel.codigo.observeAsState("")
 
     val confirmando         by confirmarEmailScreenViewModel.confirmando.observeAsState(false)
-
     val mensagemConfirmacao by confirmarEmailScreenViewModel.mensagemConfirmacao.observeAsState()
-
     val codigoConfirmado    by confirmarEmailScreenViewModel.codigoConfirmado.observeAsState(false)
+
+    val context = LocalContext.current
 
     // Navegação após confirmação bem-sucedida
     LaunchedEffect(codigoConfirmado) {
@@ -290,7 +291,7 @@ fun ConfirmarEmailScreen(
             // Botão de confirmação
             Button(
                 onClick = {
-                    confirmarEmailScreenViewModel.confirmarCodigo(idDoadora)
+                    confirmarEmailScreenViewModel.confirmarCodigo(context, idDoadora)
                 },
                 enabled = codigo.length == 6 &&
                         email.isNotBlank() &&

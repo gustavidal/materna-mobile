@@ -1,5 +1,6 @@
 package com.example.materna.screens.servicos
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -23,7 +24,11 @@ enum class ServicosEstado {
     ERRO
 }
 
-class ServicosScreenViewModel : ViewModel() {
+class ServicosScreenViewModel(
+    context: Context
+) : ViewModel() {
+    private val applicationContext = context.applicationContext
+
     private var idDoadoraCarregada: Int? = null
 
     private val _estado = MutableLiveData<ServicosEstado>()
@@ -85,7 +90,8 @@ class ServicosScreenViewModel : ViewModel() {
         chamadaDoadora?.cancel()
         _localizacaoDoadora.value = null
 
-        val call = MaternaRetrofitFactory().getDoadoraService()
+        val call = MaternaRetrofitFactory(applicationContext)
+            .getDoadoraService()
             .buscarDoadora(idDoadora)
 
         chamadaDoadora = call
@@ -176,7 +182,7 @@ class ServicosScreenViewModel : ViewModel() {
         _estado.value = ServicosEstado.CARREGANDO
         _mensagemErro.value = ""
 
-        val call = MaternaRetrofitFactory()
+        val call = MaternaRetrofitFactory(applicationContext)
             .getInstituicaoService()
             .buscarInstituicoesProximas(cepAtual)
 
@@ -334,6 +340,15 @@ class ServicosScreenViewModel : ViewModel() {
                 Log.e("Servicos", "Erro ao buscar rota", t)
             }
         })
+    }
+
+    fun cancelarRota() {
+        chamadaRota?.cancel()
+        chamadaRota = null
+
+        _pontosRota.value = emptyList()
+        _carregandoRota.value = false
+        _erroRota.value = null
     }
 
     override fun onCleared() {

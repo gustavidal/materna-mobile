@@ -19,6 +19,11 @@
     <!-- map colors -->
     <color name="route_blue">#FF247B9A</color>
 
+    <!-- selected institution colors - golden august -->
+    <color name="golden_august">#FFC69A36</color>
+    <color name="golden_august_background">#FFFFF9E9</color>
+    <color name="golden_august_dark">#FF9A701F</color>
+
     <!-- text colors -->
     <color name="main_text_color">#FF2D2121</color>
     <color name="secundary_gray">#FF8A7B76</color>

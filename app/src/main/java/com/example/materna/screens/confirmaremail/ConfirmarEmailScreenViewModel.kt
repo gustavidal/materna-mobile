@@ -1,5 +1,6 @@
 package com.example.materna.screens.confirmaremail
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -60,7 +61,7 @@ class ConfirmarEmailScreenViewModel(
                 _confirmando.value != true
     }
 
-    fun confirmarCodigo(idDoadora: Int) {
+    fun confirmarCodigo(context: Context, idDoadora: Int) {
         if (_confirmando.value == true) return
 
         val codigoDigitado = _codigo.value.orEmpty()
@@ -89,7 +90,8 @@ class ConfirmarEmailScreenViewModel(
         _mensagemConfirmacao.value = null
         _codigoConfirmado.value = false
 
-        val call = MaternaRetrofitFactory().getAuthService()
+        val call = MaternaRetrofitFactory(context.applicationContext)
+            .getAuthService()
             .validarCodigo(request)
 
         call.enqueue(object : Callback<ValidarCodigoResponse> {

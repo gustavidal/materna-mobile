@@ -3,6 +3,7 @@ package com.example.materna
 import android.annotation.SuppressLint
 import android.content.pm.ApplicationInfo
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -55,11 +56,10 @@ import com.example.materna.screens.perfil.PerfilScreenViewModel
 import com.example.materna.screens.servicos.ServicosScreen
 import com.example.materna.screens.servicos.ServicosScreenViewModel
 import com.example.materna.screens.splash.SplashScreen
+import com.example.materna.screens.splash.SplashScreenViewModel
+import com.example.materna.session.SessionEvents
 import com.example.materna.ui.theme.MaternaTheme
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("ViewModelConstructorInComposable")
@@ -72,11 +72,37 @@ class MainActivity : ComponentActivity() {
             MaternaTheme {
                 val navController = rememberNavController()
 
-                val servicosCompartilhado: ServicosScreenViewModel = viewModel(
-                    viewModelStoreOwner = this@MainActivity
-                )
+                val sessaoExpirada by SessionEvents.sessaoExpirada.collectAsState()
+
+                LaunchedEffect(sessaoExpirada) {
+                    if (sessaoExpirada) {
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.id) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+
+                        SessionEvents.consumirEvento()
+                    }
+                }
 
                 val context = LocalContext.current
+
+                val servicosCompartilhado: ServicosScreenViewModel = viewModel(
+                    viewModelStoreOwner = this@MainActivity,
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(
+                            modelClass: Class<T>
+                        ): T {
+                            return ServicosScreenViewModel(
+                                context = context.applicationContext
+                            ) as T
+                        }
+                    }
+                )
+
                 val database = remember {
                     MaternaDatabaseProvider.getDatabase(context)
                 }
@@ -109,7 +135,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "dashboard",
+                        startDestination = "splash",
                         modifier = Modifier.padding(innerPadding),
                         enterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
@@ -174,6 +200,20 @@ class MainActivity : ComponentActivity() {
 
                     ) {
                         composable(route = "splash") {
+                            val splashScreenViewModel: SplashScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return SplashScreenViewModel(
+                                            settingsDao = settingsDao,
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
+
                             var progress by remember {
                                 mutableStateOf(0f)
                             }
@@ -186,22 +226,11 @@ class MainActivity : ComponentActivity() {
 
                                 delay(200)
 
-                                val settings = withContext(Dispatchers.IO) {
-                                    settingsDao.observeSettings().first()
-                                }
-
-                                val idDoadoraPendente = settings?.idDoadoraPendente
-
-                                val destination = when {
-                                    idDoadoraPendente != null && idDoadoraPendente > 0 && !settings.emailPendente.isNullOrBlank() -> {
-                                        "confirmacao/$idDoadoraPendente"
-                                    }
-                                    settings?.onboardingCompleted == true -> {
-                                        "login"
-                                    }
-                                    else -> {
-                                        "onboarding"
-                                    }
+                                val destination = try {
+                                    splashScreenViewModel.verificarDestino()
+                                } catch (e: Exception) {
+                                    Log.e("SplashScreen", "Erro ao verificar destino", e)
+                                    "login"
                                 }
 
                                 navController.navigate(destination) {
@@ -279,7 +308,9 @@ class MainActivity : ComponentActivity() {
                                     override fun <T : ViewModel> create(
                                         modelClass: Class<T>
                                     ): T {
-                                        return DashboardScreenViewModel() as T
+                                        return DashboardScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T
                                     }
                                 }
                             )
@@ -379,8 +410,9 @@ class MainActivity : ComponentActivity() {
                                     override fun <T : ViewModel> create(
                                         modelClass: Class<T>
                                     ): T {
-                                        return JornadaScreenViewModel() as T
-                                    }
+                                        return JornadaScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T                                    }
                                 }
                             )
 
@@ -448,7 +480,18 @@ class MainActivity : ComponentActivity() {
                                 it.id == idInstituicao
                             }
 
-                            val confirmarBancoScreenViewModel: ConfirmarBancoScreenViewModel = viewModel()
+                            val confirmarBancoScreenViewModel: ConfirmarBancoScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return ConfirmarBancoScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
                             val estadoConfirmacao by confirmarBancoScreenViewModel.estado.observeAsState(
                                 ConfirmarBancoEstado.INICIAL
@@ -503,7 +546,10 @@ class MainActivity : ComponentActivity() {
                                     override fun <T : ViewModel> create(
                                         modelClass: Class<T>
                                     ): T {
-                                        return PerfilScreenViewModel(settingsDao) as T
+                                        return PerfilScreenViewModel(
+                                            settingsDao = settingsDao,
+                                            context = context.applicationContext
+                                        ) as T
                                     }
                                 }
                             )
@@ -522,7 +568,10 @@ class MainActivity : ComponentActivity() {
                                     override fun <T : ViewModel> create(
                                         modelClass: Class<T>
                                     ): T {
-                                        return EditarPerfilScreenViewModel(settingsDao) as T
+                                        return EditarPerfilScreenViewModel(
+                                            settingsDao = settingsDao,
+                                            context = context.applicationContext
+                                        ) as T
                                     }
                                 }
                             )

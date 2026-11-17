@@ -2,6 +2,7 @@ package com.example.materna.screens.servicos
 
 import android.content.pm.ApplicationInfo
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,10 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -40,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +65,7 @@ import com.example.materna.components.MapaBancosLeite
 import com.example.materna.components.ServicosFeedback
 import com.example.materna.data.local.MaternaDatabaseProvider
 import com.example.materna.models.responses.InstituicaoProxima
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +95,9 @@ fun ServicosScreen(
     var instituicaoSelecionada by remember {
         mutableStateOf<InstituicaoProxima?>(null)
     }
+
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     val isDebug = (context.applicationInfo.flags and
             ApplicationInfo.FLAG_DEBUGGABLE) != 0
@@ -141,7 +150,38 @@ fun ServicosScreen(
                     )
                 )
 
+                AnimatedVisibility(
+                    visible = instituicaoSelecionada != null
+                ) {
+                    TextButton(
+                        onClick = {
+                            instituicaoSelecionada = null
+                            servicosScreenViewModel.cancelarRota()
+
+                            coroutineScope.launch {
+                                bottomSheetState.partialExpand()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            tint = colorResource(R.color.golden_august_dark)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = "Cancelar rota",
+                            color = colorResource(R.color.golden_august_dark),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
@@ -179,6 +219,7 @@ fun ServicosScreen(
                             ) { instituicao ->
                                 BancoLeiteCard(
                                     instituicao = instituicao,
+                                    selecionado = instituicaoSelecionada?.id == instituicao.id,
                                     onSelecionar = {
                                         onSelecionarBanco(instituicao.id)
                                     }
@@ -218,26 +259,28 @@ fun ServicosScreen(
                 instituicoes = instituicoes,
                 localizacaoDoadora = localizacaoDoadora,
                 onInstituicaoClick = { instituicao ->
-                    instituicaoSelecionada = instituicao
-                    servicosScreenViewModel.buscarRota(instituicao)
+                    if (instituicaoSelecionada?.id == instituicao.id) {
+                        instituicaoSelecionada = null
+                        servicosScreenViewModel.cancelarRota()
+                    } else {
+                        instituicaoSelecionada = instituicao
+                        servicosScreenViewModel.buscarRota(instituicao)
+
+                        val index = instituicoes.indexOfFirst {
+                            it.id == instituicao.id
+                        }
+
+                        if (index >= 0) {
+                            coroutineScope.launch {
+                                bottomSheetState.expand()
+                                listState.animateScrollToItem(index)
+                            }
+                        }
+                    }
                 },
                 pontosRota = pontosRota,
                 modifier = Modifier.fillMaxSize()
             )
-
-            instituicaoSelecionada?.let { instituicao ->
-                Text(
-                    text = "Selecionado: ${instituicao.nome}",
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 100.dp)
-                        .background(
-                            color = Color.White,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        .padding(12.dp)
-                )
-            }
 
             Column(
                 modifier = Modifier

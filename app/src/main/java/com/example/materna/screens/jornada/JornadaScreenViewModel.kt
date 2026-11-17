@@ -1,5 +1,6 @@
 package com.example.materna.screens.jornada
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -21,7 +22,11 @@ enum class JornadaEstado {
     ERRO
 }
 
-class JornadaScreenViewModel : ViewModel() {
+class JornadaScreenViewModel(
+    context: Context
+) : ViewModel() {
+    private val applicationContext = context.applicationContext
+
     private val _estado = MutableLiveData<JornadaEstado>()
     val estado: LiveData<JornadaEstado> = _estado
 
@@ -97,7 +102,8 @@ class JornadaScreenViewModel : ViewModel() {
     }
 
     private fun testarBuscaInstituicao(idInstituicao: Int) {
-        val call = MaternaRetrofitFactory().getInstituicaoService()
+        val call = MaternaRetrofitFactory(applicationContext)
+            .getInstituicaoService()
             .buscarInstituicao(idInstituicao)
 
         call.enqueue(object : Callback<InstituicaoApiResponse> {

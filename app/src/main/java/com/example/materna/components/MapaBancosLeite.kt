@@ -49,7 +49,25 @@ fun MapaBancosLeite(
         MapView(context).apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
+
             controller.setZoom(12.0)
+            minZoomLevel = 6.0
+            maxZoomLevel = 18.0
+
+            setScrollableAreaLimitLatitude(
+                MapView.getTileSystem().maxLatitude,
+                MapView.getTileSystem().minLatitude,
+                0
+            )
+
+            setScrollableAreaLimitLongitude(
+                -180.0,
+                180.0,
+                0
+            )
+
+            isHorizontalMapRepetitionEnabled = false
+            isVerticalMapRepetitionEnabled = false
         }
     }
 
