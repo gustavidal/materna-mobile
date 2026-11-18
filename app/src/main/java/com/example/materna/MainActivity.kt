@@ -53,6 +53,7 @@ import com.example.materna.screens.perfil.EditarPerfilScreen
 import com.example.materna.screens.perfil.EditarPerfilScreenViewModel
 import com.example.materna.screens.perfil.PerfilScreen
 import com.example.materna.screens.perfil.PerfilScreenViewModel
+import com.example.materna.screens.recuperarsenha.RecuperarSenhaScreen
 import com.example.materna.screens.servicos.ServicosScreen
 import com.example.materna.screens.servicos.ServicosScreenViewModel
 import com.example.materna.screens.splash.SplashScreen
@@ -255,9 +256,28 @@ class MainActivity : ComponentActivity() {
                             val loginScreenViewModel: LoginScreenViewModel = viewModel()
 
                             LoginScreen(
-                                modifier = Modifier,
+                                modifier = Modifier.padding(innerPadding),
                                 navController = navController,
                                 loginScreenViewModel = loginScreenViewModel
+                            )
+                        }
+
+                        composable(route = "recuperar-senha") {
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
+
+                            RecuperarSenhaScreen(
+                                emailCadastrado = appSettings?.emailDoadora,
+
+                                onVoltarLogin = {
+                                    navController.popBackStack()
+                                },
+
+                                onEnviarCodigo = { email ->
+                                    // Próxima etapa: integrar o envio do OTP.
+                                }
                             )
                         }
 
@@ -434,7 +454,18 @@ class MainActivity : ComponentActivity() {
 
                             val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
 
-                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel()
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return JornadaScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
                             LaunchedEffect(idInstituicao) {
                                 jornadaScreenViewModel.carregarInstituicao(idInstituicao)

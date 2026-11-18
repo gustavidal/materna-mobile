@@ -172,21 +172,23 @@ fun PerfilScreen(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             PerfilIndicador(
-                valor = "—",
+                valor = doadora?.let {
+                    "${it.etapasConcluidas}/${it.totalEtapas}"
+                } ?: "—",
                 descricao = "Etapas da jornada",
                 cor = colorResource(R.color.main_pink),
                 modifier = Modifier.weight(1f)
             )
 
             PerfilIndicador(
-                valor = "—",
+                valor = doadora?.doacoesRealizadas?.toString() ?: "—",
                 descricao = "Doações realizadas",
                 cor = colorResource(R.color.green),
                 modifier = Modifier.weight(1f)
             )
 
             PerfilIndicador(
-                valor = "—",
+                valor = doadora?.totalAgendamentos?.toString() ?: "—",
                 descricao = "Agendamentos",
                 cor = colorResource(R.color.main_text_color),
                 modifier = Modifier.weight(1f)

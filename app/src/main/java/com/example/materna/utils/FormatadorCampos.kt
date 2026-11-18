@@ -79,4 +79,14 @@ object FormatadorCampos {
 
         return "${partes[2]}-${partes[1]}-${partes[0]}"
     }
+
+    fun mascararEmail(email: String): String {
+        val partes = email.split("@")
+
+        if (partes.size != 2 || partes[0].isBlank()) {
+            return "E-mail não disponível"
+        }
+
+        return "${partes[0].first()}***@${partes[1]}"
+    }
 }

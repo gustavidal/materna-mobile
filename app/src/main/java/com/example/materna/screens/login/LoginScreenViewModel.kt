@@ -96,14 +96,13 @@ class LoginScreenViewModel: ViewModel() {
 
                         if (dados?.token.isNullOrBlank() || dados?.doadora == null) {
                             _erroLogin.value = "A API não retornou os dados de autenticação."
+                            _carregando.value = false
                             return
                         }
 
                         val sessionManager = SessionManager(
                             context.applicationContext
                         )
-
-                        _carregando.value = true
 
                         viewModelScope.launch {
                             try {
@@ -119,6 +118,7 @@ class LoginScreenViewModel: ViewModel() {
                                     )
 
                                     database.appSettingsDao().salvarIdDoadora(idDoadora)
+                                    database.appSettingsDao().salvarEmailDoadora(email.trim())
 
                                     sessionManager.salvarToken(dados.token)
                                 }
@@ -137,6 +137,7 @@ class LoginScreenViewModel: ViewModel() {
                         }
                     } else {
                         _erroLogin.value = resultado?.message ?: "Não foi possível realizar o login."
+                        _carregando.value = false
                     }
                 } else {
                     val erro = try {

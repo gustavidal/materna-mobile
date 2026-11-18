@@ -58,5 +58,17 @@ data class PerfilDoadora(
     @SerializedName("sigla_estado")
     val siglaEstado: String,
 
-    val telefone: String
+    val telefone: String,
+
+    @SerializedName("etapas_concluidas")
+    val etapasConcluidas: Int = 0,
+
+    @SerializedName("total_etapas")
+    val totalEtapas: Int = 0,
+
+    @SerializedName("doacoes_realizadas")
+    val doacoesRealizadas: Int = 0,
+
+    @SerializedName("total_agendamentos")
+    val totalAgendamentos: Int = 0
 )

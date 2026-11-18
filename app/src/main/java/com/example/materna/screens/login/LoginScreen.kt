@@ -188,7 +188,7 @@ fun LoginScreen(
                         },
                         indication = null
                     ) {
-
+                        navController.navigate("recuperar-senha")
                     }
             )
 
