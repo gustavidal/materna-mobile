@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.materna.models.responses.CampanhaApiResponse
 import com.example.materna.models.responses.CampanhaResponse
+import com.example.materna.models.responses.PerfilDoadoraResponse
 import com.example.materna.services.materna.MaternaRetrofitFactory
 import com.google.gson.Gson
 import retrofit2.Call
@@ -136,8 +137,67 @@ class DashboardScreenViewModel(
         })
     }
 
+    private var chamadaDoadora: Call<PerfilDoadoraResponse>? = null
+
+    fun buscarNomeDoadora(idDoadora: Int) {
+        if (idDoadora <= 0) return
+
+        chamadaDoadora?.cancel()
+
+        val call = MaternaRetrofitFactory(applicationContext)
+            .getDoadoraService()
+            .buscarDoadora(idDoadora)
+
+        chamadaDoadora = call
+
+        call.enqueue(object : Callback<PerfilDoadoraResponse> {
+
+            override fun onResponse(
+                call: Call<PerfilDoadoraResponse>,
+                response: Response<PerfilDoadoraResponse>
+            ) {
+                if (call !== chamadaDoadora || call.isCanceled) return
+
+                val resultado = response.body()
+
+                if (response.isSuccessful && resultado?.status == true) {
+                    val doadora = resultado.response
+                        ?.doadora
+                        ?.firstOrNull { it.id == idDoadora }
+
+                    _nomeDoadora.value = doadora?.nome.orEmpty()
+
+                    Log.d(
+                        "Dashboard",
+                        "Nome recuperado: ${doadora?.nome}"
+                    )
+                } else {
+                    _nomeDoadora.value = ""
+
+                    Log.e(
+                        "Dashboard",
+                        "Erro ao buscar doadora: HTTP ${response.code()}"
+                    )
+                }
+            }
+
+            override fun onFailure(
+                call: Call<PerfilDoadoraResponse>,
+                t: Throwable
+            ) {
+                if (call !== chamadaDoadora || call.isCanceled) return
+
+                _nomeDoadora.value = ""
+
+                Log.e("Dashboard", "Falha ao buscar nome", t)
+            }
+        })
+    }
+
+
     override fun onCleared() {
         chamadaCampanhas?.cancel()
+        chamadaDoadora?.cancel()
         super.onCleared()
     }
 }

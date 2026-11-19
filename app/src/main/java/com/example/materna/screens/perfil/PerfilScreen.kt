@@ -1,5 +1,8 @@
 package com.example.materna.screens.perfil
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,6 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import coil.compose.AsyncImage
 import com.example.materna.R
 import com.example.materna.components.PerfilIndicador
 import com.example.materna.components.PerfilOpcao
@@ -64,6 +71,24 @@ fun PerfilScreen(
             backStackEntry?.savedStateHandle?.remove<Boolean>("perfil_atualizado")
         }
     }
+
+    val context = LocalContext.current
+
+
+    val selecionarFoto = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            perfilScreenViewModel.atualizarFotoPerfil(
+                context = context,
+                uri = uri
+            )
+        }
+    }
+
+    val atualizandoFoto by perfilScreenViewModel.atualizandoFoto.observeAsState(false)
+
+    val fotoPerfil by perfilScreenViewModel.fotoPerfil.observeAsState(null)
 
     Column(
         modifier = modifier
@@ -117,18 +142,42 @@ fun PerfilScreen(
         Box(
             modifier = Modifier
                 .size(112.dp)
+                .clip(CircleShape)
                 .background(
-                    color = colorResource(R.color.main_pink).copy(alpha = 0.12f),
-                    shape = CircleShape
-                ),
+                    colorResource(R.color.main_pink)
+                        .copy(alpha = 0.12f)
+                )
+                .clickable(enabled = !atualizandoFoto) {
+                    selecionarFoto.launch(
+                        PickVisualMediaRequest(
+                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                        )
+                    )
+                },
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Avatar da doadora",
-                modifier = Modifier.size(58.dp),
-                tint = colorResource(R.color.main_pink)
-            )
+            if (!fotoPerfil.isNullOrBlank()) {
+                AsyncImage(
+                    model = fotoPerfil,
+                    contentDescription = "Foto de perfil da doadora",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Avatar da doadora",
+                    modifier = Modifier.size(58.dp),
+                    tint = colorResource(R.color.main_pink)
+                )
+            }
+
+            if (atualizandoFoto) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(36.dp),
+                    color = colorResource(R.color.main_pink)
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))

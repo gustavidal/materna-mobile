@@ -41,18 +41,41 @@ object MaternaDatabaseProvider {
         }
     }
 
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS jornada_local_progress (
+                    idDoadora INTEGER NOT NULL,
+                    idJornada INTEGER NOT NULL,
+                    idEtapa TEXT NOT NULL,
+                    concluida INTEGER NOT NULL,
+                    dataConclusao INTEGER NOT NULL,
+                    PRIMARY KEY (
+                        idDoadora,
+                        idJornada,
+                        idEtapa
+                    )
+                )
+                """.trimIndent()
+            )
+        }
+    }
+
     fun getDatabase(context: Context): MaternaDatabase {
         return INSTANCE ?: synchronized(this) {
-            INSTANCE ?: Room.databaseBuilder(
-                context.applicationContext,
-                MaternaDatabase::class.java,
-                "materna_database"
-            )
+            INSTANCE ?: Room
+                .databaseBuilder(
+                    context.applicationContext,
+                    MaternaDatabase::class.java,
+                    "materna_database"
+                )
                 .addMigrations(
                     MIGRATION_1_2,
                     MIGRATION_2_3,
                     MIGRATION_3_4,
-                    MIGRATION_4_5
+                    MIGRATION_4_5,
+                    MIGRATION_5_6
                 )
                 .build()
                 .also { database ->

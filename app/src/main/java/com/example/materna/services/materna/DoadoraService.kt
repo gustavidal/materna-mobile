@@ -1,9 +1,11 @@
 package com.example.materna.services.materna
 
 import com.example.materna.models.requests.AtualizarDoadoraRequest
+import com.example.materna.models.requests.AtualizarFotoRequest
 import com.example.materna.models.requests.CadastroDoadora
 import com.example.materna.models.requests.RedefinirSenhaRequest
 import com.example.materna.models.responses.AtualizarDoadoraResponse
+import com.example.materna.models.responses.AtualizarFotoResponse
 import com.example.materna.models.responses.CadastroDoadoraResponse
 import com.example.materna.models.responses.PerfilDoadoraResponse
 import retrofit2.Call
@@ -40,4 +42,9 @@ interface DoadoraService {
     fun buscarDoadora(
         @Path("id") id: Int
     ): Call<PerfilDoadoraResponse>
+
+    @PATCH("doadora/me")
+    fun atualizarFoto(
+        @Body request: AtualizarFotoRequest
+    ): Call<AtualizarFotoResponse>
 }

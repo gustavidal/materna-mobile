@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -49,6 +51,7 @@ import java.util.Locale
 @Composable
 fun ConfirmarBancoScreen(
     instituicao: InstituicaoProxima,
+    idDoadora: Int?,
     onVoltar: () -> Unit,
     onConfirmar: () -> Unit,
     onVoltarInicio: () -> Unit,
@@ -58,6 +61,17 @@ fun ConfirmarBancoScreen(
     val estado       by confirmarBancoScreenViewModel.estado.observeAsState(ConfirmarBancoEstado.INICIAL)
 
     val mensagemErro by confirmarBancoScreenViewModel.mensagemErro.observeAsState("")
+
+    LaunchedEffect(estado) {
+        when (estado) {
+            ConfirmarBancoEstado.SEM_VINCULO,
+            ConfirmarBancoEstado.MESMO_BANCO -> {
+                onConfirmar()
+            }
+
+            else -> Unit
+        }
+    }
 
     Column(
         modifier = modifier
@@ -277,12 +291,14 @@ fun ConfirmarBancoScreen(
         ) {
             Button(
                 onClick = {
-                    confirmarBancoScreenViewModel.verificarVinculo(
-                        idDoadora = 1, // Temporário para testes
-                        idInstituicao = instituicao.id
-                    )
+                    if (idDoadora != null && idDoadora > 0) {
+                        confirmarBancoScreenViewModel.verificarVinculo(
+                            idDoadora = idDoadora,
+                            idInstituicao = instituicao.id
+                        )
+                    }
                 },
-                enabled = estado != ConfirmarBancoEstado.CARREGANDO,
+                enabled = estado != ConfirmarBancoEstado.CARREGANDO && idDoadora != null && idDoadora > 0,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(62.dp)
@@ -321,29 +337,6 @@ fun ConfirmarBancoScreen(
                 }
             }
 
-            when (estado) {
-                ConfirmarBancoEstado.OUTRO_BANCO -> {
-                    Text(
-                        text = "Você já possui uma jornada ativa em outro banco de leite. " +
-                                "Será necessário encerrar o vínculo anterior antes de iniciar uma nova jornada.",
-                        color = colorResource(R.color.main_text_color),
-                        fontSize = 13.sp,
-                        lineHeight = 20.sp
-                    )
-                }
-
-                ConfirmarBancoEstado.ERRO -> {
-                    Text(
-                        text = mensagemErro,
-                        color = colorResource(R.color.red),
-                        fontSize = 13.sp,
-                        lineHeight = 20.sp
-                    )
-                }
-
-                else -> Unit
-            }
-
             TextButton(onClick = onVoltarInicio) {
                 Text(
                     text = "Voltar para o início",
@@ -353,5 +346,57 @@ fun ConfirmarBancoScreen(
                 )
             }
         }
+    }
+
+    if (
+        estado == ConfirmarBancoEstado.OUTRO_BANCO ||
+        estado == ConfirmarBancoEstado.ERRO
+    ) {
+        val outroBanco = estado == ConfirmarBancoEstado.OUTRO_BANCO
+
+        AlertDialog(
+            onDismissRequest = {
+                confirmarBancoScreenViewModel.limparAviso()
+            },
+            title = {
+                Text(
+                    text = if (outroBanco)
+                        "Jornada já vinculada"
+                    else
+                        "Não foi possível continuar",
+                    color = colorResource(R.color.main_text_color),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = if (outroBanco)
+                        "Você já possui uma jornada ativa em outro banco de leite. " +
+                                "Para iniciar uma nova jornada, será necessário " +
+                                "encerrar o vínculo anterior."
+                    else
+                        mensagemErro.ifBlank {
+                            "Não foi possível verificar seus vínculos. " +
+                                    "Tente novamente."
+                        },
+                    color = colorResource(R.color.secundary_gray)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmarBancoScreenViewModel.limparAviso()
+                    }
+                ) {
+                    Text(
+                        text = "Entendi",
+                        color = colorResource(R.color.main_pink),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = colorResource(R.color.white)
+        )
     }
 }

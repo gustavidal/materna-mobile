@@ -97,8 +97,13 @@ class ConfirmarBancoScreenViewModel(
                         )
                     }
 
-                    val jornadasAtivas = jornadas.filter {
-                        it.isAtivo == 1
+                    val jornadasAtivas = jornadas.filter { jornada ->
+                        jornada.isAtivo == 1 &&
+                                jornada.etapas.any { etapa ->
+                                    etapa.vinculos.any { vinculo ->
+                                        vinculo.encerrado == 0
+                                    }
+                                }
                     }
 
                     _estado.value = when {
@@ -141,6 +146,16 @@ class ConfirmarBancoScreenViewModel(
                 }
             }
         )
+    }
+
+    fun limparAviso() {
+        if (
+            _estado.value == ConfirmarBancoEstado.ERRO ||
+            _estado.value == ConfirmarBancoEstado.OUTRO_BANCO
+        ) {
+            _mensagemErro.value = ""
+            _estado.value = ConfirmarBancoEstado.INICIAL
+        }
     }
 
     override fun onCleared() {

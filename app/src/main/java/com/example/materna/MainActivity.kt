@@ -1,7 +1,6 @@
 package com.example.materna
 
 import android.annotation.SuppressLint
-import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -9,9 +8,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -33,6 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.materna.components.MaternaBottomBar
 import com.example.materna.data.local.MaternaDatabaseProvider
+import com.example.materna.models.domain.JornadaStatus
 import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.campanhas.CampanhaScreen
@@ -44,6 +50,8 @@ import com.example.materna.screens.confirmaremail.ConfirmarEmailScreen
 import com.example.materna.screens.confirmaremail.ConfirmarEmailScreenViewModel
 import com.example.materna.screens.dashboard.DashboardScreen
 import com.example.materna.screens.dashboard.DashboardScreenViewModel
+import com.example.materna.screens.jornada.ConhecaDoacaoScreen
+import com.example.materna.screens.jornada.JornadaEstado
 import com.example.materna.screens.jornada.JornadaScreen
 import com.example.materna.screens.jornada.JornadaScreenViewModel
 import com.example.materna.screens.login.LoginScreen
@@ -113,6 +121,15 @@ class MainActivity : ComponentActivity() {
 
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+
+                var mostrarAvisoSaidaJornada by remember {
+                    mutableStateOf(false)
+                }
+
+                var navegacaoPendente by remember {
+                    mutableStateOf<(() -> Unit)?>(null)
+                }
+
                 val bottomBarRoutes = listOf(
                     "dashboard",
                     "campanhas",
@@ -128,12 +145,91 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         if (currentRoute in bottomBarRoutes) {
+
                             MaternaBottomBar(
-                                navController = navController
+                                navController = navController,
+                                onNavigateRequest = { _, navegar ->
+                                    if (currentRoute == "jornada/{id_instituicao}") {
+                                        val jornadaEntry = navController.currentBackStackEntry
+
+                                        if (jornadaEntry != null) {
+                                            val jornadaViewModel = ViewModelProvider(
+                                                jornadaEntry
+                                            )[JornadaScreenViewModel::class.java]
+
+                                            val primeiraConcluida = jornadaViewModel.etapas.value
+                                                ?.firstOrNull {
+                                                    it.id == "conheca_doacao"
+                                                }
+                                                ?.status == JornadaStatus.CONCLUIDA
+
+                                            val jornadaCarregada = jornadaViewModel.estado.value == JornadaEstado.COM_BANCO
+
+                                            if (jornadaCarregada && !primeiraConcluida) {
+                                                navegacaoPendente = navegar
+                                                mostrarAvisoSaidaJornada = true
+                                            } else {
+                                                navegar()
+                                            }
+                                        } else {
+                                            navegar()
+                                        }
+
+                                    } else {
+                                        navegar()
+                                    }
+                                }
                             )
                         }
                     }
                 ) { innerPadding ->
+
+                    if (mostrarAvisoSaidaJornada) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                mostrarAvisoSaidaJornada = false
+                                navegacaoPendente = null
+                            },
+                            title = {
+                                Text("Deseja sair da jornada?")
+                            },
+                            text = {
+                                Text(
+                                    "Você ainda não concluiu a primeira etapa. " +
+                                            "Sua jornada ainda não está vinculada " +
+                                            "à instituição selecionada."
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        val navegar = navegacaoPendente
+
+                                        mostrarAvisoSaidaJornada = false
+                                        navegacaoPendente = null
+
+                                        navegar?.invoke()
+                                    }
+                                ) {
+                                    Text(
+                                        text = "Sair mesmo assim",
+                                        color = colorResource(R.color.main_pink)
+                                    )
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        mostrarAvisoSaidaJornada = false
+                                        navegacaoPendente = null
+                                    }
+                                ) {
+                                    Text("Continuar jornada")
+                                }
+                            }
+                        )
+                    }
+
                     NavHost(
                         navController = navController,
                         startDestination = "splash",
@@ -347,17 +443,15 @@ class MainActivity : ComponentActivity() {
                                 appSettingsDao.observeSettings()
                             }.collectAsState(initial = null)
 
-                            val isDebug = (
-                                    context.applicationInfo.flags and
-                                            ApplicationInfo.FLAG_DEBUGGABLE
-                                    ) != 0
-
                             val idDoadora = appSettings?.idDoadora
-                                ?: if (isDebug) 1 else null
 
                             LaunchedEffect(idDoadora) {
-                                idDoadora?.let {
-                                    servicosCompartilhado.buscarLocalizacaoDoadora(it)
+                                if (idDoadora != null && idDoadora > 0) {
+                                    servicosCompartilhado.buscarLocalizacaoDoadora(idDoadora)
+
+                                    dashboardScreenViewModel.buscarNomeDoadora(idDoadora)
+                                } else {
+                                    dashboardScreenViewModel.atualizarNome("")
                                 }
                             }
 
@@ -450,9 +544,17 @@ class MainActivity : ComponentActivity() {
                                     type = NavType.IntType
                                 }
                             )
-                            ) { backStackEntry ->
+                        ) { backStackEntry ->
 
-                            val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
+                            val idInstituicao = backStackEntry.arguments
+                                ?.getInt("id_instituicao")
+                                ?: return@composable
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
+
+                            val idDoadora = appSettings?.idDoadora
 
                             val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
                                 factory = object : ViewModelProvider.Factory {
@@ -467,8 +569,13 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
 
-                            LaunchedEffect(idInstituicao) {
-                                jornadaScreenViewModel.carregarInstituicao(idInstituicao)
+                            LaunchedEffect(idInstituicao, idDoadora) {
+                                if (idDoadora != null && idDoadora > 0) {
+                                    jornadaScreenViewModel.carregarInstituicao(
+                                        idInstituicao = idInstituicao,
+                                        idDoadora = idDoadora
+                                    )
+                                }
                             }
 
                             JornadaScreen(
@@ -476,6 +583,74 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 jornadaScreenViewModel = jornadaScreenViewModel
                             )
+                        }
+
+
+
+                        composable(
+                            route = "conheca_doacao/{id_instituicao}",
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+
+                            val idInstituicao = backStackEntry.arguments
+                                ?.getInt("id_instituicao")
+                                ?: return@composable
+
+                            val jornadaEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry(
+                                    "jornada/$idInstituicao"
+                                )
+                            }
+
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
+                                viewModelStoreOwner = jornadaEntry
+                            )
+
+                            var salvando by remember {
+                                mutableStateOf(false)
+                            }
+
+                            var mensagemErro by remember {
+                                mutableStateOf<String?>(null)
+                            }
+
+                            Column {
+                                mensagemErro?.let { mensagem ->
+                                    Text(
+                                        text = mensagem,
+                                        color = colorResource(R.color.main_pink),
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                }
+
+                                ConhecaDoacaoScreen(
+                                    onConcluir = {
+                                        if (!salvando) {
+                                            salvando = true
+                                            mensagemErro = null
+
+                                            jornadaScreenViewModel.concluirEtapaEstatica(
+                                                idEtapa = "conheca_doacao",
+                                                onSucesso = {
+                                                    salvando = false
+                                                    navController.popBackStack()
+                                                },
+                                                onErro = { erro ->
+                                                    salvando = false
+                                                    mensagemErro = erro
+                                                }
+                                            )
+                                        }
+                                    },
+                                    onVoltar = {
+                                        navController.popBackStack()
+                                    }
+                                )
+                            }
                         }
 
 
@@ -504,6 +679,12 @@ class MainActivity : ComponentActivity() {
                             )
                         ) { backStackEntry ->
                             val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
+
+                            val idDoadora = appSettings?.idDoadora
 
                             val instituicoes by servicosCompartilhado.instituicoes.observeAsState(emptyList())
 
@@ -545,6 +726,7 @@ class MainActivity : ComponentActivity() {
                                 ConfirmarBancoScreen(
                                     modifier = Modifier,
                                     instituicao = instituicao,
+                                    idDoadora = idDoadora,
                                     confirmarBancoScreenViewModel = confirmarBancoScreenViewModel,
                                     onVoltar = {
                                         navController.popBackStack()

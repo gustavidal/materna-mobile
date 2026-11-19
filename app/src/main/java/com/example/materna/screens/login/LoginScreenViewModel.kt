@@ -1,6 +1,7 @@
 package com.example.materna.screens.login
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -58,12 +59,18 @@ class LoginScreenViewModel: ViewModel() {
     private var chamadaLogin: Call<LoginResponse>? = null
 
     fun realizarLogin(context: Context) {
-        if (_carregando.value == true) return
+        if (_carregando.value == true) {
+            Log.w("LoginDoadora", "Login ignorado: autenticação já em andamento.")
+            return
+        }
 
         val email = _email.value.orEmpty().trim()
         val senha = _senha.value.orEmpty()
 
+        Log.d("LoginDoadora", "Iniciando processo de autenticação.")
+
         if (email.isBlank() || senha.isBlank()) {
+            Log.w("LoginDoadora", "Validação falhou: campos obrigatórios vazios.")
             _erroLogin.value = "Preencha o e-mail e a senha."
             return
         }
@@ -77,96 +84,132 @@ class LoginScreenViewModel: ViewModel() {
         _erroLogin.value = null
         _loginRealizado.value = false
 
-        val call = MaternaRetrofitFactory(context.applicationContext)
-            .getAuthService()
-            .realizarLogin(login)
+        Log.d("LoginDoadora", "Preparando requisição de login.")
 
-        chamadaLogin = call
+        try {
+            val call = MaternaRetrofitFactory(context.applicationContext)
+                .getAuthService()
+                .realizarLogin(login)
 
-        call.enqueue(object : Callback<LoginResponse> {
-            override fun onResponse(
-                call: Call<LoginResponse>,
-                response: Response<LoginResponse>
-            ) {
-                if (response.isSuccessful) {
-                    val resultado = response.body()
+            chamadaLogin = call
 
-                    if (resultado?.status == true) {
-                        val dados = resultado.response
+            Log.d("LoginDoadora", "Enviando requisição para a API.")
 
-                        if (dados?.token.isNullOrBlank() || dados?.doadora == null) {
-                            _erroLogin.value = "A API não retornou os dados de autenticação."
-                            _carregando.value = false
-                            return
-                        }
+            call.enqueue(object : Callback<LoginResponse> {
 
-                        val sessionManager = SessionManager(
-                            context.applicationContext
-                        )
+                override fun onResponse(
+                    call: Call<LoginResponse>,
+                    response: Response<LoginResponse>
+                ) {
+                    Log.d("LoginDoadora", "Resposta HTTP recebida: ${response.code()}")
 
-                        viewModelScope.launch {
-                            try {
-                                val idDoadora = dados.doadora.id
+                    if (response.isSuccessful) {
+                        val resultado = response.body()
 
-                                require(idDoadora > 0) {
-                                    "ID da doadora inválido."
-                                }
+                        if (resultado?.status == true) {
+                            Log.d("LoginDoadora", "API confirmou a autenticação.")
 
-                                val tokenSalvo = withContext(Dispatchers.IO) {
-                                    val database = MaternaDatabaseProvider.getDatabase(
-                                        context.applicationContext
-                                    )
+                            val dados = resultado.response
 
-                                    database.appSettingsDao().salvarIdDoadora(idDoadora)
-                                    database.appSettingsDao().salvarEmailDoadora(email.trim())
-
-                                    sessionManager.salvarToken(dados.token)
-                                }
-
-                                if (tokenSalvo) {
-                                    _erroLogin.value = null
-                                    _loginRealizado.value = true
-                                } else {
-                                    _erroLogin.value = "Não foi possível salvar sua sessão. Tente novamente."
-                                }
-                            } catch (e: Exception) {
-                                _erroLogin.value = "Não foi possível concluir o login. Tente novamente."
-                            } finally {
+                            if (dados?.token.isNullOrBlank() || dados?.doadora == null) {
+                                Log.e("LoginDoadora", "Resposta incompleta: token ou doadora ausente.")
+                                _erroLogin.value = "A API não retornou os dados de autenticação."
                                 _carregando.value = false
+                                return
                             }
+
+                            val sessionManager = SessionManager(
+                                context.applicationContext
+                            )
+
+                            viewModelScope.launch {
+                                try {
+                                    val idDoadora = dados.doadora.id
+
+                                    require(idDoadora > 0) {
+                                        "ID da doadora inválido."
+                                    }
+
+                                    Log.d("LoginDoadora", "Dados de autenticação validados.")
+                                    Log.d("LoginDoadora", "Iniciando persistência da sessão.")
+
+                                    val tokenSalvo = withContext(Dispatchers.IO) {
+                                        val database = MaternaDatabaseProvider.getDatabase(
+                                            context.applicationContext
+                                        )
+
+                                        database.appSettingsDao().salvarIdDoadora(idDoadora)
+                                        database.appSettingsDao().salvarEmailDoadora(email)
+
+                                        sessionManager.salvarToken(dados.token)
+                                    }
+
+                                    if (tokenSalvo) {
+                                        Log.i("LoginDoadora", "Login realizado com sucesso.")
+                                        Log.i("LoginDoadora", "Sessão persistida com sucesso.")
+                                        _erroLogin.value = null
+                                        _loginRealizado.value = true
+                                    } else {
+                                        Log.e("LoginDoadora", "Falha ao salvar token da sessão.")
+                                        _erroLogin.value = "Não foi possível salvar sua sessão. Tente novamente."
+                                    }
+
+                                } catch (e: Exception) {
+                                    Log.e("LoginDoadora", "Erro ao persistir sessão.", e)
+                                    _erroLogin.value = "Não foi possível concluir o login. Tente novamente."
+                                } finally {
+                                    Log.d("LoginDoadora", "Finalizando processamento do login.")
+                                    _carregando.value = false
+                                }
+                            }
+                        } else {
+                            Log.w("LoginDoadora", "API retornou status de autenticação negativo.")
+                            _erroLogin.value = resultado?.message ?: "Não foi possível realizar o login."
+                            _carregando.value = false
                         }
                     } else {
-                        _erroLogin.value = resultado?.message ?: "Não foi possível realizar o login."
+                        Log.w("LoginDoadora", "Falha HTTP na autenticação: ${response.code()}")
+
+                        val erro = try {
+                            response.errorBody()?.string()?.let {
+                                Gson().fromJson(it, LoginResponse::class.java)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("LoginDoadora", "Erro ao interpretar resposta da API.", e)
+                            null
+                        }
+
+                        _erroLogin.value = when (response.code()) {
+                            401 -> "E-mail ou senha incorretos."
+                            else -> erro?.message ?: "Erro ao realizar login (HTTP ${response.code()})."
+                        }
+
                         _carregando.value = false
                     }
-                } else {
-                    val erro = try {
-                        response.errorBody()?.string()?.let {
-                            Gson().fromJson(it, LoginResponse::class.java)
-                        }
-                    } catch (e: Exception) {
-                        null
+                }
+
+                override fun onFailure(
+                    call: Call<LoginResponse>,
+                    t: Throwable
+                ) {
+                    if (call.isCanceled) {
+                        Log.d("LoginDoadora", "Requisição de login cancelada.")
+                        return
                     }
 
-                    _erroLogin.value = when (response.code()) {
-                        401 -> "E-mail ou senha incorretos."
-                        else -> erro?.message ?: "Erro ao realizar login (HTTP ${response.code()})."
-                    }
+                    Log.e("LoginDoadora", "Falha de comunicação com a API.", t)
 
                     _carregando.value = false
+                    _erroLogin.value = "Não foi possível conectar à API. Verifique sua conexão."
                 }
-            }
+            })
 
-            override fun onFailure(
-                call: Call<LoginResponse>,
-                t: Throwable
-            ) {
-                if (call.isCanceled) return
+        } catch (e: Exception) {
+            Log.e("LoginDoadora", "Erro ao preparar requisição de login.", e)
 
-                _carregando.value = false
-                _erroLogin.value = "Não foi possível conectar à API. Verifique sua conexão."
-            }
-        })
+            _carregando.value = false
+            _erroLogin.value = "Não foi possível iniciar o login. Tente novamente."
+        }
     }
 
     override fun onCleared() {

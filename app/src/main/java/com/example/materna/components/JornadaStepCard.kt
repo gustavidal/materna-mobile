@@ -22,12 +22,15 @@ import com.example.materna.models.domain.JornadaStatus
 @Composable
 fun JornadaStepCard(
     etapa: JornadaEtapa,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val atual = etapa.status == JornadaStatus.ATUAL
     val bloqueada = etapa.status == JornadaStatus.BLOQUEADA
 
     Card(
+        onClick = onClick,
+        enabled = !bloqueada,
         modifier = modifier
             .fillMaxWidth()
             .then(
@@ -43,11 +46,8 @@ fun JornadaStepCard(
             ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (bloqueada) {
-                colorResource(R.color.disabled)
-            } else {
-                colorResource(R.color.white)
-            }
+            containerColor = if (bloqueada) colorResource(R.color.disabled) else colorResource(R.color.white),
+            disabledContainerColor = colorResource(R.color.disabled)
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp

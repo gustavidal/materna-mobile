@@ -1,5 +1,6 @@
 package com.example.materna.screens.jornada
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,7 @@ import com.example.materna.R
 import com.example.materna.components.JornadaProgressCard
 import com.example.materna.components.JornadaSemBanco
 import com.example.materna.components.JornadaTimeline
+import com.example.materna.models.domain.JornadaStatus
 
 @Composable
 fun JornadaScreen(
@@ -61,6 +63,21 @@ fun JornadaScreen(
     var mostrarDialogoCancelamento by remember {
         mutableStateOf(false)
     }
+
+    val primeiraEtapaConcluida = etapas
+        .firstOrNull { it.id == "conheca_doacao" }
+        ?.status == JornadaStatus.CONCLUIDA
+
+    var mostrarAvisoSaida by remember {
+        mutableStateOf(false)
+    }
+
+    BackHandler(
+        enabled = estado == JornadaEstado.COM_BANCO && !primeiraEtapaConcluida
+    ) {
+        mostrarAvisoSaida = true
+    }
+
 
     Column(
         modifier = modifier
@@ -123,7 +140,23 @@ fun JornadaScreen(
                 )
 
                 JornadaTimeline(
-                    etapas = etapas
+                    etapas = etapas,
+                    onEtapaClick = { etapa ->
+                        val idInstituicao = navController
+                            .currentBackStackEntry
+                            ?.arguments
+                            ?.getInt("id_instituicao")
+
+                        if (
+                            etapa.id == "conheca_doacao" &&
+                            idInstituicao != null &&
+                            idInstituicao > 0
+                        ) {
+                            navController.navigate(
+                                "conheca_doacao/$idInstituicao"
+                            )
+                        }
+                    }
                 )
 
                 TextButton(
@@ -141,72 +174,7 @@ fun JornadaScreen(
                 }
             }
 
-            JornadaEstado.ERRO -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_cloud_off),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(64.dp),
-                        tint = colorResource(R.color.main_text_color)
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Text(
-                        text = "Ops! O leite derramou...",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = colorResource(R.color.main_text_color)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = mensagemErro,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        color = colorResource(R.color.secundary_gray)
-                    )
-
-                    Spacer(modifier = Modifier.height(28.dp))
-
-                    Button(
-                        onClick = {
-                            jornadaScreenViewModel.recarregarJornada()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(0.75f)
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorResource(R.color.main_pink)
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = "Tentar novamente",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = colorResource(R.color.white)
-                        )
-                    }
-                }
-            }
+            JornadaEstado.ERRO -> Unit
         }
     }
 
@@ -267,6 +235,103 @@ fun JornadaScreen(
                     }
                 }
             }
+        )
+    }
+
+    if (mostrarAvisoSaida) {
+        AlertDialog(
+            onDismissRequest = {
+                mostrarAvisoSaida = false
+            },
+            title = {
+                Text(
+                    text = "Deseja sair da jornada?",
+                    color = colorResource(R.color.main_text_color)
+                )
+            },
+            text = {
+                Text(
+                    text = "Você ainda não concluiu a primeira etapa. " +
+                            "Se sair agora, sua jornada não estará vinculada " +
+                            "à instituição selecionada."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostrarAvisoSaida = false
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text(
+                        text = "Sair mesmo assim",
+                        color = colorResource(R.color.main_pink)
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        mostrarAvisoSaida = false
+                    }
+                ) {
+                    Text(
+                        text = "Continuar jornada",
+                        color = colorResource(R.color.main_text_color)
+                    )
+                }
+            }
+        )
+    }
+
+    if (estado == JornadaEstado.ERRO) {
+        AlertDialog(
+            onDismissRequest = {
+                navController.popBackStack()
+            },
+            title = {
+                Text(
+                    text = "Ops! Algo deu errado",
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.main_text_color)
+                )
+            },
+            text = {
+                Text(
+                    text = mensagemErro.ifBlank {
+                        "Não foi possível carregar sua jornada. " +
+                                "Verifique sua conexão e tente novamente."
+                    },
+                    color = colorResource(R.color.secundary_gray)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        jornadaScreenViewModel.recarregarJornada()
+                    }
+                ) {
+                    Text(
+                        text = "Tentar novamente",
+                        color = colorResource(R.color.main_pink),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text(
+                        text = "Voltar",
+                        color = colorResource(R.color.main_text_color)
+                    )
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = colorResource(R.color.white)
         )
     }
 }

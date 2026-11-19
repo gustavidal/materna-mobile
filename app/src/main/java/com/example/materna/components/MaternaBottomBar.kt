@@ -18,7 +18,10 @@ import com.example.materna.R
 
 @Composable
 fun MaternaBottomBar(
-    navController: NavController
+    navController: NavController,
+    onNavigateRequest: (String, () -> Unit) -> Unit = { _, navegar ->
+        navegar()
+    }
 ) {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
 
@@ -50,8 +53,10 @@ fun MaternaBottomBar(
                 selected = selectedRoute == route,
                 onClick = {
                     if (selectedRoute != route) {
-                        navController.navigate(route) {
-                            launchSingleTop = true
+                        onNavigateRequest(route) {
+                            navController.navigate(route) {
+                                launchSingleTop = true
+                            }
                         }
                     }
                 },
