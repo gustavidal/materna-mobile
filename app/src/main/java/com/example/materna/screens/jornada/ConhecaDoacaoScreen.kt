@@ -1,6 +1,7 @@
 package com.example.materna.screens.jornada
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -84,6 +85,7 @@ fun ConhecaDoacaoScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(colorResource(R.color.background_cream))
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)

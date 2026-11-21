@@ -443,10 +443,35 @@ class JornadaScreenViewModel(
                     call: Call<VinculoEtapaDoadoraResponse>,
                     response: Response<VinculoEtapaDoadoraResponse>
                 ) {
-                    if (!response.isSuccessful || response.body()?.status != true) {
+                    val erroApi = response.errorBody()?.string().orEmpty()
+
+                    val semVinculos =
+                        response.code() == 404 &&
+                        erroApi.contains(
+                            "\"status_code\"\\s*:\\s*404".toRegex()
+                        ) &&
+                        erroApi.contains("Não foram encontrados dados")
+
+                    Log.d(
+                        "JornadaVinculo",
+                        "Consulta antes do POST: HTTP ${response.code()} | $erroApi"
+                    )
+
+                    if (
+                        !semVinculos &&
+                        (!response.isSuccessful || response.body()?.status != true)
+                    ) {
                         criandoVinculo = false
+
                         onErro("Não foi possível verificar os vínculos existentes.")
                         return
+                    }
+
+                    if (semVinculos) {
+                        Log.i(
+                            "JornadaVinculo",
+                            "Nenhum vínculo encontrado. Prosseguindo para o POST."
+                        )
                     }
 
                     val vinculoExistente = response.body()
@@ -540,21 +565,79 @@ class JornadaScreenViewModel(
                     call: Call<VinculoEtapaDoadoraResponse>,
                     response: Response<VinculoEtapaDoadoraResponse>
                 ) {
-                    Log.e(
-                        "JornadaVinculo",
-                        "HTTP: ${response.code()} | Status: ${response.body()?.status} | Erro: ${response.errorBody()?.string()}"
-                    )
-                    
-                    if (response.code() == 404) {
-                        val erroApi = response.errorBody()?.string().orEmpty()
+                    val erroApi = response.errorBody()?.string().orEmpty()
 
-                        if (
-                            erroApi.contains("\"status_code\"\\s*:\\s*404".toRegex()) &&
-                            erroApi.contains("Não foram encontrados dados")
-                        ) {
-                            Log.i("Jornada", "Doadora sem vínculo. Iniciando jornada.")
-                            onResultado(false)
-                            return
+                    Log.d(
+                        "JornadaVinculo",
+                        "HTTP: ${response.code()} | " +
+                            "Status: ${response.body()?.status} | " +
+                            "Erro: $erroApi"
+                    )
+
+                    if (
+                        response.code() == 404 &&
+                        erroApi.contains(
+                            "\"status_code\"\\s*:\\s*404".toRegex()
+                        ) &&
+                        erroApi.contains("Não foram encontrados dados")
+                    ) {
+                        Log.i(
+                            "Jornada",
+                            "Nenhum vínculo encontrado. Liberando a Jornada."
+                        )
+
+                        onResultado(false)
+                        return
+                    }
+              
+                    val semVinculos =
+                        response.code() == 404 &&
+                        erroApi.contains(
+                            "\"status_code\"\\s*:\\s*404".toRegex()
+                        ) &&
+                        erroApi.contains("Não foram encontrados dados")
+
+                    if (
+                        !semVinculos &&
+                        (!response.isSuccessful || response.body()?.status != true)
+                    ) {
+                        criandoVinculo = false
+
+                        Log.e(
+                            "JornadaVinculo",
+                            "Falha ao consultar vínculos: HTTP ${response.code()} | $erroApi"
+                        )
+
+                        onErro("Não foi possível verificar os vínculos existentes.")
+                        return
+                    }
+
+                    if (semVinculos) {
+                        Log.i(
+                            "JornadaVinculo",
+                            "Doadora sem vínculos. Criando primeiro vínculo."
+                        )
+                    }
+
+                    Log.d(
+                        "JornadaVinculo",
+                        "IDs esperados: jornada=$idJornada, " +
+                            "instituicao=$idInstituicao, etapa=$idEtapa"
+                    )
+
+                    response.body()?.response?.jornadas?.forEach { jornada ->
+                        Log.d(
+                            "JornadaVinculo",
+                            "Jornada recebida: ${jornada.id} | " +
+                                "Instituição: ${jornada.instituicao.id}"
+                        )
+
+                        jornada.etapas.forEach { etapa ->
+                            Log.d(
+                                "JornadaVinculo",
+                                "Etapa recebida: ${etapa.id} | " +
+                                    "Vínculos: ${etapa.vinculos.size}"
+                            )
                         }
                     }
 
@@ -564,11 +647,11 @@ class JornadaScreenViewModel(
                         .orEmpty()
                         .any { jornada ->
                             jornada.id == idJornada &&
-                                    jornada.instituicao.id == idInstituicao &&
-                                    jornada.etapas.any { etapa ->
-                                        etapa.id == idEtapa &&
-                                                etapa.vinculos.isNotEmpty()
-                                    }
+                                jornada.instituicao.id == idInstituicao &&
+                                jornada.etapas.any { etapa ->
+                                    etapa.id == idEtapa &&
+                                        etapa.vinculos.isNotEmpty()
+                                }
                         }
 
                     onResultado(possuiVinculo)

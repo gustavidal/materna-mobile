@@ -516,8 +516,14 @@ class MainActivity : ComponentActivity() {
 
 
 
-
+                        
                         composable(route = "jornada") {
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
+
+                            val idDoadora = appSettings?.idDoadora
+
                             val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
                                 factory = object : ViewModelProvider.Factory {
                                     @Suppress("UNCHECKED_CAST")
@@ -526,9 +532,66 @@ class MainActivity : ComponentActivity() {
                                     ): T {
                                         return JornadaScreenViewModel(
                                             context = context.applicationContext
-                                        ) as T                                    }
+                                        ) as T
+                                    }
                                 }
                             )
+
+                            LaunchedEffect(idDoadora) {
+                                if (idDoadora != null && idDoadora > 0) {
+                                    try {
+                                        val resposta = kotlinx.coroutines.withContext(
+                                            kotlinx.coroutines.Dispatchers.IO
+                                        ) {
+                                            com.example.materna.services.materna
+                                                .MaternaRetrofitFactory(context.applicationContext)
+                                                .getVinculoEtapaDoadoraService()
+                                                .buscarVinculosDoadora(idDoadora)
+                                                .execute()
+                                        }
+
+                                        if (resposta.isSuccessful &&
+                                            resposta.body()?.status == true
+                                        ) {
+                                            val jornadaVinculada = resposta.body()
+                                                ?.response
+                                                ?.jornadas
+                                                .orEmpty()
+                                                .firstOrNull { jornada ->
+                                                    jornada.isAtivo == 1 &&
+                                                        jornada.etapas.any { etapa ->
+                                                            etapa.vinculos.isNotEmpty()
+                                                        }
+                                                }
+
+                                            if (jornadaVinculada != null) {
+                                                val idInstituicao =
+                                                    jornadaVinculada.instituicao.id
+
+                                                Log.d(
+                                                    "Jornada",
+                                                    "Recuperando instituição: $idInstituicao"
+                                                )
+
+                                                navController.navigate(
+                                                    "jornada/$idInstituicao"
+                                                ) {
+                                                    popUpTo("jornada") {
+                                                        inclusive = true
+                                                    }
+                                                    launchSingleTop = true
+                                                }
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e(
+                                            "Jornada",
+                                            "Erro ao recuperar jornada vinculada",
+                                            e
+                                        )
+                                    }
+                                }
+                            }
 
                             JornadaScreen(
                                 modifier = Modifier,
