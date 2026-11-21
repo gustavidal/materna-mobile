@@ -7,7 +7,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class MaternaRetrofitFactory(context: Context) {
-    private val _baseUrl = "http://10.0.2.2:9090/v1/materna/"
+    private val _baseUrl = "http://127.0.0.1:9090/v1/materna/"
 
     private val sessionManager = SessionManager(
         context.applicationContext

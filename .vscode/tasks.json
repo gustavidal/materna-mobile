@@ -1,0 +1,52 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "1. Instalar Materna",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": [
+                "installDebug",
+                "--console=plain"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "ANDROID_HOME": "${env:LOCALAPPDATA}\\Android\\Sdk"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "2. Abrir Materna",
+            "type": "shell",
+            "command": "${env:LOCALAPPDATA}\\Android\\Sdk\\platform-tools\\adb.exe",
+            "args": [
+                "shell",
+                "monkey",
+                "-p",
+                "com.example.materna",
+                "-c",
+                "android.intent.category.LAUNCHER",
+                "1"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Materna - Instalar e abrir",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "1. Instalar Materna",
+                "2. Abrir Materna"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

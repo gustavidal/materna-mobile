@@ -540,12 +540,22 @@ class JornadaScreenViewModel(
                     call: Call<VinculoEtapaDoadoraResponse>,
                     response: Response<VinculoEtapaDoadoraResponse>
                 ) {
-                    if (
-                        !response.isSuccessful ||
-                        response.body()?.status != true
-                    ) {
-                        onErro("Não foi possível verificar o vínculo da jornada.")
-                        return
+                    Log.e(
+                        "JornadaVinculo",
+                        "HTTP: ${response.code()} | Status: ${response.body()?.status} | Erro: ${response.errorBody()?.string()}"
+                    )
+                    
+                    if (response.code() == 404) {
+                        val erroApi = response.errorBody()?.string().orEmpty()
+
+                        if (
+                            erroApi.contains("\"status_code\"\\s*:\\s*404".toRegex()) &&
+                            erroApi.contains("Não foram encontrados dados")
+                        ) {
+                            Log.i("Jornada", "Doadora sem vínculo. Iniciando jornada.")
+                            onResultado(false)
+                            return
+                        }
                     }
 
                     val possuiVinculo = response.body()
