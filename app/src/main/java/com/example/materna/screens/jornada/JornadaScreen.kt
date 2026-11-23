@@ -6,25 +6,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -34,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,6 +39,7 @@ import com.example.materna.components.JornadaSemBanco
 import com.example.materna.components.JornadaTimeline
 import com.example.materna.models.domain.JornadaStatus
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JornadaScreen(
     modifier: Modifier = Modifier,
@@ -79,102 +72,137 @@ fun JornadaScreen(
     }
 
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .verticalScroll(rememberScrollState())
-            .padding(
-                start = 24.dp,
-                end = 24.dp,
-                top = 32.dp,
-                bottom = 32.dp
-            ),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+
+    PullToRefreshBox(
+        isRefreshing = estado == JornadaEstado.CARREGANDO,
+        onRefresh = {
+            jornadaScreenViewModel.recarregarJornada()
+        },
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = 24.dp,
+                    end = 24.dp,
+                    top = 32.dp,
+                    bottom = 32.dp
+                ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text(
-                text = "Minha jornada",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.main_text_color)
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Minha jornada",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.main_text_color)
+                )
 
-            Text(
-                text = "Acompanhe cada etapa",
-                fontSize = 14.sp,
-                color = colorResource(R.color.secundary_gray)
-            )
-        }
+                Text(
+                    text = "Acompanhe cada etapa",
+                    fontSize = 14.sp,
+                    color = colorResource(R.color.secundary_gray)
+                )
+            }
 
-        when (estado) {
-            JornadaEstado.CARREGANDO -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = colorResource(R.color.main_pink),
-                        strokeWidth = 4.dp
+            when (estado) {
+                JornadaEstado.CARREGANDO -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = colorResource(R.color.main_pink),
+                            strokeWidth = 4.dp
+                        )
+                    }
+                }
+
+                JornadaEstado.SEM_BANCO -> {
+                    JornadaSemBanco(
+                        onSelecionarBanco = {
+                            navController.navigate("servicos") {
+                                launchSingleTop = true
+                            }
+                        }
                     )
                 }
-            }
 
-            JornadaEstado.SEM_BANCO -> {
-                JornadaSemBanco(
-                    onSelecionarBanco = {
-                        navController.navigate("servicos") {
-                            launchSingleTop = true
-                        }
-                    }
-                )
-            }
+                JornadaEstado.COM_BANCO -> {
+                    JornadaProgressCard(
+                        progresso = progresso
+                    )
 
-            JornadaEstado.COM_BANCO -> {
-                JornadaProgressCard(
-                    progresso = progresso
-                )
+                    JornadaTimeline(
+                        etapas = etapas,
+                        onEtapaClick = { etapa ->
+                            if (etapa.status == JornadaStatus.ATUAL) {
+                                val idInstituicao = navController
+                                    .currentBackStackEntry
+                                    ?.arguments
+                                    ?.getInt("id_instituicao")
 
-                JornadaTimeline(
-                    etapas = etapas,
-                    onEtapaClick = { etapa ->
-                        val idInstituicao = navController
-                            .currentBackStackEntry
-                            ?.arguments
-                            ?.getInt("id_instituicao")
+                                val idJornada = jornadaScreenViewModel.idJornadaSelecionada
 
-                        if (
-                            etapa.id == "conheca_doacao" &&
-                            idInstituicao != null &&
-                            idInstituicao > 0
-                        ) {
-                            navController.navigate(
-                                "conheca_doacao/$idInstituicao"
+                                when (etapa.id) {
+                                    "conheca_doacao" -> {
+                                        if (idInstituicao != null && idInstituicao > 0) {
+                                            navController.navigate(
+                                                "conheca_doacao/$idInstituicao"
+                                            )
+                                        }
+                                    }
+
+                                    "orientacoes" -> {
+                                        if (idJornada != null && idJornada > 0) {
+                                            navController.navigate(
+                                                "orientacoes/$idJornada"
+                                            )
+                                        }
+                                    }
+
+                                    "questionario" -> {
+                                        if (idJornada != null && idJornada > 0) {
+                                            navController.navigate(
+                                                "questionario/$idJornada"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        onDocumentoEnviado = { etapaId, url ->
+                            jornadaScreenViewModel.registrarDocumentoEnviado(
+                                etapaId = etapaId,
+                                url = url
                             )
                         }
-                    }
-                )
-
-                TextButton(
-                    onClick = {
-                        mostrarDialogoCancelamento = true
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Cancelar jornada",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = colorResource(R.color.main_pink)
                     )
-                }
-            }
 
-            JornadaEstado.ERRO -> Unit
+                    TextButton(
+                        onClick = {
+                            mostrarDialogoCancelamento = true
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Cancelar jornada",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = colorResource(R.color.main_pink)
+                        )
+                    }
+                }
+
+                JornadaEstado.ERRO -> Unit
+            }
         }
     }
 
@@ -259,8 +287,7 @@ fun JornadaScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        mostrarAvisoSaida = false
-                        navController.popBackStack()
+                        navController.navigate("servicos")
                     }
                 ) {
                     Text(
@@ -272,7 +299,7 @@ fun JornadaScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        mostrarAvisoSaida = false
+
                     }
                 ) {
                     Text(

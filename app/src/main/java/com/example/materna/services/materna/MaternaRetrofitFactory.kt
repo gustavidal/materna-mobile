@@ -39,6 +39,10 @@ class MaternaRetrofitFactory(context: Context) {
         return retrofit.create(DoadoraService::class.java)
     }
 
+    fun getDocumentoService(): DocumentoService {
+        return retrofit.create(DocumentoService::class.java)
+    }
+
     fun getInstituicaoService(): InstituicaoService {
         return retrofit.create(InstituicaoService::class.java)
     }

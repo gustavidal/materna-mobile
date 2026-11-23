@@ -15,4 +15,11 @@ interface CloudinaryService {
         @Part file: MultipartBody.Part,
         @Part("upload_preset") uploadPreset: RequestBody
     ): Call<CloudinaryUploadResponse>
+
+    @Multipart
+    @POST("v1_1/materna-perfis/auto/upload")
+    fun enviarDocumento(
+        @Part file: MultipartBody.Part,
+        @Part("upload_preset") uploadPreset: RequestBody
+    ): Call<CloudinaryUploadResponse>
 }

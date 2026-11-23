@@ -54,6 +54,8 @@ import com.example.materna.screens.jornada.ConhecaDoacaoScreen
 import com.example.materna.screens.jornada.JornadaEstado
 import com.example.materna.screens.jornada.JornadaScreen
 import com.example.materna.screens.jornada.JornadaScreenViewModel
+import com.example.materna.screens.jornada.OrientacoesScreen
+import com.example.materna.screens.jornada.QuestionarioScreen
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
@@ -632,6 +634,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
 
+                            val atualizarJornada by backStackEntry.savedStateHandle
+                                .getLiveData("atualizar_jornada", false)
+                                .observeAsState(false)
+
+                            LaunchedEffect(atualizarJornada) {
+                                if (atualizarJornada) {
+                                    backStackEntry.savedStateHandle.remove<Boolean>("atualizar_jornada")
+
+                                    jornadaScreenViewModel.recarregarJornada()
+                                }
+                            }
+
                             LaunchedEffect(idInstituicao, idDoadora) {
                                 if (idDoadora != null && idDoadora > 0) {
                                     jornadaScreenViewModel.carregarInstituicao(
@@ -714,6 +728,87 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                        }
+
+
+
+                        composable(
+                            route = "orientacoes/{id_jornada}",
+                            arguments = listOf(
+                                navArgument("id_jornada") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+
+                            val idJornada = backStackEntry.arguments
+                                ?.getInt("id_jornada")
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
+
+                            val idDoadora = appSettings?.idDoadora
+
+                            val progressoDao = remember(database) {
+                                database.jornadaLocalProgressDao()
+                            }
+
+                            OrientacoesScreen(
+                                idDoadora = idDoadora,
+                                idJornada = idJornada,
+                                progressoDao = progressoDao,
+                                onVoltar = {
+                                    navController.popBackStack()
+                                },
+                                onConcluir = {
+                                    navController.previousBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("atualizar_jornada", true)
+
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+
+
+                        composable(
+                            route = "questionario/{id_jornada}",
+                            arguments = listOf(
+                                navArgument("id_jornada") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val idJornada = backStackEntry.arguments
+                                ?.getInt("id_jornada")
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
+
+                            val idDoadora = appSettings?.idDoadora
+
+                            val progressoDao = remember(database) {
+                                database.jornadaLocalProgressDao()
+                            }
+
+                            QuestionarioScreen(
+                                idDoadora = idDoadora,
+                                idJornada = idJornada,
+                                progressoDao = progressoDao,
+                                onVoltar = {
+                                    navController.popBackStack()
+                                },
+                                onConcluir = {
+                                    navController.previousBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("atualizar_jornada", true)
+
+                                    navController.popBackStack()
+                                }
+                            )
                         }
 
 

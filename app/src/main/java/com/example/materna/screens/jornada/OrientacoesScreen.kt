@@ -1,14 +1,9 @@
-
 package com.example.materna.screens.jornada
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,27 +13,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.materna.R
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
+import com.example.materna.components.OrientacaoCard
 import com.example.materna.data.local.JornadaLocalProgress
 import com.example.materna.data.local.JornadaLocalProgressDao
 import kotlinx.coroutines.launch
 
-private data class Orientacao(
+data class Orientacao(
     val id: String,
     val titulo: String,
     val descricao: String,
@@ -184,7 +176,21 @@ fun OrientacoesScreen(
         }
 
         Button(
-            onClick = onConcluir,
+            onClick = {
+                if (podeSalvar && todosVisualizados) {
+                    scope.launch {
+                        progressoDao.salvarConclusao(
+                            JornadaLocalProgress(
+                                idDoadora = requireNotNull(idDoadora),
+                                idJornada = requireNotNull(idJornada),
+                                idEtapa = "orientacoes"
+                            )
+                        )
+
+                        onConcluir()
+                    }
+                }
+            },
             enabled = todosVisualizados,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -193,80 +199,6 @@ fun OrientacoesScreen(
             )
         ) {
             Text("Concluir orientações")
-        }
-    }
-}
-
-@Composable
-private fun OrientacaoCard(
-    orientacao: Orientacao,
-    visualizado: Boolean,
-    onVisualizar: () -> Unit
-) {
-    var expandido by remember {
-        mutableStateOf(false)
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
-                expandido = !expandido
-
-                if (expandido) {
-                    onVisualizar()
-                }
-            },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = colorResource(R.color.white)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = orientacao.titulo,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colorResource(R.color.main_text_color)
-                    )
-
-                    Text(
-                        text = orientacao.descricao,
-                        fontSize = 12.sp,
-                        color = colorResource(R.color.secundary_gray)
-                    )
-                }
-
-                Text(
-                    text = if (visualizado) "✓" else "›",
-                    color = colorResource(
-                        if (visualizado) R.color.success_green
-                        else R.color.main_text_color
-                    )
-                )
-            }
-
-            AnimatedVisibility(
-                visible = expandido,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
-                Text(
-                    text = orientacao.conteudo,
-                    fontSize = 14.sp,
-                    lineHeight = 21.sp,
-                    color = colorResource(R.color.main_text_color)
-                )
-            }
         }
     }
 }

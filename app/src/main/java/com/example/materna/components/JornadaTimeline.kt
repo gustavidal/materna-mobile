@@ -30,7 +30,8 @@ import com.example.materna.models.domain.JornadaStatus
 fun JornadaTimeline(
     etapas: List<JornadaEtapa>,
     modifier: Modifier = Modifier,
-    onEtapaClick: (JornadaEtapa) -> Unit = {}
+    onEtapaClick: (JornadaEtapa) -> Unit = {},
+    onDocumentoEnviado: (etapaId: String, url: String) -> Unit = { _, _ -> }
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -89,6 +90,9 @@ fun JornadaTimeline(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         onEtapaClick(etapa)
+                    },
+                    onDocumentoEnviado = { etapaId, url ->
+                        onDocumentoEnviado(etapaId, url)
                     }
                 )
             }

@@ -58,6 +58,8 @@ class JornadaScreenViewModel(
     private var idInstituicaoSelecionada: Int? = null
     private var idDoadoraAtual: Int? = null
     private var idJornadaAtual: Int? = null
+    val idJornadaSelecionada: Int? get() = idJornadaAtual
+    private var jornadaCarregada: JornadaResponse? = null
     private var idPrimeiraEtapaReal: Int? = null
     private var criandoVinculo = false
     private var concluindoEtapa = false
@@ -196,6 +198,7 @@ class JornadaScreenViewModel(
 
                     if (jornadasAtivas.size == 1) {
                         val jornada = jornadasAtivas.first()
+                        jornadaCarregada = jornada
                         val idDoadora = idDoadoraAtual
                         idPrimeiraEtapaReal = jornada.etapas
                             .minByOrNull { it.ordem }
@@ -328,13 +331,9 @@ class JornadaScreenViewModel(
         )
 
         val conclusoesValidas = if (possuiVinculo) {
-            etapasConcluidas
+            etapasConcluidas + "conheca_doacao"
         } else {
-            etapasConcluidas - setOf(
-                "conheca_doacao",
-                "orientacoes",
-                "questionario"
-            )
+            etapasConcluidas - "conheca_doacao"
         }
 
         val primeiraPendente = idsEstaticos.indexOfFirst {
@@ -370,14 +369,24 @@ class JornadaScreenViewModel(
             )
         }
 
+        val etapasEstaticasConcluidas = idsEstaticos.all {
+            it in conclusoesValidas
+        }
+
         val etapasInstituicao = jornada.etapas
             .sortedBy { it.ordem }
-            .map { etapa ->
+            .mapIndexed { index, etapa ->
                 JornadaEtapa(
                     id = "instituicao_${etapa.id}",
                     titulo = etapa.titulo,
                     descricao = etapa.descricao,
-                    status = JornadaStatus.BLOQUEADA
+                    status = if (etapasEstaticasConcluidas && index == 0) JornadaStatus.ATUAL else JornadaStatus.BLOQUEADA,
+                    isAgendavel = etapa.isAgendavel,
+                    isRepetivel = etapa.isRepetivel,
+                    isObrigatorio = etapa.isObrigatorio,
+                    isSolicitaArquivo = etapa.isSolicitaArquivo,
+                    isPrecisaAprovacao = etapa.isPrecisaAprovacao,
+                    documento = etapa.documento
                 )
             }
 
@@ -389,12 +398,6 @@ class JornadaScreenViewModel(
         idDoadora: Int
     ) {
         if (idInstituicao <= 0 || idDoadora <= 0) return
-
-        if (
-            idInstituicaoSelecionada == idInstituicao &&
-            idDoadoraAtual == idDoadora &&
-            _estado.value == JornadaEstado.COM_BANCO
-        ) return
 
         idInstituicaoSelecionada = idInstituicao
         idDoadoraAtual = idDoadora
@@ -684,6 +687,39 @@ class JornadaScreenViewModel(
         _mensagemErro.value = ""
 
         testarBuscaInstituicao(idInstituicao)
+    }
+
+    private val _documentosEnviados = MutableLiveData<Map<String, String>>(emptyMap())
+    val documentosEnviados: LiveData<Map<String, String>> = _documentosEnviados
+
+    fun registrarDocumentoEnviado(
+        etapaId: String,
+        url: String
+    ) {
+        if (etapaId.isBlank() || url.isBlank()) {
+            Log.e("DocumentoEnvio", "Não foi possível registrar o documento.")
+            return
+        }
+
+        val documentos = _documentosEnviados.value
+            .orEmpty()
+            .toMutableMap()
+
+        documentos[etapaId] = url
+
+        _documentosEnviados.value = documentos
+
+        Log.d("DocumentoEnvio", "Documento registrado para a etapa $etapaId")
+    }
+
+    private fun obterIdEtapaReal(etapaId: String): Int? {
+        if (!etapaId.startsWith("instituicao_")) {
+            return null
+        }
+
+        return etapaId
+            .removePrefix("instituicao_")
+            .toIntOrNull()
     }
 
     init {
