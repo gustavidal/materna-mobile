@@ -43,6 +43,7 @@ interface DoadoraService {
         @Path("id") id: Int
     ): Call<PerfilDoadoraResponse>
 
+    @Headers("Content-Type: application/json")
     @PATCH("doadora/me")
     fun atualizarFoto(
         @Body request: AtualizarFotoRequest

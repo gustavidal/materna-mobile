@@ -10,14 +10,14 @@ import retrofit2.http.Part
 
 interface CloudinaryService {
     @Multipart
-    @POST("v1_1/materna-perfis/image/upload")
+    @POST("v1_1/pvyoqrku/image/upload")
     fun enviarImagem(
         @Part file: MultipartBody.Part,
         @Part("upload_preset") uploadPreset: RequestBody
     ): Call<CloudinaryUploadResponse>
 
     @Multipart
-    @POST("v1_1/materna-perfis/auto/upload")
+    @POST("v1_1/pvyoqrku/auto/upload")
     fun enviarDocumento(
         @Part file: MultipartBody.Part,
         @Part("upload_preset") uploadPreset: RequestBody

@@ -1,5 +1,6 @@
 package com.example.materna.screens.jornada
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -46,12 +47,14 @@ fun JornadaScreen(
     navController: NavController,
     jornadaScreenViewModel: JornadaScreenViewModel = viewModel()
 ) {
-    val estado       by jornadaScreenViewModel.estado.observeAsState(JornadaEstado.CARREGANDO)
+    val estado          by jornadaScreenViewModel.estado.observeAsState(JornadaEstado.CARREGANDO)
 
-    val progresso    by jornadaScreenViewModel.progresso.observeAsState(0)
-    val etapas       by jornadaScreenViewModel.etapas.observeAsState(emptyList())
+    val progresso       by jornadaScreenViewModel.progresso.observeAsState(0)
+    val etapas          by jornadaScreenViewModel.etapas.observeAsState(emptyList())
 
-    val mensagemErro by jornadaScreenViewModel.mensagemErro.observeAsState("")
+    val mensagemErro    by jornadaScreenViewModel.mensagemErro.observeAsState("")
+
+    val nomeInstituicao by jornadaScreenViewModel.nomeInstituicao.observeAsState("")
 
     var mostrarDialogoCancelamento by remember {
         mutableStateOf(false)
@@ -143,7 +146,12 @@ fun JornadaScreen(
                     JornadaTimeline(
                         etapas = etapas,
                         onEtapaClick = { etapa ->
-                            if (etapa.status == JornadaStatus.ATUAL) {
+//                            if (etapa.status == JornadaStatus.ATUAL) {
+                            // TODO: Restaurar após os testes de agendamento
+                            if (
+                                etapa.status == JornadaStatus.ATUAL ||
+                                etapa.isAgendavel == 1
+                            ) {
                                 val idInstituicao = navController
                                     .currentBackStackEntry
                                     ?.arguments
@@ -173,6 +181,29 @@ fun JornadaScreen(
                                             navController.navigate(
                                                 "questionario/$idJornada"
                                             )
+                                        }
+                                    }
+
+                                    else -> {
+                                        if (
+                                            etapa.id.startsWith("instituicao_") &&
+                                            etapa.isAgendavel == 1 &&
+                                            idInstituicao != null &&
+                                            idInstituicao > 0 &&
+                                            idJornada != null &&
+                                            idJornada > 0
+                                        ) {
+                                            val idEtapa = etapa.id
+                                                .removePrefix("instituicao_")
+                                                .toIntOrNull()
+
+                                            if (idEtapa != null) {
+                                                navController.navigate(
+                                                    "agendamento/$idInstituicao/$idJornada/$idEtapa?nome_instituicao=${Uri.encode(nomeInstituicao)}"
+                                                ) {
+                                                    launchSingleTop = true
+                                                }
+                                            }
                                         }
                                     }
                                 }

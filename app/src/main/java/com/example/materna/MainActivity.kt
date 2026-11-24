@@ -11,6 +11,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModel
@@ -39,6 +42,7 @@ import androidx.navigation.navArgument
 import com.example.materna.components.MaternaBottomBar
 import com.example.materna.data.local.MaternaDatabaseProvider
 import com.example.materna.models.domain.JornadaStatus
+import com.example.materna.screens.agendamento.AgendamentoScreen
 import com.example.materna.screens.cadastro.CadastroScreen
 import com.example.materna.screens.cadastro.CadastroScreenViewModel
 import com.example.materna.screens.campanhas.CampanhaScreen
@@ -138,6 +142,7 @@ class MainActivity : ComponentActivity() {
                     "campanha/{id}",
                     "jornada",
                     "jornada/{id_instituicao}",
+                    "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}",
                     "servicos",
                     "confirmar_banco/{id_instituicao}",
                     "perfil"
@@ -807,6 +812,48 @@ class MainActivity : ComponentActivity() {
                                         ?.set("atualizar_jornada", true)
 
                                     navController.popBackStack()
+                                }
+                            )
+                        }
+
+
+
+                        composable(
+                            route = "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}?nome_instituicao={nome_instituicao}",
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_jornada") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_etapa") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("nome_instituicao") {
+                                    type = NavType.StringType
+                                    defaultValue = "Instituição"
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
+                            val idJornada = backStackEntry.arguments?.getInt("id_jornada") ?: return@composable
+                            val idEtapa = backStackEntry.arguments?.getInt("id_etapa") ?: return@composable
+                            val nomeInstituicao = backStackEntry.arguments?.getString("nome_instituicao").orEmpty().ifBlank { "Instituição" }
+
+                            AgendamentoScreen(
+                                nomeInstituicao = nomeInstituicao,
+                                idInstituicao = idInstituicao,
+                                iconeInstituicao = painterResource(R.drawable.ic_hospital),
+                                iconeHorario = Icons.Default.Home,
+                                onVoltar = {
+                                    navController.popBackStack()
+                                },
+                                onConfirmar = {
+                                    Log.d(
+                                        "AGENDAMENTO",
+                                        "Instituição: $idInstituicao | Jornada: $idJornada | Etapa: $idEtapa"
+                                    )
                                 }
                             )
                         }

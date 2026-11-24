@@ -3,6 +3,7 @@ package com.example.materna.services.cloudinary
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -48,6 +49,16 @@ class DocumentoEtapaUpload {
                 "O arquivo deve ter no máximo 10 MB."
             }
 
+            val tiposPermitidos = setOf(
+                "application/pdf",
+                "image/jpeg",
+                "image/png"
+            )
+
+            require(mimeType in tiposPermitidos) {
+                "Formato inválido. Selecione um PDF, JPG ou PNG."
+            }
+
             val arquivo = MultipartBody.Part.createFormData(
                 "file",
                 nomeOriginal,
@@ -66,7 +77,16 @@ class DocumentoEtapaUpload {
                 .enviarDocumento(arquivo, preset)
                 .awaitResponse()
 
+            Log.d("CloudinaryUpload", "HTTP: ${resposta.code()}")
+
             if (!resposta.isSuccessful) {
+                val mensagemErro = resposta.errorBody()?.string()
+
+                Log.e(
+                    "CloudinaryUpload",
+                    "Erro: $mensagemErro"
+                )
+
                 error(
                     "Falha no upload: HTTP ${resposta.code()}"
                 )

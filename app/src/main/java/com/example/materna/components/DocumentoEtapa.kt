@@ -64,7 +64,11 @@ fun DocumentoEtapa(
         Button(
             onClick = {
                 seletorDocumento.launch(
-                    arrayOf("*/*")
+                    arrayOf(
+                        "application/pdf",
+                        "image/jpeg",
+                        "image/png"
+                    )
                 )
             },
             modifier = Modifier.fillMaxWidth(),

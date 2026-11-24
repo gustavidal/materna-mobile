@@ -1,7 +1,6 @@
-
 package com.example.materna.components
 
-import android.R.attr.onClick
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,10 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +39,22 @@ fun JornadaStepCard(
     onDocumentoEnviado: (etapaId: String, url: String) -> Unit = { _, _ -> }
 ) {
     val atual = etapa.status == JornadaStatus.ATUAL
-    val bloqueada = etapa.status == JornadaStatus.BLOQUEADA
+//    val bloqueada = etapa.status == JornadaStatus.BLOQUEADA
+
+    // TODO: Restaurar após os testes de agendamento
+    val bloqueada =
+        etapa.status == JornadaStatus.BLOQUEADA &&
+                etapa.isAgendavel != 1
+
+    LaunchedEffect(etapa) {
+        Log.d(
+            "JORNADA_AGENDAMENTO",
+            "ID: ${etapa.id} | " +
+                    "Título: ${etapa.titulo} | " +
+                    "Status: ${etapa.status} | " +
+                    "Agendável: ${etapa.isAgendavel}"
+        )
+    }
 
     var expandido by remember(etapa.id) {
         mutableStateOf(false)
@@ -132,6 +149,32 @@ fun JornadaStepCard(
                 }
             }
 
+            if (
+//                atual &&
+                etapa.id.startsWith("instituicao_") &&
+                etapa.isAgendavel == 1
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorResource(R.color.main_pink),
+                        contentColor = colorResource(R.color.white)
+                    )
+                ) {
+                    Text(
+                        text = "Agendar atendimento",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
             // Área fixa: independente da descrição
             if (
                 atual &&
@@ -149,10 +192,6 @@ fun JornadaStepCard(
 
             if (atual && etapa.id.startsWith("instituicao_")) {
                 val funcionalidades = buildList {
-                    if (etapa.isAgendavel == 1) {
-                        add("Agendamento")
-                    }
-
                     if (etapa.isPrecisaAprovacao == 1) {
                         add("Aprovação necessária")
                     }

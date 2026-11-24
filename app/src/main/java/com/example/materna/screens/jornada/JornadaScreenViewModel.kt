@@ -11,6 +11,7 @@ import com.example.materna.data.local.MaternaDatabaseProvider
 import com.example.materna.models.domain.JornadaEtapa
 import com.example.materna.models.domain.JornadaStatus
 import com.example.materna.models.requests.CriarVinculoEtapaRequest
+import com.example.materna.models.requests.EnviarDocumentoRequest
 import com.example.materna.models.responses.CriarVinculoEtapaResponse
 import com.example.materna.models.responses.InstituicaoApiResponse
 import com.example.materna.models.responses.JornadaResponse
@@ -20,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -52,6 +54,9 @@ class JornadaScreenViewModel(
 
     private val _mensagemErro = MutableLiveData<String>()
     val mensagemErro: LiveData<String> = _mensagemErro
+
+    private val _nomeInstituicao = MutableLiveData<String>()
+    val nomeInstituicao: LiveData<String> = _nomeInstituicao
 
 
 
@@ -190,6 +195,8 @@ class JornadaScreenViewModel(
                         ?.response
                         ?.instituicao
                         ?.firstOrNull()
+
+                    _nomeInstituicao.value = instituicao?.nome.orEmpty()
 
                     val jornadasAtivas = instituicao
                         ?.jornadas
@@ -696,20 +703,50 @@ class JornadaScreenViewModel(
         etapaId: String,
         url: String
     ) {
-        if (etapaId.isBlank() || url.isBlank()) {
-            Log.e("DocumentoEnvio", "Não foi possível registrar o documento.")
+        val idEtapa = obterIdEtapaReal(etapaId)
+
+        if (idEtapa == null) {
+            Log.e("DocumentoEnvio", "ID da etapa inválido.")
             return
         }
 
-        val documentos = _documentosEnviados.value
-            .orEmpty()
-            .toMutableMap()
+        obterVinculoEtapa(
+            idEtapa = idEtapa,
 
-        documentos[etapaId] = url
+            onSucesso = { idVinculo ->
 
-        _documentosEnviados.value = documentos
+                if (idVinculo != null) {
+                    enviarDocumentoMaterna(
+                        idVinculo = idVinculo,
+                        url = url,
 
-        Log.d("DocumentoEnvio", "Documento registrado para a etapa $etapaId")
+                        onSucesso = {
+                            _documentosEnviados.value =
+                                _documentosEnviados.value.orEmpty() +
+                                        (etapaId to url)
+
+                            Log.d(
+                                "DocumentoEnvio",
+                                "Documento registrado na API Materna."
+                            )
+                        },
+
+                        onErro = { erro ->
+                            Log.e("DocumentoEnvio", erro)
+                        }
+                    )
+                } else {
+                    Log.w(
+                        "DocumentoEnvio",
+                        "Etapa sem vínculo ativo: $idEtapa"
+                    )
+                }
+            },
+
+            onErro = { erro ->
+                Log.e("DocumentoEnvio", erro)
+            }
+        )
     }
 
     private fun obterIdEtapaReal(etapaId: String): Int? {
@@ -720,6 +757,242 @@ class JornadaScreenViewModel(
         return etapaId
             .removePrefix("instituicao_")
             .toIntOrNull()
+    }
+
+    private fun obterVinculoEtapa(
+        idEtapa: Int,
+        onSucesso: (Int?) -> Unit,
+        onErro: (String) -> Unit
+    ) {
+        val idDoadora = idDoadoraAtual
+        val idJornada = idJornadaAtual
+        val idInstituicao = idInstituicaoSelecionada
+
+        if (
+            idDoadora == null ||
+            idJornada == null ||
+            idInstituicao == null
+        ) {
+            onErro("Não foi possível identificar a jornada.")
+            return
+        }
+
+        val service = MaternaRetrofitFactory(applicationContext)
+            .getVinculoEtapaDoadoraService()
+
+        service.buscarVinculosDoadora(idDoadora)
+            .enqueue(object : Callback<VinculoEtapaDoadoraResponse> {
+
+                override fun onResponse(
+                    call: Call<VinculoEtapaDoadoraResponse>,
+                    response: Response<VinculoEtapaDoadoraResponse>
+                ) {
+                    if (
+                        !response.isSuccessful ||
+                        response.body()?.status != true
+                    ) {
+                        Log.e(
+                            "DocumentoEnvio",
+                            "Erro ao buscar vínculo: HTTP ${response.code()}"
+                        )
+
+                        onErro("Não foi possível consultar os vínculos.")
+                        return
+                    }
+
+                    val vinculo = response.body()
+                        ?.response
+                        ?.jornadas
+                        .orEmpty()
+                        .firstOrNull {
+                            it.id == idJornada && it.instituicao.id == idInstituicao
+                        }
+                        ?.etapas
+                        ?.firstOrNull { it.id == idEtapa }
+                        ?.vinculos
+                        .orEmpty()
+                        .filter { it.encerrado == 0 }
+                        .maxByOrNull { it.ciclo }
+
+                    if (vinculo == null) {
+                        Log.w(
+                            "DocumentoEnvio",
+                            "Etapa $idEtapa sem vínculo ativo."
+                        )
+
+                        onSucesso(null)
+                        return
+                    }
+
+                    Log.d(
+                        "DocumentoEnvio",
+                        "Etapa: $idEtapa | Vínculo: ${vinculo.id}"
+                    )
+
+                    onSucesso(vinculo.id)
+                }
+
+                override fun onFailure(
+                    call: Call<VinculoEtapaDoadoraResponse>,
+                    t: Throwable
+                ) {
+                    Log.e("DocumentoEnvio", "Falha ao buscar vínculo", t)
+
+                    onErro("Falha de conexão ao buscar vínculo.")
+                }
+            })
+    }
+
+    private fun criarVinculoEtapaDocumento(
+        idEtapa: Int,
+        onSucesso: (Int) -> Unit,
+        onErro: (String) -> Unit
+    ) {
+        val idDoadora = idDoadoraAtual
+        val idJornada = idJornadaAtual
+        val idInstituicao = idInstituicaoSelecionada
+
+        if (
+            idDoadora == null ||
+            idJornada == null ||
+            idInstituicao == null
+        ) {
+            onErro("Dados da jornada incompletos.")
+            return
+        }
+
+        if (criandoVinculo) {
+            onErro("Aguarde a criação do vínculo.")
+            return
+        }
+
+        criandoVinculo = true
+
+        val request = CriarVinculoEtapaRequest(
+            idDoadora = idDoadora,
+            idEtapa = idEtapa,
+            idInstituicao = idInstituicao,
+            idJornada = idJornada
+        )
+
+        MaternaRetrofitFactory(applicationContext)
+            .getVinculoEtapaDoadoraService()
+            .criarVinculoEtapa(request)
+            .enqueue(object : Callback<CriarVinculoEtapaResponse> {
+
+                override fun onResponse(
+                    call: Call<CriarVinculoEtapaResponse>,
+                    response: Response<CriarVinculoEtapaResponse>
+                ) {
+                    criandoVinculo = false
+
+                    val idVinculo = response.body()?.response?.id
+
+                    if (
+                        response.isSuccessful &&
+                        response.body()?.status == true &&
+                        idVinculo != null
+                    ) {
+                        Log.d(
+                            "DocumentoEnvio",
+                            "Vínculo criado: $idVinculo"
+                        )
+
+                        onSucesso(idVinculo)
+                    } else {
+                        Log.e(
+                            "DocumentoEnvio",
+                            "Erro ao criar vínculo: HTTP ${response.code()}"
+                        )
+
+                        onErro("Não foi possível criar o vínculo.")
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<CriarVinculoEtapaResponse>,
+                    t: Throwable
+                ) {
+                    criandoVinculo = false
+
+                    Log.e(
+                        "DocumentoEnvio",
+                        "Falha ao criar vínculo",
+                        t
+                    )
+
+                    onErro("Falha de conexão ao criar vínculo.")
+                }
+            })
+    }
+
+    private fun enviarDocumentoMaterna(
+        idVinculo: Int,
+        url: String,
+        onSucesso: () -> Unit,
+        onErro: (String) -> Unit
+    ) {
+        val idDoadora = idDoadoraAtual
+
+        if (idDoadora == null) {
+            onErro("Doadora não identificada.")
+            return
+        }
+
+        val request = EnviarDocumentoRequest(
+            idDoadora = idDoadora,
+            documento = url
+        )
+
+        MaternaRetrofitFactory(applicationContext)
+            .getDocumentoService()
+            .enviarDocumento(idVinculo, request)
+            .enqueue(object : Callback<ResponseBody> {
+
+                override fun onResponse(
+                    call: Call<ResponseBody>,
+                    response: Response<ResponseBody>
+                ) {
+                    Log.d(
+                        "DocumentoEnvio",
+                        "HTTP: ${response.code()}"
+                    )
+
+                    if (response.isSuccessful) {
+                        response.body()?.close()
+
+                        Log.d(
+                            "DocumentoEnvio",
+                            "Documento registrado com sucesso."
+                        )
+
+                        onSucesso()
+                    } else {
+                        val erro = response.errorBody()?.string()
+
+                        Log.e(
+                            "DocumentoEnvio",
+                            "Falha HTTP ${response.code()}"
+                        )
+
+                        onErro(
+                            erro ?: "Não foi possível registrar o documento."
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<ResponseBody>,
+                    t: Throwable
+                ) {
+                    Log.e(
+                        "DocumentoEnvio",
+                        "Falha na requisição: ${t.javaClass.simpleName}"
+                    )
+
+                    onErro("Falha de conexão com a API Materna.")
+                }
+            })
     }
 
     init {

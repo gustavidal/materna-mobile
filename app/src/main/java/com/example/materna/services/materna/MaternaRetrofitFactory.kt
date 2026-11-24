@@ -43,6 +43,10 @@ class MaternaRetrofitFactory(context: Context) {
         return retrofit.create(DocumentoService::class.java)
     }
 
+    fun getHorarioService(): HorarioService {
+        return retrofit.create(HorarioService::class.java)
+    }
+
     fun getInstituicaoService(): InstituicaoService {
         return retrofit.create(InstituicaoService::class.java)
     }
