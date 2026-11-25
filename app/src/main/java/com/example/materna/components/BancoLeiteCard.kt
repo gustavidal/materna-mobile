@@ -135,7 +135,7 @@ fun BancoLeiteCard(
                     Text(
                         text = instituicao.tipoColeta,
                         fontSize = 11.sp,
-                        color = Color(0xFF36865C)
+                        color = colorResource(R.color.green)
                     )
                 }
             }
@@ -148,7 +148,8 @@ fun BancoLeiteCard(
                 .height(44.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = corBotao
+                containerColor = corBotao,
+                contentColor = colorResource(R.color.white)
             )
         ) {
             Text(

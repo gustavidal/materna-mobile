@@ -73,7 +73,8 @@ class AgendamentoScreenViewModel : ViewModel() {
         MaternaRetrofitFactory(context)
             .getHorarioService()
             .buscarHorariosDisponiveis(
-                idInstituicao = idInstituicao
+                idInstituicao = idInstituicao,
+                isProximo = false
             )
             .enqueue(object : Callback<ResponseBody> {
 

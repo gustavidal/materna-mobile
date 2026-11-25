@@ -1,9 +1,11 @@
 package com.example.materna.services.materna
 
 import com.example.materna.models.requests.EnviarDocumentoRequest
-import okhttp3.ResponseBody
+import com.example.materna.models.responses.DocumentosDoadoraResponse
+import com.example.materna.models.responses.EnviarDocumentoResponse
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -14,5 +16,8 @@ interface DocumentoService {
     fun enviarDocumento(
         @Path("id_jornada_doacao") idVinculo: Int,
         @Body request: EnviarDocumentoRequest
-    ): Call<ResponseBody>
+    ): Call<EnviarDocumentoResponse>
+
+    @GET("documento/doadora/me")
+    fun buscarDocumentosDoadora(): Call<DocumentosDoadoraResponse>
 }

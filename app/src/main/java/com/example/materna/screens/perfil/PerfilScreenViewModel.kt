@@ -126,7 +126,7 @@ class PerfilScreenViewModel(
         carregarPerfil()
     }
 
-    private fun carregarPerfil() {
+    fun carregarPerfil() {
         viewModelScope.launch {
             try {
                 val settings = settingsDao.observeSettings().first()

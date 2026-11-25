@@ -25,13 +25,23 @@ import androidx.compose.ui.unit.sp
 import com.example.materna.R
 import com.example.materna.models.domain.JornadaEtapa
 import com.example.materna.models.domain.JornadaStatus
+import com.example.materna.models.responses.DocumentoDoadoraResponse
+import com.example.materna.screens.jornada.DocumentoEstado
 
 @Composable
 fun JornadaTimeline(
     etapas: List<JornadaEtapa>,
     modifier: Modifier = Modifier,
     onEtapaClick: (JornadaEtapa) -> Unit = {},
-    onDocumentoEnviado: (etapaId: String, url: String) -> Unit = { _, _ -> }
+    onDocumentoEnviado: (etapaId: String, url: String) -> Unit = { _, _ -> },
+    onEtapaConcluida: (etapaId: String) -> Unit = {},
+    onPularEtapa: (etapaId: String) -> Unit = {},
+    documentosPorEtapa: Map<String, DocumentoDoadoraResponse> = emptyMap(),
+    estadoDocumentos: DocumentoEstado = DocumentoEstado.INICIAL,
+    documentosEmRegistro: Set<String> = emptySet(),
+    erroDocumentos: String? = null,
+    errosRegistroDocumento: Map<String, String> = emptyMap(),
+    onTentarNovamenteDocumentos: () -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -88,11 +98,21 @@ fun JornadaTimeline(
                 JornadaStepCard(
                     etapa = etapa,
                     modifier = Modifier.weight(1f),
+                    documentoAtual = documentosPorEtapa[etapa.id],
+                    estadoDocumentos = estadoDocumentos,
+                    onPularEtapa = onPularEtapa,
+                    registrandoDocumento = etapa.id in documentosEmRegistro,
+                    erroDocumentos = erroDocumentos,
+                    erroRegistroDocumento = errosRegistroDocumento[etapa.id],
+                    onTentarNovamenteDocumentos = onTentarNovamenteDocumentos,
                     onClick = {
                         onEtapaClick(etapa)
                     },
                     onDocumentoEnviado = { etapaId, url ->
                         onDocumentoEnviado(etapaId, url)
+                    },
+                    onEtapaConcluida = { etapaId ->
+                        onEtapaConcluida(etapaId)
                     }
                 )
             }

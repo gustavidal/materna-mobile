@@ -1,4 +1,4 @@
-package com.example.materna.screens.jornada
+package com.example.materna.screens.others
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +28,7 @@ import com.example.materna.R
 import com.example.materna.components.OrientacaoCard
 import com.example.materna.data.local.JornadaLocalProgress
 import com.example.materna.data.local.JornadaLocalProgressDao
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 data class Orientacao(
@@ -106,7 +107,7 @@ fun OrientacoesScreen(
                 idJornada = requireNotNull(idJornada)
             )
         } else {
-            kotlinx.coroutines.flow.flowOf(emptyList())
+            flowOf(emptyList())
         }
     }.collectAsState(initial = emptyList())
 

@@ -10,11 +10,18 @@ import com.example.materna.data.local.JornadaLocalProgress
 import com.example.materna.data.local.MaternaDatabaseProvider
 import com.example.materna.models.domain.JornadaEtapa
 import com.example.materna.models.domain.JornadaStatus
+import com.example.materna.models.requests.CancelarJornadaRequest
+import com.example.materna.models.requests.ConcluirEtapaRequest
 import com.example.materna.models.requests.CriarVinculoEtapaRequest
 import com.example.materna.models.requests.EnviarDocumentoRequest
 import com.example.materna.models.responses.CriarVinculoEtapaResponse
+import com.example.materna.models.responses.DocumentoDoadoraResponse
+import com.example.materna.models.responses.DocumentoResponse
+import com.example.materna.models.responses.DocumentosDoadoraResponse
+import com.example.materna.models.responses.EnviarDocumentoResponse
 import com.example.materna.models.responses.InstituicaoApiResponse
 import com.example.materna.models.responses.JornadaResponse
+import com.example.materna.models.responses.VinculoEtapa
 import com.example.materna.models.responses.VinculoEtapaDoadoraResponse
 import com.example.materna.services.materna.MaternaRetrofitFactory
 import kotlinx.coroutines.Dispatchers
@@ -25,12 +32,19 @@ import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import kotlin.collections.orEmpty
+import java.time.LocalDate
 
 enum class JornadaEstado {
     CARREGANDO,
     SEM_BANCO,
     COM_BANCO,
+    ERRO
+}
+
+enum class DocumentoEstado {
+    INICIAL,
+    CARREGANDO,
+    SUCESSO,
     ERRO
 }
 
@@ -60,14 +74,26 @@ class JornadaScreenViewModel(
 
 
 
+
+
     private var idInstituicaoSelecionada: Int? = null
     private var idDoadoraAtual: Int? = null
     private var idJornadaAtual: Int? = null
     val idJornadaSelecionada: Int? get() = idJornadaAtual
     private var jornadaCarregada: JornadaResponse? = null
     private var idPrimeiraEtapaReal: Int? = null
+    private var etapasInstitucionaisConcluidas: Set<String> = emptySet()
     private var criandoVinculo = false
     private var concluindoEtapa = false
+
+    private val _cancelandoJornada = MutableLiveData(false)
+    val cancelandoJornada: LiveData<Boolean> = _cancelandoJornada
+
+    private val _erroCancelamento = MutableLiveData<String?>(null)
+    val erroCancelamento: LiveData<String?> = _erroCancelamento
+
+    private val _jornadaCancelada = MutableLiveData(false)
+    val jornadaCancelada: LiveData<Boolean> = _jornadaCancelada
 
 
 
@@ -247,20 +273,39 @@ class JornadaScreenViewModel(
                                     idEtapa = idPrimeiraEtapa,
 
                                     onResultado = { possuiVinculo ->
-                                        _etapas.value = montarEtapasJornada(
-                                            jornada = jornada,
-                                            etapasConcluidas = etapasConcluidas,
-                                            possuiVinculo = possuiVinculo
-                                        )
 
-                                        calcularProgresso()
+                                        val finalizarCarregamento: () -> Unit = {
+                                            _etapas.value = montarEtapasJornada(
+                                                jornada = jornada,
+                                                etapasConcluidas = etapasConcluidas,
+                                                possuiVinculo = possuiVinculo
+                                            )
 
-                                        _estado.value = JornadaEstado.COM_BANCO
+                                            calcularProgresso()
 
-                                        Log.i(
-                                            "Jornada",
-                                            "Vínculo confirmado: $possuiVinculo"
-                                        )
+                                            _estado.value = JornadaEstado.COM_BANCO
+
+                                            buscarDocumentosDoadora()
+
+                                            Log.i("Jornada", "Jornada carregada com sucesso.")
+                                        }
+
+                                        val etapasEstaticasConcluidas = possuiVinculo && "orientacoes" in etapasConcluidas && "questionario" in etapasConcluidas
+
+                                        if (etapasEstaticasConcluidas) {
+                                            garantirProximoVinculo(
+                                                jornada = jornada,
+
+                                                onSucesso = finalizarCarregamento,
+
+                                                onErro = { erro ->
+                                                    _mensagemErro.value = erro
+                                                    _estado.value = JornadaEstado.ERRO
+                                                }
+                                            )
+                                        } else {
+                                            finalizarCarregamento()
+                                        }
                                     },
 
                                     onErro = { erro ->
@@ -326,6 +371,57 @@ class JornadaScreenViewModel(
         })
     }
 
+    private fun garantirProximoVinculo(
+        jornada: JornadaResponse,
+        onSucesso: () -> Unit,
+        onErro: (String) -> Unit
+    ) {
+        val tag = "JORNADA_PROXIMO_VINCULO"
+
+        val proximaEtapa = jornada.etapas
+            .sortedBy { it.ordem }
+            .firstOrNull {
+                "instituicao_${it.id}" !in etapasInstitucionaisConcluidas
+            }
+
+        if (proximaEtapa == null) {
+            Log.i(tag, "Todas as etapas foram concluídas.")
+            onSucesso()
+            return
+        }
+
+        val etapaId = "instituicao_${proximaEtapa.id}"
+
+        if (etapaId in _vinculosPorEtapa.value.orEmpty()) {
+            Log.d(tag, "A etapa $etapaId já possui vínculo ativo.")
+            onSucesso()
+            return
+        }
+
+        Log.d(tag, "Criando vínculo para a etapa $etapaId")
+
+        criarVinculoEtapa(
+            idEtapa = proximaEtapa.id,
+
+            onSucesso = { idVinculo ->
+                _vinculosPorEtapa.value =
+                    _vinculosPorEtapa.value.orEmpty() +
+                            (etapaId to idVinculo)
+
+                associarDocumentosEtapas()
+
+                Log.i(tag, "Novo vínculo criado: $idVinculo")
+
+                onSucesso()
+            },
+
+            onErro = { erro ->
+                Log.e(tag, erro)
+                onErro(erro)
+            }
+        )
+    }
+
     private fun montarEtapasJornada(
         jornada: JornadaResponse,
         etapasConcluidas: Set<String>,
@@ -380,22 +476,35 @@ class JornadaScreenViewModel(
             it in conclusoesValidas
         }
 
-        val etapasInstituicao = jornada.etapas
+        val etapasOrdenadas = jornada.etapas
             .sortedBy { it.ordem }
-            .mapIndexed { index, etapa ->
-                JornadaEtapa(
-                    id = "instituicao_${etapa.id}",
-                    titulo = etapa.titulo,
-                    descricao = etapa.descricao,
-                    status = if (etapasEstaticasConcluidas && index == 0) JornadaStatus.ATUAL else JornadaStatus.BLOQUEADA,
-                    isAgendavel = etapa.isAgendavel,
-                    isRepetivel = etapa.isRepetivel,
-                    isObrigatorio = etapa.isObrigatorio,
-                    isSolicitaArquivo = etapa.isSolicitaArquivo,
-                    isPrecisaAprovacao = etapa.isPrecisaAprovacao,
-                    documento = etapa.documento
-                )
+
+        val primeiraInstitucionalPendente = etapasOrdenadas
+            .firstOrNull {
+                "instituicao_${it.id}" !in etapasInstitucionaisConcluidas
             }
+            ?.id
+
+        val etapasInstituicao = etapasOrdenadas.map { etapa ->
+            val etapaId = "instituicao_${etapa.id}"
+
+            JornadaEtapa(
+                id = etapaId,
+                titulo = etapa.titulo,
+                descricao = etapa.descricao,
+                status = when {
+                    etapaId in etapasInstitucionaisConcluidas -> JornadaStatus.CONCLUIDA
+                    etapasEstaticasConcluidas && etapa.id == primeiraInstitucionalPendente && etapaId in _vinculosPorEtapa.value.orEmpty() -> JornadaStatus.ATUAL
+                    else -> JornadaStatus.BLOQUEADA
+                },
+                isAgendavel = etapa.isAgendavel,
+                isRepetivel = etapa.isRepetivel,
+                isObrigatorio = etapa.isObrigatorio,
+                isSolicitaArquivo = etapa.isSolicitaArquivo,
+                isPrecisaAprovacao = etapa.isPrecisaAprovacao,
+                documento = etapa.documento
+            )
+        }
 
         return etapasIniciais + etapasInstituicao
     }
@@ -596,6 +705,10 @@ class JornadaScreenViewModel(
                             "Nenhum vínculo encontrado. Liberando a Jornada."
                         )
 
+                        etapasInstitucionaisConcluidas = emptySet()
+                        _vinculosPorEtapa.value = emptyMap()
+                        associarDocumentosEtapas()
+
                         onResultado(false)
                         return
                     }
@@ -631,23 +744,38 @@ class JornadaScreenViewModel(
 
                     Log.d(
                         "JornadaVinculo",
-                        "IDs esperados: jornada=$idJornada, " +
-                            "instituicao=$idInstituicao, etapa=$idEtapa"
+                        "IDs esperados: jornada=$idJornada, instituicao=$idInstituicao, etapa=$idEtapa"
                     )
 
                     response.body()?.response?.jornadas?.forEach { jornada ->
                         Log.d(
                             "JornadaVinculo",
-                            "Jornada recebida: ${jornada.id} | " +
-                                "Instituição: ${jornada.instituicao.id}"
+                            "Jornada recebida: ${jornada.id} | Instituição: ${jornada.instituicao.id}"
                         )
 
                         jornada.etapas.forEach { etapa ->
                             Log.d(
                                 "JornadaVinculo",
-                                "Etapa recebida: ${etapa.id} | " +
-                                    "Vínculos: ${etapa.vinculos.size}"
+                                "Etapa recebida: ${etapa.id} | Vínculos: ${etapa.vinculos.size}"
                             )
+
+                            etapa.vinculos.forEach { vinculo ->
+                                Log.d(
+                                    "JornadaVinculo",
+                                    """
+                                            ==============================
+                                            Jornada: ${jornada.id}
+                                            Instituição: ${jornada.instituicao.id}
+                                            Etapa: ${etapa.id}
+                                            ID do vínculo: ${vinculo.id}
+                                            Ciclo: ${vinculo.ciclo}
+                                            Status: ${vinculo.status}
+                                            Encerrado: ${vinculo.encerrado}
+                                            Data de conclusão: ${vinculo.dataConclusao}
+                                            ==============================
+                                            """.trimIndent()
+                                )
+                            }
                         }
                     }
 
@@ -663,6 +791,66 @@ class JornadaScreenViewModel(
                                         etapa.vinculos.isNotEmpty()
                                 }
                         }
+
+                    etapasInstitucionaisConcluidas = response.body()
+                        ?.response
+                        ?.jornadas
+                        .orEmpty()
+                        .firstOrNull {
+                            it.id == idJornada &&
+                                    it.instituicao.id == idInstituicao
+                        }
+                        ?.etapas
+                        .orEmpty()
+                        .filter { etapa ->
+                            jornadaCarregada?.etapas?.any {
+                                it.id == etapa.id && it.isRepetivel == 0
+                            } == true &&
+                                    etapa.vinculos.any { vinculo ->
+                                        vinculo.status == "concluida" &&
+                                                !vinculo.dataConclusao.isNullOrBlank()
+                                    }
+                        }
+                        .map { etapa ->
+                            "instituicao_${etapa.id}"
+                        }
+                        .toSet()
+
+                    Log.d(
+                        "JornadaVinculo",
+                        "Etapas institucionais concluídas: $etapasInstitucionaisConcluidas"
+                    )
+
+                    val vinculos = response.body()
+                        ?.response
+                        ?.jornadas
+                        .orEmpty()
+                        .firstOrNull {
+                            it.id == idJornada &&
+                                    it.instituicao.id == idInstituicao
+                        }
+                        ?.etapas
+                        .orEmpty()
+                        .mapNotNull { etapa ->
+
+                            val vinculoAtivo = etapa.vinculos
+                                .filter { isVinculoAtivo(it) }
+                                .maxByOrNull { it.id }
+
+                            vinculoAtivo?.let {
+                                "instituicao_${etapa.id}" to it.id
+                            }
+                        }
+                        .toMap()
+
+                    _vinculosPorEtapa.value = vinculos
+
+                    associarDocumentosEtapas()
+
+                    Log.d(
+                        "DOCUMENTOS_API",
+                        "Vínculos por etapa: $vinculos"
+                    )
 
                     onResultado(possuiVinculo)
                 }
@@ -683,6 +871,11 @@ class JornadaScreenViewModel(
     }
 
     fun recarregarJornada() {
+        if (
+            _cancelandoJornada.value == true ||
+            _jornadaCancelada.value == true
+        ) return
+
         val idInstituicao = idInstituicaoSelecionada ?: run {
             _estado.value = JornadaEstado.SEM_BANCO
             return
@@ -699,16 +892,81 @@ class JornadaScreenViewModel(
     private val _documentosEnviados = MutableLiveData<Map<String, String>>(emptyMap())
     val documentosEnviados: LiveData<Map<String, String>> = _documentosEnviados
 
+    private val _documentosDoadora = MutableLiveData<List<DocumentoDoadoraResponse>>(emptyList())
+    val documentosDoadora: LiveData<List<DocumentoDoadoraResponse>> = _documentosDoadora
+
+    private val _vinculosPorEtapa = MutableLiveData<Map<String, Int>>(emptyMap())
+    val vinculosPorEtapa: LiveData<Map<String, Int>> = _vinculosPorEtapa
+
+    private val _documentosPorEtapa = MutableLiveData<Map<String, DocumentoDoadoraResponse>>(emptyMap())
+    val documentosPorEtapa: LiveData<Map<String, DocumentoDoadoraResponse>> = _documentosPorEtapa
+
+    private val _estadoDocumentos = MutableLiveData(DocumentoEstado.INICIAL)
+    val estadoDocumentos: LiveData<DocumentoEstado> = _estadoDocumentos
+
+    private val _documentosEmRegistro = MutableLiveData<Set<String>>(emptySet())
+    val documentosEmRegistro: LiveData<Set<String>> = _documentosEmRegistro
+
+    private val _erroDocumentos = MutableLiveData<String?>(null)
+    val erroDocumentos: LiveData<String?> = _erroDocumentos
+
+    private val _errosRegistroDocumento = MutableLiveData<Map<String, String>>(emptyMap())
+    val errosRegistroDocumento: LiveData<Map<String, String>> = _errosRegistroDocumento
+
+    private var consultaDocumentosAtual: Call<DocumentosDoadoraResponse>? = null
+
     fun registrarDocumentoEnviado(
         etapaId: String,
         url: String
     ) {
-        val idEtapa = obterIdEtapaReal(etapaId)
+        if (
+            _cancelandoJornada.value == true ||
+            _jornadaCancelada.value == true
+        ) return
 
-        if (idEtapa == null) {
-            Log.e("DocumentoEnvio", "ID da etapa inválido.")
+        if (etapaId in _documentosEmRegistro.value.orEmpty()) {
+            Log.w("DocumentoEnvio", "Registro já em andamento.")
             return
         }
+
+        val idEtapa = obterIdEtapaReal(etapaId)
+
+        val etapa = _etapas.value?.firstOrNull {
+            it.id == etapaId
+        }
+
+        if (
+            idEtapa == null ||
+            etapa == null ||
+            etapa.status != JornadaStatus.ATUAL ||
+            etapa.isSolicitaArquivo != 1
+        ) {
+            finalizarRegistroDocumento(
+                etapaId,
+                "Esta etapa não permite o envio de documentos."
+            )
+            return
+        }
+
+        if (_estadoDocumentos.value != DocumentoEstado.SUCESSO) {
+            finalizarRegistroDocumento(
+                etapaId,
+                "Aguarde a consulta dos documentos."
+            )
+            return
+        }
+
+        val possuiDocumentoRegistrado = _documentosPorEtapa.value.orEmpty().containsKey(etapaId) || _documentosEnviados.value.orEmpty().containsKey(etapaId)
+
+        if (possuiDocumentoRegistrado) {
+            finalizarRegistroDocumento(
+                etapaId,
+                "Esta etapa já possui um documento registrado."
+            )
+            return
+        }
+
+        iniciarRegistroDocumento(etapaId)
 
         obterVinculoEtapa(
             idEtapa = idEtapa,
@@ -719,32 +977,47 @@ class JornadaScreenViewModel(
                     enviarDocumentoMaterna(
                         idVinculo = idVinculo,
                         url = url,
+                        onSucesso = { documento ->
+                            _documentosEnviados.value = _documentosEnviados.value.orEmpty() + (etapaId to documento.documento)
+                            _vinculosPorEtapa.value = _vinculosPorEtapa.value.orEmpty() + (etapaId to idVinculo)
 
-                        onSucesso = {
-                            _documentosEnviados.value =
-                                _documentosEnviados.value.orEmpty() +
-                                        (etapaId to url)
+                            buscarDocumentosDoadora()
+                            finalizarRegistroDocumento(etapaId)
+
+                            if (
+                                etapa.isPrecisaAprovacao == 0 &&
+                                documento.idStatusDocumento == 2
+                            ) {
+                                avancarEtapaDocumento(etapaId)
+                            }
 
                             Log.d(
                                 "DocumentoEnvio",
                                 "Documento registrado na API Materna."
                             )
                         },
-
                         onErro = { erro ->
-                            Log.e("DocumentoEnvio", erro)
+                            buscarDocumentosDoadora()
+
+                            finalizarRegistroDocumento(
+                                etapaId,
+                                erro
+                            )
                         }
                     )
                 } else {
-                    Log.w(
-                        "DocumentoEnvio",
-                        "Etapa sem vínculo ativo: $idEtapa"
+                    finalizarRegistroDocumento(
+                        etapaId,
+                        "Nenhum vínculo ativo encontrado."
                     )
                 }
             },
 
             onErro = { erro ->
-                Log.e("DocumentoEnvio", erro)
+                finalizarRegistroDocumento(
+                    etapaId,
+                    erro
+                )
             }
         )
     }
@@ -754,9 +1027,13 @@ class JornadaScreenViewModel(
             return null
         }
 
-        return etapaId
-            .removePrefix("instituicao_")
-            .toIntOrNull()
+        return etapaId.removePrefix("instituicao_").toIntOrNull()
+    }
+
+    private fun isVinculoAtivo(vinculo: VinculoEtapa): Boolean {
+        return vinculo.encerrado == 0 &&
+                vinculo.status == "em_andamento" &&
+                vinculo.dataConclusao.isNullOrBlank()
     }
 
     private fun obterVinculoEtapa(
@@ -811,8 +1088,8 @@ class JornadaScreenViewModel(
                         ?.firstOrNull { it.id == idEtapa }
                         ?.vinculos
                         .orEmpty()
-                        .filter { it.encerrado == 0 }
-                        .maxByOrNull { it.ciclo }
+                        .filter { isVinculoAtivo(it) }
+                        .maxByOrNull { it.id }
 
                     if (vinculo == null) {
                         Log.w(
@@ -843,7 +1120,7 @@ class JornadaScreenViewModel(
             })
     }
 
-    private fun criarVinculoEtapaDocumento(
+    private fun criarVinculoEtapa(
         idEtapa: Int,
         onSucesso: (Int) -> Unit,
         onErro: (String) -> Unit
@@ -929,7 +1206,7 @@ class JornadaScreenViewModel(
     private fun enviarDocumentoMaterna(
         idVinculo: Int,
         url: String,
-        onSucesso: () -> Unit,
+        onSucesso: (DocumentoResponse) -> Unit,
         onErro: (String) -> Unit
     ) {
         val idDoadora = idDoadoraAtual
@@ -947,36 +1224,144 @@ class JornadaScreenViewModel(
         MaternaRetrofitFactory(applicationContext)
             .getDocumentoService()
             .enviarDocumento(idVinculo, request)
+            .enqueue(object : Callback<EnviarDocumentoResponse> {
+
+                override fun onResponse(
+                    call: Call<EnviarDocumentoResponse>,
+                    response: Response<EnviarDocumentoResponse>
+                ) {
+                    Log.d("DocumentoEnvio", "HTTP: ${response.code()}")
+
+                    val retorno = response.body()
+                    val documento = retorno?.response
+
+                    if (
+                        response.isSuccessful &&
+                        retorno?.status == true &&
+                        documento != null
+                    ) {
+                        Log.d("DocumentoEnvio", "ID do documento: ${documento.idDocumento}")
+                        Log.d("DocumentoEnvio", "ID do status: ${documento.idStatusDocumento}")
+                        Log.d("DocumentoEnvio", "Status: ${documento.status}")
+                        Log.d("DocumentoEnvio", "Mensagem: ${retorno.message}")
+
+                        onSucesso(documento)
+                    } else {
+                        Log.e("DocumentoEnvio", "Falha HTTP ${response.code()}")
+
+                        onErro(
+                            retorno?.message ?: "Não foi possível registrar o documento."
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<EnviarDocumentoResponse>,
+                    t: Throwable
+                ) {
+                    Log.e("DocumentoEnvio", "Falha na requisição: ${t.javaClass.simpleName}")
+
+                    onErro("Falha na comunicação com a API Materna.")
+                }
+            })
+    }
+
+    private fun avancarEtapaDocumento(etapaId: String) {
+        val tag = "JORNADA_DOCUMENTO"
+
+        val etapa = _etapas.value.orEmpty()
+            .firstOrNull { it.id == etapaId }
+
+        if (
+            etapa == null ||
+            etapa.status != JornadaStatus.ATUAL ||
+            etapa.isSolicitaArquivo != 1 ||
+            etapa.isRepetivel != 0 ||
+            etapa.isPrecisaAprovacao != 0
+        ) {
+            Log.w(tag, "Etapa não elegível para avanço automático.")
+            return
+        }
+
+        concluirEtapaInstitucional(etapaId)
+    }
+
+    private fun atualizarStatusEtapas(etapaId: String) {
+        val etapas = _etapas.value.orEmpty()
+
+        val indiceAtual = etapas.indexOfFirst {
+            it.id == etapaId
+        }
+
+        if (indiceAtual == -1) return
+
+        if (etapas[indiceAtual].status != JornadaStatus.ATUAL) {
+            return
+        }
+
+        _etapas.value = etapas.mapIndexed { index, etapa ->
+            when {
+                index == indiceAtual -> {
+                    etapa.copy(
+                        status = JornadaStatus.CONCLUIDA
+                    )
+                }
+
+                index == indiceAtual + 1 &&
+                        etapa.status == JornadaStatus.BLOQUEADA -> {
+                    etapa.copy(
+                        status = JornadaStatus.ATUAL
+                    )
+                }
+
+                else -> etapa
+            }
+        }
+
+        calcularProgresso()
+
+        Log.d("JornadaVinculo", "Etapa concluída: $etapaId")
+    }
+
+    private fun encerrarVinculoEtapa(
+        idVinculo: Int,
+        onSucesso: () -> Unit,
+        onErro: (String) -> Unit
+    ) {
+        val tag = "JORNADA_CONCLUSAO_API"
+
+        val request = ConcluirEtapaRequest(
+            dataConclusao = LocalDate.now().toString()
+        )
+
+        Log.d(tag, "Encerrando vínculo: $idVinculo")
+        Log.d(tag, "Data de conclusão: ${request.dataConclusao}")
+
+        MaternaRetrofitFactory(applicationContext)
+            .getVinculoEtapaDoadoraService()
+            .concluirEtapa(idVinculo, request)
             .enqueue(object : Callback<ResponseBody> {
 
                 override fun onResponse(
                     call: Call<ResponseBody>,
                     response: Response<ResponseBody>
                 ) {
-                    Log.d(
-                        "DocumentoEnvio",
-                        "HTTP: ${response.code()}"
-                    )
+                    Log.d(tag, "HTTP: ${response.code()}")
+                    Log.d(tag, "URL: ${call.request().url}")
 
                     if (response.isSuccessful) {
-                        response.body()?.close()
+                        val retorno = response.body()?.string()
 
-                        Log.d(
-                            "DocumentoEnvio",
-                            "Documento registrado com sucesso."
-                        )
+                        Log.d(tag, "Resposta: $retorno")
 
                         onSucesso()
                     } else {
                         val erro = response.errorBody()?.string()
 
-                        Log.e(
-                            "DocumentoEnvio",
-                            "Falha HTTP ${response.code()}"
-                        )
+                        Log.e(tag, "Erro: $erro")
 
                         onErro(
-                            erro ?: "Não foi possível registrar o documento."
+                            "Não foi possível concluir a etapa."
                         )
                     }
                 }
@@ -985,17 +1370,474 @@ class JornadaScreenViewModel(
                     call: Call<ResponseBody>,
                     t: Throwable
                 ) {
-                    Log.e(
-                        "DocumentoEnvio",
-                        "Falha na requisição: ${t.javaClass.simpleName}"
-                    )
+                    Log.e(tag, "Falha na requisição", t)
 
-                    onErro("Falha de conexão com a API Materna.")
+                    onErro(
+                        "Falha de conexão ao concluir a etapa."
+                    )
                 }
             })
     }
 
-    init {
-        _estado.value = JornadaEstado.SEM_BANCO
+    private fun concluirEtapaInstitucional(
+        etapaId: String
+    ) {
+        if (
+            _cancelandoJornada.value == true ||
+            _jornadaCancelada.value == true
+        ) return
+
+        val tag = "JORNADA_CONCLUSAO"
+
+        if (concluindoEtapa) {
+            Log.w(tag, "Conclusão já em andamento.")
+            return
+        }
+
+        val etapa = _etapas.value.orEmpty()
+            .firstOrNull { it.id == etapaId }
+
+        val idEtapa = obterIdEtapaReal(etapaId)
+
+        if (
+            etapa == null ||
+            idEtapa == null ||
+            etapa.status != JornadaStatus.ATUAL ||
+            etapa.isRepetivel != 0
+        ) {
+            Log.w(tag, "Etapa não elegível para conclusão.")
+            return
+        }
+
+        concluindoEtapa = true
+
+        obterVinculoEtapa(
+            idEtapa = idEtapa,
+
+            onSucesso = { idVinculo ->
+                if (idVinculo == null) {
+                    concluindoEtapa = false
+
+                    Log.w(tag, "Nenhum vínculo ativo encontrado.")
+
+                    recarregarJornada()
+                } else {
+                    encerrarVinculoEtapa(
+                        idVinculo = idVinculo,
+
+                        onSucesso = {
+                            concluindoEtapa = false
+
+                            Log.i(tag, "Etapa concluída: $etapaId")
+
+                            recarregarJornada()
+                        },
+
+                        onErro = { erro ->
+                            concluindoEtapa = false
+
+                            Log.e(tag, erro)
+                        }
+                    )
+                }
+            },
+
+            onErro = { erro ->
+                concluindoEtapa = false
+
+                Log.e(tag, erro)
+            }
+        )
+    }
+
+    fun concluirEtapaSimples(etapaId: String) {
+        val tag = "JORNADA_ETAPA_SIMPLES"
+
+        val etapa = _etapas.value.orEmpty()
+            .firstOrNull { it.id == etapaId }
+
+        if (etapa == null) {
+            Log.e(tag, "Etapa não encontrada.")
+            return
+        }
+
+        val isEtapaSimples =
+            etapa.id.startsWith("instituicao_") &&
+                    etapa.status == JornadaStatus.ATUAL &&
+                    etapa.isAgendavel == 0 &&
+                    etapa.isSolicitaArquivo == 0 &&
+                    etapa.isPrecisaAprovacao == 0 &&
+                    etapa.isRepetivel == 0 &&
+                    etapa.isObrigatorio == 1
+
+        if (!isEtapaSimples) {
+            Log.w(tag, "Etapa não elegível para conclusão simples.")
+            return
+        }
+
+        concluirEtapaInstitucional(etapaId)
+    }
+
+    private fun recuperarConclusaoDocumento() {
+        if (
+            _cancelandoJornada.value == true ||
+            _jornadaCancelada.value == true
+        ) return
+
+        val tag = "JORNADA_RECUPERACAO"
+
+        if (
+            concluindoEtapa ||
+            _estado.value != JornadaEstado.COM_BANCO ||
+            _estadoDocumentos.value != DocumentoEstado.SUCESSO ||
+            _documentosEmRegistro.value.orEmpty().isNotEmpty()
+        ) {
+            return
+        }
+
+        val etapaAtual = _etapas.value.orEmpty()
+            .firstOrNull {
+                it.status == JornadaStatus.ATUAL
+            } ?: return
+
+        if (
+            !etapaAtual.id.startsWith("instituicao_") ||
+            etapaAtual.isSolicitaArquivo != 1 ||
+            etapaAtual.isPrecisaAprovacao != 0 ||
+            etapaAtual.isRepetivel != 0 ||
+            etapaAtual.isAgendavel != 0
+        ) {
+            return
+        }
+
+        val documento = _documentosPorEtapa.value
+            .orEmpty()[etapaAtual.id] ?: return
+
+        val idVinculo = _vinculosPorEtapa.value
+            .orEmpty()[etapaAtual.id] ?: return
+
+        if (
+            documento.idStatusDocumento != 2 ||
+            documento.idJornadaDoacao != idVinculo
+        ) {
+            return
+        }
+
+        Log.i(
+            tag,
+            "Recuperando conclusão da etapa ${etapaAtual.id}"
+        )
+
+        avancarEtapaDocumento(etapaAtual.id)
+    }
+
+    fun buscarDocumentosDoadora() {
+        if (
+            _cancelandoJornada.value == true ||
+            _jornadaCancelada.value == true
+        ) return
+
+        val tag = "DOCUMENTOS_API"
+
+        val consultaAnterior = consultaDocumentosAtual
+
+        val novaConsulta = MaternaRetrofitFactory(applicationContext)
+            .getDocumentoService()
+            .buscarDocumentosDoadora()
+
+        consultaDocumentosAtual = novaConsulta
+
+        consultaAnterior?.cancel()
+
+        _estadoDocumentos.value = DocumentoEstado.CARREGANDO
+        _erroDocumentos.value = null
+
+        Log.d(tag, "Buscando documentos da doadora...")
+
+        novaConsulta.enqueue(object : Callback<DocumentosDoadoraResponse> {
+
+                override fun onResponse(
+                    call: Call<DocumentosDoadoraResponse>,
+                    response: Response<DocumentosDoadoraResponse>
+                ) {
+                    if (call !== consultaDocumentosAtual || call.isCanceled) {
+                        return
+                    }
+
+                    consultaDocumentosAtual = null
+
+                    val retorno = response.body()
+
+                    Log.d(tag, "HTTP: ${response.code()}")
+
+                    if (
+                        response.isSuccessful &&
+                        retorno?.status == true &&
+                        retorno.response != null
+                    ) {
+                        val documentos = retorno.response.orEmpty()
+
+                        _documentosDoadora.value = documentos
+
+                        associarDocumentosEtapas()
+
+                        _estadoDocumentos.value = DocumentoEstado.SUCESSO
+                        recuperarConclusaoDocumento()
+
+                        Log.d(
+                            tag,
+                            "Documentos encontrados: ${documentos.size}"
+                        )
+
+                        documentos.forEach { documento ->
+                            Log.d(
+                                tag,
+                                "ID: ${documento.idDocumento} | " +
+                                        "Vínculo: ${documento.idJornadaDoacao} | " +
+                                        "ID Status: ${documento.idStatusDocumento} | " +
+                                        "Status: ${documento.status}"
+                            )
+                        }
+
+                    } else {
+                        _erroDocumentos.value =
+                            "Não foi possível consultar os documentos."
+
+                        _estadoDocumentos.value =
+                            DocumentoEstado.ERRO
+
+                        Log.e(
+                            tag,
+                            "Erro ao buscar documentos: HTTP ${response.code()}"
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<DocumentosDoadoraResponse>,
+                    t: Throwable
+                ) {
+                    if (call !== consultaDocumentosAtual || call.isCanceled) {
+                        return
+                    }
+
+                    consultaDocumentosAtual = null
+
+                    _erroDocumentos.value = "Não foi possível conectar ao servidor."
+
+                    _estadoDocumentos.value = DocumentoEstado.ERRO
+
+                    Log.e(tag, "Falha ao buscar documentos", t)
+                }
+            })
+    }
+
+    private fun associarDocumentosEtapas() {
+        val vinculos = _vinculosPorEtapa.value.orEmpty()
+        val documentos = _documentosDoadora.value.orEmpty()
+
+        val documentosPorEtapa = vinculos
+            .mapNotNull { (etapaId, idVinculo) ->
+
+                val documentoAtual = documentos
+                    .filter { it.idJornadaDoacao == idVinculo }
+                    .maxByOrNull { it.idDocumento }
+
+                documentoAtual?.let {
+                    etapaId to it
+                }
+            }
+            .toMap()
+
+        _documentosPorEtapa.value = documentosPorEtapa
+
+        documentosPorEtapa.forEach { (etapaId, documento) ->
+            Log.d(
+                "DOCUMENTOS_API",
+                "Etapa: $etapaId | Documento: ${documento.idDocumento} | Status: ${documento.status}"
+            )
+        }
+    }
+
+    private fun iniciarRegistroDocumento(etapaId: String) {
+        _documentosEmRegistro.value = _documentosEmRegistro.value.orEmpty() + etapaId
+        _errosRegistroDocumento.value = _errosRegistroDocumento.value.orEmpty() - etapaId
+    }
+
+    private fun finalizarRegistroDocumento(
+        etapaId: String,
+        erro: String? = null
+    ) {
+        _documentosEmRegistro.value = _documentosEmRegistro.value.orEmpty() - etapaId
+
+        if (erro != null) {
+            _errosRegistroDocumento.value = _errosRegistroDocumento.value.orEmpty() + (etapaId to erro)
+            Log.e("DocumentoEnvio", erro)
+        }
+    }
+
+    fun pularEtapaOpcional(etapaId: String) {
+        val tag = "JORNADA_ETAPA_OPCIONAL"
+
+        val etapa = _etapas.value.orEmpty()
+            .firstOrNull { it.id == etapaId }
+
+        if (
+            etapa == null ||
+            !etapa.id.startsWith("instituicao_") ||
+            etapa.status != JornadaStatus.ATUAL ||
+            etapa.isObrigatorio != 0 ||
+            etapa.isRepetivel != 0
+        ) {
+            Log.w(tag, "Esta etapa não pode ser pulada.")
+            return
+        }
+
+        Log.d(tag, "Pulando etapa: $etapaId")
+
+        concluirEtapaInstitucional(etapaId)
+    }
+
+    fun cancelarJornada() {
+        if (
+            _cancelandoJornada.value == true ||
+            _jornadaCancelada.value == true
+        ) return
+
+        val tag = "JORNADA_CANCELAMENTO"
+
+        if (_cancelandoJornada.value == true) return
+
+        _erroCancelamento.value = null
+
+        if (
+            _estado.value != JornadaEstado.COM_BANCO ||
+            concluindoEtapa ||
+            criandoVinculo ||
+            _documentosEmRegistro.value.orEmpty().isNotEmpty() ||
+            _estadoDocumentos.value == DocumentoEstado.CARREGANDO
+        ) {
+            _erroCancelamento.value =
+                "Aguarde a operação atual ser concluída."
+            return
+        }
+
+        val idDoadora = idDoadoraAtual
+
+        val etapaAtual = _etapas.value.orEmpty()
+            .firstOrNull {
+                it.status == JornadaStatus.ATUAL &&
+                        it.id.startsWith("instituicao_")
+            }
+
+        val idEtapa = etapaAtual?.id?.let {
+            obterIdEtapaReal(it)
+        } ?: idPrimeiraEtapaReal
+
+        if (idDoadora == null || idEtapa == null) {
+            _erroCancelamento.value =
+                "Não foi possível identificar a jornada."
+
+            Log.e(tag, "Dados da jornada incompletos.")
+            return
+        }
+
+        _cancelandoJornada.value = true
+
+        Log.d(tag, "Buscando vínculo da etapa: $idEtapa")
+
+        obterVinculoEtapa(
+            idEtapa = idEtapa,
+
+            onSucesso = { idVinculo ->
+                if (idVinculo == null) {
+                    _cancelandoJornada.value = false
+                    _erroCancelamento.value =
+                        "Nenhum vínculo ativo encontrado."
+
+                    Log.e(tag, "Vínculo não encontrado.")
+                } else {
+                    solicitarCancelamentoJornada(
+                        idVinculo = idVinculo,
+                        idDoadora = idDoadora
+                    )
+                }
+
+                Log.d(tag, "Vínculo recuperado: $idVinculo")
+            },
+
+            onErro = { erro ->
+                _cancelandoJornada.value = false
+                _erroCancelamento.value = erro
+
+                Log.e(tag, erro)
+            }
+        )
+    }
+
+    private fun solicitarCancelamentoJornada(
+        idVinculo: Int,
+        idDoadora: Int
+    ) {
+        val tag = "JORNADA_CANCELAMENTO"
+
+        val request = CancelarJornadaRequest(
+            idDoadora = idDoadora
+        )
+
+        Log.d(tag, "Iniciando cancelamento da jornada.")
+        Log.d(tag, "ID do vínculo: $idVinculo")
+
+        MaternaRetrofitFactory(applicationContext)
+            .getVinculoEtapaDoadoraService()
+            .cancelarJornada(idVinculo, request)
+            .enqueue(object : Callback<ResponseBody> {
+
+                override fun onResponse(
+                    call: Call<ResponseBody>,
+                    response: Response<ResponseBody>
+                ) {
+                    Log.d(tag, "HTTP: ${response.code()}")
+                    Log.d(tag, "URL: ${call.request().url}")
+
+                    if (response.isSuccessful) {
+                        val retorno = response.body()?.string()
+
+                        Log.i(tag, "Resposta: $retorno")
+                        Log.i(tag, "Jornada cancelada com sucesso.")
+
+                        _jornadaCancelada.value = true
+                        _cancelandoJornada.value = false
+
+                    } else {
+                        val erro = response.errorBody()?.string()
+
+                        Log.e(tag, "Erro: $erro")
+
+                        _cancelandoJornada.value = false
+                        _erroCancelamento.value = "Não foi possível cancelar a jornada."
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<ResponseBody>,
+                    t: Throwable
+                ) {
+                    _cancelandoJornada.value = false
+
+                    _erroCancelamento.value =
+                        "Falha de conexão ao cancelar a jornada."
+
+                    Log.e(tag, "Falha na requisição", t)
+                }
+            })
+    }
+
+    override fun onCleared() {
+        val consulta = consultaDocumentosAtual
+        consultaDocumentosAtual = null
+        consulta?.cancel()
+
+        super.onCleared()
     }
 }

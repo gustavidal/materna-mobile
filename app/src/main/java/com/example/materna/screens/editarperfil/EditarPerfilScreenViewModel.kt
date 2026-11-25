@@ -1,4 +1,4 @@
-package com.example.materna.screens.perfil
+package com.example.materna.screens.editarperfil
 
 import android.content.Context
 import android.util.Log

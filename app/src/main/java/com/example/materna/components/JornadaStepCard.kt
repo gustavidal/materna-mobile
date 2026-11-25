@@ -1,6 +1,10 @@
 package com.example.materna.components
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,21 +35,29 @@ import androidx.compose.ui.unit.sp
 import com.example.materna.R
 import com.example.materna.models.domain.JornadaEtapa
 import com.example.materna.models.domain.JornadaStatus
+import com.example.materna.models.responses.DocumentoDoadoraResponse
+import com.example.materna.screens.jornada.DocumentoEstado
 
 @Composable
 fun JornadaStepCard(
     etapa: JornadaEtapa,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
-    onDocumentoEnviado: (etapaId: String, url: String) -> Unit = { _, _ -> }
+    onDocumentoEnviado: (etapaId: String, url: String) -> Unit = { _, _ -> },
+    onEtapaConcluida: (etapaId: String) -> Unit = {},
+    onPularEtapa: (etapaId: String) -> Unit = {},
+    documentoAtual: DocumentoDoadoraResponse? = null,
+    estadoDocumentos: DocumentoEstado = DocumentoEstado.INICIAL,
+    registrandoDocumento: Boolean = false,
+    erroDocumentos: String? = null,
+    erroRegistroDocumento: String? = null,
+    onTentarNovamenteDocumentos: () -> Unit = {}
 ) {
     val atual = etapa.status == JornadaStatus.ATUAL
-//    val bloqueada = etapa.status == JornadaStatus.BLOQUEADA
+    val bloqueada = etapa.status == JornadaStatus.BLOQUEADA
 
-    // TODO: Restaurar após os testes de agendamento
-    val bloqueada =
-        etapa.status == JornadaStatus.BLOQUEADA &&
-                etapa.isAgendavel != 1
+    val context = LocalContext.current
+    val documentoInstituicao = etapa.documento?.trim()
 
     LaunchedEffect(etapa) {
         Log.d(
@@ -150,7 +163,91 @@ fun JornadaStepCard(
             }
 
             if (
-//                atual &&
+                atual &&
+                etapa.id.startsWith("instituicao_") &&
+                !documentoInstituicao.isNullOrBlank()
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = colorResource(R.color.pink_beige)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Documento da instituição",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colorResource(R.color.main_text_color)
+                        )
+
+                        Text(
+                            text = "Disponível para consulta",
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.secundary_gray)
+                        )
+
+                        Button(
+                            onClick = {
+                                try {
+                                    val uri = Uri.parse(documentoInstituicao)
+
+                                    if (uri.scheme !in listOf("https", "http") ||
+                                        uri.host.isNullOrBlank()
+                                    ) {
+                                        Toast.makeText(
+                                            context,
+                                            "Documento indisponível.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        val intent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            uri
+                                        )
+
+                                        context.startActivity(intent)
+                                    }
+                                } catch (e: ActivityNotFoundException) {
+                                    Log.e(
+                                        "JornadaDocumento",
+                                        "Não foi possível abrir o documento."
+                                    )
+
+                                    Toast.makeText(
+                                        context,
+                                        "Não foi possível abrir o documento.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorResource(R.color.main_pink),
+                                contentColor = colorResource(R.color.white)
+                            )
+                        ) {
+                            Text(
+                                text = "Visualizar documento",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (
+                atual &&
                 etapa.id.startsWith("instituicao_") &&
                 etapa.isAgendavel == 1
             ) {
@@ -179,15 +276,89 @@ fun JornadaStepCard(
             if (
                 atual &&
                 etapa.id.startsWith("instituicao_") &&
-                etapa.isSolicitaArquivo == 0
+                etapa.isSolicitaArquivo == 1
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 DocumentoEtapa(
+                    documentoAtual = documentoAtual,
+                    estadoDocumentos = estadoDocumentos,
+                    registrandoDocumento = registrandoDocumento,
+                    erroDocumentos = erroDocumentos,
+                    erroRegistroDocumento = erroRegistroDocumento,
+                    onTentarNovamenteDocumentos = onTentarNovamenteDocumentos,
                     onEnviarDocumento = { url ->
                         onDocumentoEnviado(etapa.id, url)
                     }
                 )
+            }
+
+            // Etapa opcional
+            if (
+                atual &&
+                etapa.id.startsWith("instituicao_") &&
+                etapa.isObrigatorio == 0 &&
+                etapa.isRepetivel == 0
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        onPularEtapa(etapa.id)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .border(
+                            width = 1.dp,
+                            color = colorResource(R.color.main_pink),
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorResource(R.color.white),
+                        contentColor = colorResource(R.color.main_pink)
+                    )
+                ) {
+                    Text(
+                        text = "Pular etapa",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            // Etapa simples
+            if (
+                atual &&
+                etapa.id.startsWith("instituicao_") &&
+                etapa.isAgendavel == 0 &&
+                etapa.isSolicitaArquivo == 0 &&
+                etapa.isPrecisaAprovacao == 0 &&
+                etapa.isRepetivel == 0 &&
+                etapa.isObrigatorio == 1
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        onEtapaConcluida(etapa.id)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorResource(R.color.main_pink),
+                        contentColor = colorResource(R.color.white)
+                    )
+                ) {
+                    Text(
+                        text = "Concluir etapa",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
 
             if (atual && etapa.id.startsWith("instituicao_")) {

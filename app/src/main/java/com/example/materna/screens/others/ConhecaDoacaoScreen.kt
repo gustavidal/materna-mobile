@@ -1,4 +1,4 @@
-package com.example.materna.screens.jornada
+package com.example.materna.screens.others
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background

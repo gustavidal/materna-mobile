@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.materna.R
-import com.example.materna.screens.jornada.Orientacao
+import com.example.materna.screens.others.Orientacao
 
 @Composable
 fun OrientacaoCard(

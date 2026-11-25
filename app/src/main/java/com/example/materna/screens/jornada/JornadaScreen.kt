@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -19,7 +21,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -47,14 +52,24 @@ fun JornadaScreen(
     navController: NavController,
     jornadaScreenViewModel: JornadaScreenViewModel = viewModel()
 ) {
-    val estado          by jornadaScreenViewModel.estado.observeAsState(JornadaEstado.CARREGANDO)
+    val estado                 by jornadaScreenViewModel.estado.observeAsState(JornadaEstado.CARREGANDO)
 
-    val progresso       by jornadaScreenViewModel.progresso.observeAsState(0)
-    val etapas          by jornadaScreenViewModel.etapas.observeAsState(emptyList())
+    val progresso              by jornadaScreenViewModel.progresso.observeAsState(0)
+    val etapas                 by jornadaScreenViewModel.etapas.observeAsState(emptyList())
 
-    val mensagemErro    by jornadaScreenViewModel.mensagemErro.observeAsState("")
+    val documentosPorEtapa     by jornadaScreenViewModel.documentosPorEtapa.observeAsState(emptyMap())
+    val estadoDocumentos       by jornadaScreenViewModel.estadoDocumentos.observeAsState(DocumentoEstado.INICIAL)
+    val documentosEmRegistro   by jornadaScreenViewModel.documentosEmRegistro.observeAsState(emptySet())
+    val erroDocumentos         by jornadaScreenViewModel.erroDocumentos.observeAsState()
+    val errosRegistroDocumento by jornadaScreenViewModel.errosRegistroDocumento.observeAsState(emptyMap())
 
-    val nomeInstituicao by jornadaScreenViewModel.nomeInstituicao.observeAsState("")
+    val mensagemErro           by jornadaScreenViewModel.mensagemErro.observeAsState("")
+
+    val nomeInstituicao        by jornadaScreenViewModel.nomeInstituicao.observeAsState("")
+
+    val cancelandoJornada      by jornadaScreenViewModel.cancelandoJornada.observeAsState(false)
+    val erroCancelamento       by jornadaScreenViewModel.erroCancelamento.observeAsState()
+    val jornadaCancelada       by jornadaScreenViewModel.jornadaCancelada.observeAsState(false)
 
     var mostrarDialogoCancelamento by remember {
         mutableStateOf(false)
@@ -74,14 +89,45 @@ fun JornadaScreen(
         mostrarAvisoSaida = true
     }
 
+    val pullToRefreshState = rememberPullToRefreshState()
 
+    var atualizandoJornada by remember {
+        mutableStateOf(false)
+    }
+
+    val carregandoJornada =
+        estado == JornadaEstado.CARREGANDO
+
+    LaunchedEffect(estado) {
+        if (!carregandoJornada) {
+            atualizandoJornada = false
+        }
+    }
 
     PullToRefreshBox(
-        isRefreshing = estado == JornadaEstado.CARREGANDO,
+        isRefreshing = atualizandoJornada && carregandoJornada,
+        state = pullToRefreshState,
         onRefresh = {
-            jornadaScreenViewModel.recarregarJornada()
+            if (
+                !carregandoJornada &&
+                !cancelandoJornada &&
+                documentosEmRegistro.isEmpty() &&
+                estadoDocumentos != DocumentoEstado.CARREGANDO
+            ) {
+                atualizandoJornada = true
+                jornadaScreenViewModel.recarregarJornada()
+            }
         },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                modifier = Modifier.align(Alignment.TopCenter),
+                isRefreshing = atualizandoJornada && carregandoJornada,
+                state = pullToRefreshState,
+                containerColor = colorResource(R.color.white),
+                color = colorResource(R.color.main_pink)
+            )
+        }
     ) {
         Column(
             modifier = modifier
@@ -115,16 +161,30 @@ fun JornadaScreen(
 
             when (estado) {
                 JornadaEstado.CARREGANDO -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = colorResource(R.color.main_pink),
-                            strokeWidth = 4.dp
-                        )
+                    if (!atualizandoJornada) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(320.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(42.dp),
+                                    color = colorResource(R.color.main_pink),
+                                    strokeWidth = 4.dp
+                                )
+
+                                Text(
+                                    text = "Carregando sua jornada...",
+                                    fontSize = 14.sp,
+                                    color = colorResource(R.color.secundary_gray)
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -145,13 +205,19 @@ fun JornadaScreen(
 
                     JornadaTimeline(
                         etapas = etapas,
+                        documentosPorEtapa = documentosPorEtapa,
+                        estadoDocumentos = estadoDocumentos,
+                        documentosEmRegistro = documentosEmRegistro,
+                        erroDocumentos = erroDocumentos,
+                        errosRegistroDocumento = errosRegistroDocumento,
+                        onPularEtapa = { etapaId ->
+                            jornadaScreenViewModel.pularEtapaOpcional(etapaId)
+                        },
+                        onTentarNovamenteDocumentos = {
+                            jornadaScreenViewModel.buscarDocumentosDoadora()
+                        },
                         onEtapaClick = { etapa ->
-//                            if (etapa.status == JornadaStatus.ATUAL) {
-                            // TODO: Restaurar após os testes de agendamento
-                            if (
-                                etapa.status == JornadaStatus.ATUAL ||
-                                etapa.isAgendavel == 1
-                            ) {
+                            if (etapa.status == JornadaStatus.ATUAL) {
                                 val idInstituicao = navController
                                     .currentBackStackEntry
                                     ?.arguments
@@ -214,6 +280,9 @@ fun JornadaScreen(
                                 etapaId = etapaId,
                                 url = url
                             )
+                        },
+                        onEtapaConcluida = { etapaId ->
+                            jornadaScreenViewModel.concluirEtapaSimples(etapaId)
                         }
                     )
 
@@ -221,6 +290,7 @@ fun JornadaScreen(
                         onClick = {
                             mostrarDialogoCancelamento = true
                         },
+                        enabled = !cancelandoJornada,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
@@ -237,22 +307,56 @@ fun JornadaScreen(
         }
     }
 
-    if (mostrarDialogoCancelamento) {
+    if (mostrarDialogoCancelamento && !jornadaCancelada) {
         AlertDialog(
             onDismissRequest = {
-                mostrarDialogoCancelamento = false
+                if (!cancelandoJornada) {
+                    mostrarDialogoCancelamento = false
+                }
             },
             title = {
                 Text(
                     text = "Cancelar jornada?",
-                    color = colorResource(R.color.main_text_color)
+                    color = colorResource(R.color.main_text_color),
+                    fontWeight = FontWeight.Bold
                 )
             },
             text = {
-                Text(
-                    text = "Tem certeza de que deseja cancelar sua jornada? Você poderá perder o progresso realizado.",
-                    color = colorResource(R.color.secundary_gray)
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Tem certeza de que deseja cancelar sua jornada? Você poderá perder o progresso realizado.",
+                        color = colorResource(R.color.secundary_gray)
+                    )
+
+                    if (cancelandoJornada) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = colorResource(R.color.main_pink),
+                                strokeWidth = 2.dp
+                            )
+
+                            Text(
+                                text = "Cancelando jornada...",
+                                fontSize = 14.sp,
+                                color = colorResource(R.color.secundary_gray)
+                            )
+                        }
+                    }
+
+                    erroCancelamento?.let { erro ->
+                        Text(
+                            text = erro,
+                            fontSize = 13.sp,
+                            color = androidx.compose.ui.graphics.Color.Red
+                        )
+                    }
+                }
             },
             confirmButton = {
                 Row(
@@ -265,9 +369,8 @@ fun JornadaScreen(
                         onClick = {
                             mostrarDialogoCancelamento = false
                         },
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
+                        enabled = !cancelandoJornada,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(
                             text = "Continuar jornada",
@@ -279,10 +382,9 @@ fun JornadaScreen(
 
                     TextButton(
                         onClick = {
-                            mostrarDialogoCancelamento = false
-
-                            // TODO: Integrar cancelamento com a API.
+                            jornadaScreenViewModel.cancelarJornada()
                         },
+                        enabled = !cancelandoJornada,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
@@ -293,7 +395,49 @@ fun JornadaScreen(
                         )
                     }
                 }
-            }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = colorResource(R.color.white)
+        )
+    }
+
+    if (jornadaCancelada) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = {
+                Text(
+                    text = "Jornada cancelada",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.main_text_color)
+                )
+            },
+            text = {
+                Text(
+                    text = "Sua jornada foi cancelada com sucesso. " +
+                            "Você poderá selecionar outro banco de leite " +
+                            "quando desejar.",
+                    fontSize = 14.sp,
+                    color = colorResource(R.color.secundary_gray)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // TODO: Finalizar cancelamento local.
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Entendido",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colorResource(R.color.main_pink)
+                    )
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = colorResource(R.color.white)
         )
     }
 
@@ -357,8 +501,7 @@ fun JornadaScreen(
             text = {
                 Text(
                     text = mensagemErro.ifBlank {
-                        "Não foi possível carregar sua jornada. " +
-                                "Verifique sua conexão e tente novamente."
+                        "Não foi possível carregar sua jornada. Verifique sua conexão e tente novamente."
                     },
                     color = colorResource(R.color.secundary_gray)
                 )

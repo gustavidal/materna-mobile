@@ -1,4 +1,4 @@
-package com.example.materna.screens.jornada
+package com.example.materna.screens.others
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

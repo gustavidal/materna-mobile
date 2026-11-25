@@ -30,4 +30,8 @@
 
     <!-- text boxes -->
     <color name="border">#FFEEDCD6</color>
+
+    <!-- document status colors -->
+    <color name="success_background">#FFEAF5EE</color>
+    <color name="error_red">#FFB83D46</color>
 </resources>

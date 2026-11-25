@@ -42,4 +42,16 @@ interface JornadaLocalProgressDao {
         idJornada: Int,
         idEtapa: String
     ): Boolean
+
+    @Query(
+        """
+    DELETE FROM jornada_local_progress
+    WHERE idDoadora = :idDoadora
+    AND idJornada = :idJornada
+    """
+    )
+    suspend fun limparProgresso(
+        idDoadora: Int,
+        idJornada: Int
+    ): Int
 }

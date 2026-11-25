@@ -339,7 +339,8 @@ fun ServicosScreen(
                         modifier = Modifier.height(52.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = colorResource(R.color.main_pink)
+                            containerColor = colorResource(R.color.main_pink),
+                            contentColor = colorResource(R.color.white)
                         )
                     ) {
                         Text("Buscar")
