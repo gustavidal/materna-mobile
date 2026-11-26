@@ -16,6 +16,8 @@ import com.example.materna.models.responses.PerfilDoadora
 import com.example.materna.models.responses.PerfilDoadoraResponse
 import com.example.materna.services.cloudinary.CloudinaryRetrofitFactory
 import com.example.materna.services.materna.MaternaRetrofitFactory
+import com.example.materna.session.SessionManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -32,6 +34,17 @@ class PerfilScreenViewModel(
     context: Context
 ) : ViewModel() {
     private val applicationContext = context.applicationContext
+
+    private val sessionManager = SessionManager(applicationContext)
+
+    private val _saindoDaConta = MutableLiveData(false)
+    val saindoDaConta: LiveData<Boolean> = _saindoDaConta
+
+    private val _logoutRealizado = MutableLiveData(false)
+    val logoutRealizado: LiveData<Boolean> = _logoutRealizado
+
+    private val _erroLogout = MutableLiveData<String?>(null)
+    val erroLogout: LiveData<String?> = _erroLogout
 
     private val _doadora = MutableLiveData<PerfilDoadora?>()
     val doadora: LiveData<PerfilDoadora?> = _doadora
@@ -288,6 +301,64 @@ class PerfilScreenViewModel(
                 onErro(e.message ?: "Erro ao preparar a imagem.")
             }
         }
+    }
+
+    fun sairDaConta() {
+        if (
+            _saindoDaConta.value == true ||
+            _logoutRealizado.value == true ||
+            _atualizandoFoto.value == true
+        ) return
+
+        _saindoDaConta.value = true
+        _erroLogout.value = null
+
+        Log.d("MaternaLogout", "Iniciando logout")
+
+        chamadaAtual?.cancel()
+        chamadaAtual = null
+
+        chamadaAtualizacaoFoto?.cancel()
+        chamadaAtualizacaoFoto = null
+
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    settingsDao.limparDadosSessao()
+
+                    if (!sessionManager.limparSessao()) {
+                        throw IllegalStateException(
+                            "Não foi possível remover o token"
+                        )
+                    }
+                }
+
+                _doadora.value = null
+                _fotoPerfil.value = null
+                _mensagemErro.value = null
+                _carregando.value = false
+
+                Log.i("MaternaLogout", "Sessão encerrada com sucesso")
+
+                _logoutRealizado.value = true
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: Exception) {
+                Log.e("MaternaLogout", "Erro ao realizar logout", e)
+
+                _erroLogout.value =
+                    "Não foi possível encerrar completamente a sessão. Tente novamente."
+
+            } finally {
+                _saindoDaConta.value = false
+            }
+        }
+    }
+
+    fun limparErroLogout() {
+        _erroLogout.value = null
     }
 
     override fun onCleared() {

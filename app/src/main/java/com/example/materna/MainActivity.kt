@@ -1,8 +1,10 @@
 package com.example.materna
 
+import android.R.attr.tag
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
+import android.util.Log.e
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -87,20 +89,8 @@ class MainActivity : ComponentActivity() {
             MaternaTheme {
                 val navController = rememberNavController()
 
-                val sessaoExpirada by SessionEvents.sessaoExpirada.collectAsState()
-
-                LaunchedEffect(sessaoExpirada) {
-                    if (sessaoExpirada) {
-                        navController.navigate("login") {
-                            popUpTo(navController.graph.id) {
-                                inclusive = true
-                            }
-                            launchSingleTop = true
-                        }
-
-                        SessionEvents.consumirEvento()
-                    }
-                }
+                val sessaoExpirada  by SessionEvents.sessaoExpirada.collectAsState()
+                val logoutRealizado by SessionEvents.logoutRealizado.collectAsState()
 
                 val context = LocalContext.current
 
@@ -136,13 +126,36 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf<(() -> Unit)?>(null)
                 }
 
+                LaunchedEffect(sessaoExpirada, logoutRealizado) {
+                    if (sessaoExpirada || logoutRealizado) {
+
+                        Log.d("MaternaLogout", "Encerrando navegação autenticada")
+
+                        servicosCompartilhado.limparDadosSessao()
+
+                        mostrarAvisoSaidaJornada = false
+                        navegacaoPendente = null
+
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.id) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+
+                        SessionEvents.consumirEvento()
+
+                        Log.i("MaternaLogout", "Redirecionamento ao login concluído")
+                    }
+                }
+
                 val bottomBarRoutes = listOf(
                     "dashboard",
                     "campanhas",
                     "campanha/{id}",
                     "jornada",
                     "jornada/{id_instituicao}",
-                    "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}",
+                    "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}/{id_coleta}/{id_doadora}/{id_jornada_doacao}?nome_instituicao={nome_instituicao}",
                     "servicos",
                     "confirmar_banco/{id_instituicao}",
                     "perfil"
@@ -546,7 +559,11 @@ class MainActivity : ComponentActivity() {
 
                             LaunchedEffect(idDoadora) {
                                 if (idDoadora != null && idDoadora > 0) {
+                                    val tag = "JORNADA_DEBUG"
+
                                     try {
+                                        Log.d(tag, "Consultando vínculos da doadora: $idDoadora")
+
                                         val resposta = kotlinx.coroutines.withContext(
                                             kotlinx.coroutines.Dispatchers.IO
                                         ) {
@@ -557,7 +574,10 @@ class MainActivity : ComponentActivity() {
                                                 .execute()
                                         }
 
-                                        if (resposta.isSuccessful &&
+                                        Log.d(tag, "HTTP: ${resposta.code()}")
+
+                                        if (
+                                            resposta.isSuccessful &&
                                             resposta.body()?.status == true
                                         ) {
                                             val jornadaVinculada = resposta.body()
@@ -566,9 +586,15 @@ class MainActivity : ComponentActivity() {
                                                 .orEmpty()
                                                 .firstOrNull { jornada ->
                                                     jornada.isAtivo == 1 &&
-                                                        jornada.etapas.any { etapa ->
-                                                            etapa.vinculos.isNotEmpty()
-                                                        }
+                                                            jornada.etapas.any { etapa ->
+                                                                etapa.vinculos.any { vinculo ->
+                                                                    vinculo.encerrado == 0 &&
+                                                                            vinculo.status in listOf(
+                                                                        "em_andamento",
+                                                                        "concluida"
+                                                                    )
+                                                                }
+                                                            }
                                                 }
 
                                             if (jornadaVinculada != null) {
@@ -576,7 +602,7 @@ class MainActivity : ComponentActivity() {
                                                     jornadaVinculada.instituicao.id
 
                                                 Log.d(
-                                                    "Jornada",
+                                                    tag,
                                                     "Recuperando instituição: $idInstituicao"
                                                 )
 
@@ -586,15 +612,37 @@ class MainActivity : ComponentActivity() {
                                                     popUpTo("jornada") {
                                                         inclusive = true
                                                     }
+
                                                     launchSingleTop = true
                                                 }
+                                            } else {
+                                                jornadaScreenViewModel.exibirSemBanco()
+                                            }
+                                        } else {
+                                            val erroApi = resposta.errorBody()
+                                                ?.string()
+                                                .orEmpty()
+
+                                            Log.e(tag, "Resposta da API: $erroApi")
+
+                                            if (
+                                                resposta.code() == 404 &&
+                                                erroApi.contains("Não foram encontrados dados")
+                                            ) {
+                                                jornadaScreenViewModel.exibirSemBanco()
+                                            } else {
+                                                jornadaScreenViewModel.exibirErro(
+                                                    "Não foi possível consultar sua jornada."
+                                                )
                                             }
                                         }
+                                    } catch (e: kotlinx.coroutines.CancellationException) {
+                                        throw e
                                     } catch (e: Exception) {
-                                        Log.e(
-                                            "Jornada",
-                                            "Erro ao recuperar jornada vinculada",
-                                            e
+                                        Log.e(tag, "Erro ao recuperar jornada", e)
+
+                                        jornadaScreenViewModel.exibirErro(
+                                            "Não foi possível recuperar sua jornada."
                                         )
                                     }
                                 }
@@ -819,7 +867,7 @@ class MainActivity : ComponentActivity() {
 
 
                         composable(
-                            route = "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}?nome_instituicao={nome_instituicao}",
+                            route = "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}/{id_coleta}/{id_doadora}/{id_jornada_doacao}?nome_instituicao={nome_instituicao}",
                             arguments = listOf(
                                 navArgument("id_instituicao") {
                                     type = NavType.IntType
@@ -833,27 +881,47 @@ class MainActivity : ComponentActivity() {
                                 navArgument("nome_instituicao") {
                                     type = NavType.StringType
                                     defaultValue = "Instituição"
-                                }
+                                },
+                                navArgument("id_coleta") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_doadora") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_jornada_doacao") {
+                                    type = NavType.IntType
+                                },
                             )
                         ) { backStackEntry ->
                             val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
                             val idJornada = backStackEntry.arguments?.getInt("id_jornada") ?: return@composable
                             val idEtapa = backStackEntry.arguments?.getInt("id_etapa") ?: return@composable
                             val nomeInstituicao = backStackEntry.arguments?.getString("nome_instituicao").orEmpty().ifBlank { "Instituição" }
+                            val idColeta = backStackEntry.arguments?.getInt("id_coleta") ?: return@composable
+                            val idDoadora = backStackEntry.arguments?.getInt("id_doadora") ?: return@composable
+                            val idJornadaDoacao = backStackEntry.arguments?.getInt("id_jornada_doacao") ?: return@composable
 
+                            Log.d(
+                                "AGENDAMENTO_NAV",
+                                "Instituição: $idInstituicao | " +
+                                        "Jornada: $idJornada | " +
+                                        "Etapa: $idEtapa | " +
+                                        "Coleta: $idColeta | " +
+                                        "Doadora: $idDoadora | " +
+                                        "Vínculo: $idJornadaDoacao"
+                            )
                             AgendamentoScreen(
                                 nomeInstituicao = nomeInstituicao,
                                 idInstituicao = idInstituicao,
                                 iconeInstituicao = painterResource(R.drawable.ic_hospital),
                                 iconeHorario = Icons.Default.Home,
+                                idJornada = idJornada,
+                                idEtapa = idEtapa,
+                                idColeta = idColeta,
+                                idDoadora = idDoadora,
+                                idJornadaDoacao = idJornadaDoacao,
                                 onVoltar = {
                                     navController.popBackStack()
-                                },
-                                onConfirmar = {
-                                    Log.d(
-                                        "AGENDAMENTO",
-                                        "Instituição: $idInstituicao | Jornada: $idJornada | Etapa: $idEtapa"
-                                    )
                                 }
                             )
                         }

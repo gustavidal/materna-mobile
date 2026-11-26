@@ -97,4 +97,14 @@ interface AppSettingsDao {
             )
         )
     }
+
+    @Query("""
+    UPDATE app_settings
+    SET idDoadora = NULL,
+        emailDoadora = NULL,
+        idDoadoraPendente = NULL,
+        emailPendente = NULL
+    WHERE id = 1
+""")
+    suspend fun limparDadosSessao()
 }

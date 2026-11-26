@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -33,17 +34,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.materna.R
 import com.example.materna.components.JornadaProgressCard
-import com.example.materna.components.JornadaSemBanco
 import com.example.materna.components.JornadaTimeline
 import com.example.materna.models.domain.JornadaStatus
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +70,8 @@ fun JornadaScreen(
     val mensagemErro           by jornadaScreenViewModel.mensagemErro.observeAsState("")
 
     val nomeInstituicao        by jornadaScreenViewModel.nomeInstituicao.observeAsState("")
+    val idColeta               by jornadaScreenViewModel.idColeta.observeAsState()
+    val vinculosPorEtapa       by jornadaScreenViewModel.vinculosPorEtapa.observeAsState(emptyMap())
 
     val cancelandoJornada      by jornadaScreenViewModel.cancelandoJornada.observeAsState(false)
     val erroCancelamento       by jornadaScreenViewModel.erroCancelamento.observeAsState()
@@ -188,15 +194,7 @@ fun JornadaScreen(
                     }
                 }
 
-                JornadaEstado.SEM_BANCO -> {
-                    JornadaSemBanco(
-                        onSelecionarBanco = {
-                            navController.navigate("servicos") {
-                                launchSingleTop = true
-                            }
-                        }
-                    )
-                }
+                JornadaEstado.SEM_BANCO -> Unit
 
                 JornadaEstado.COM_BANCO -> {
                     JornadaProgressCard(
@@ -263,12 +261,36 @@ fun JornadaScreen(
                                                 .removePrefix("instituicao_")
                                                 .toIntOrNull()
 
-                                            if (idEtapa != null) {
+                                            val coleta = idColeta
+                                            val idDoadora = jornadaScreenViewModel.idDoadoraSelecionada
+                                            val idJornadaDoacao = vinculosPorEtapa[etapa.id]
+
+                                            if (
+                                                idEtapa != null &&
+                                                idEtapa > 0 &&
+                                                coleta != null &&
+                                                coleta in 1..3 &&
+                                                idDoadora != null &&
+                                                idDoadora > 0 &&
+                                                idJornadaDoacao != null &&
+                                                idJornadaDoacao > 0
+                                            ) {
                                                 navController.navigate(
-                                                    "agendamento/$idInstituicao/$idJornada/$idEtapa?nome_instituicao=${Uri.encode(nomeInstituicao)}"
+                                                    "agendamento/$idInstituicao/$idJornada/$idEtapa/" +
+                                                            "$coleta/$idDoadora/$idJornadaDoacao" +
+                                                            "?nome_instituicao=${Uri.encode(nomeInstituicao)}"
                                                 ) {
                                                     launchSingleTop = true
                                                 }
+                                            } else {
+                                                android.util.Log.e(
+                                                    "AGENDAMENTO",
+                                                    "Dados inválidos: " +
+                                                            "Etapa=$idEtapa | " +
+                                                            "Coleta=$coleta | " +
+                                                            "Doadora=$idDoadora | " +
+                                                            "Vínculo=$idJornadaDoacao"
+                                                )
                                             }
                                         }
                                     }
@@ -424,7 +446,16 @@ fun JornadaScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // TODO: Finalizar cancelamento local.
+                        mostrarDialogoCancelamento = false
+
+                        jornadaScreenViewModel.confirmarCancelamentoJornada()
+
+                        navController.navigate("jornada") {
+                            popUpTo("jornada/{id_instituicao}") {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -486,11 +517,119 @@ fun JornadaScreen(
         )
     }
 
+    val voltarParaServicos: () -> Unit = {
+        if (!navController.popBackStack("servicos", false)) {
+            navController.navigate("servicos") {
+                popUpTo("jornada/{id_instituicao}") {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
+        }
+    }
+
+    if (estado == JornadaEstado.SEM_BANCO) {
+
+        val sairDaJornada: () -> Unit = {
+            if (!navController.popBackStack()) {
+                navController.navigate("dashboard") {
+                    launchSingleTop = true
+                }
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = sairDaJornada,
+
+            icon = {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(
+                            color = colorResource(R.color.pink_beige),
+                            shape = RoundedCornerShape(50)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_hospital),
+                        contentDescription = null,
+                        tint = colorResource(R.color.main_pink),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            },
+
+            title = {
+                Text(
+                    text = "Você ainda não iniciou sua jornada",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = colorResource(R.color.main_text_color),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+
+            text = {
+                Text(
+                    text = "Selecione um banco de leite para iniciar " +
+                            "sua jornada de doação de leite materno.",
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = colorResource(R.color.secundary_gray),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Button(
+                        onClick = voltarParaServicos,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(R.color.main_pink),
+                            contentColor = colorResource(R.color.white)
+                        )
+                    ) {
+                        Text(
+                            text = "Selecionar banco de leite",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    TextButton(
+                        onClick = sairDaJornada,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Agora não",
+                            color = colorResource(R.color.secundary_gray)
+                        )
+                    }
+                }
+            },
+
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false
+            ),
+
+            shape = RoundedCornerShape(24.dp),
+            containerColor = colorResource(R.color.white)
+        )
+    }
+
     if (estado == JornadaEstado.ERRO) {
         AlertDialog(
-            onDismissRequest = {
-                navController.popBackStack()
-            },
+            onDismissRequest = voltarParaServicos,
             title = {
                 Text(
                     text = "Ops! Algo deu errado",
@@ -521,9 +660,7 @@ fun JornadaScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = {
-                        navController.popBackStack()
-                    }
+                    onClick = voltarParaServicos
                 ) {
                     Text(
                         text = "Voltar",

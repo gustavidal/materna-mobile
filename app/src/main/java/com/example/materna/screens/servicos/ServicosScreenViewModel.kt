@@ -5,12 +5,17 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.materna.models.responses.InstituicaoProxima
 import com.example.materna.models.responses.InstituicoesProximasResponse
 import com.example.materna.models.responses.PerfilDoadoraResponse
 import com.example.materna.models.responses.RotaResponse
 import com.example.materna.services.materna.MaternaRetrofitFactory
 import com.example.materna.services.osrm.OsrmRetrofitFactory
+import com.example.materna.session.SessionManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.util.GeoPoint
 import retrofit2.Call
 import retrofit2.Callback
@@ -349,6 +354,38 @@ class ServicosScreenViewModel(
         _pontosRota.value = emptyList()
         _carregandoRota.value = false
         _erroRota.value = null
+    }
+
+    fun limparDadosSessao() {
+        Log.d("Servicos", "Limpando dados da sessão")
+
+        // Cancelar requisições pendentes
+        chamadaAtual?.cancel()
+        chamadaDoadora?.cancel()
+        chamadaRota?.cancel()
+
+        chamadaAtual = null
+        chamadaDoadora = null
+        chamadaRota = null
+
+        // Limpar identificação da doadora
+        idDoadoraCarregada = null
+
+        // Limpar dados da busca
+        _cep.value = ""
+        _instituicoes.value = emptyList()
+        _mensagemErro.value = ""
+        _localizacaoDoadora.value = null
+
+        // Limpar dados da rota
+        _pontosRota.value = emptyList()
+        _carregandoRota.value = false
+        _erroRota.value = null
+
+        // Restaurar estado inicial
+        _estado.value = ServicosEstado.INICIAL
+
+        Log.i("Servicos", "Dados da sessão limpos com sucesso")
     }
 
     override fun onCleared() {

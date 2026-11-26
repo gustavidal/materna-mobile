@@ -27,6 +27,10 @@ class MaternaRetrofitFactory(context: Context) {
 
 
 
+    fun getAgendamentoService(): AgendamentoService {
+        return retrofit.create(AgendamentoService::class.java)
+    }
+
     fun getAuthService(): AuthService {
         return retrofit.create(AuthService::class.java)
     }

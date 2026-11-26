@@ -1,6 +1,6 @@
 package com.example.materna.services.materna
 
-import okhttp3.ResponseBody
+import com.example.materna.models.responses.HorariosAgendaResponse
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -15,6 +15,6 @@ interface HorarioService {
         isProximo: Boolean = true,
 
         @Query("id_doadora")
-        idDoadora: Int? = null
-    ): Call<ResponseBody>
+        idDoadora: String = "null"
+    ): Call<HorariosAgendaResponse>
 }

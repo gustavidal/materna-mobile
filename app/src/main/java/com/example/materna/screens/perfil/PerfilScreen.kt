@@ -23,12 +23,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -36,6 +39,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,8 +50,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -53,6 +61,7 @@ import coil.compose.AsyncImage
 import com.example.materna.R
 import com.example.materna.components.PerfilIndicador
 import com.example.materna.components.PerfilOpcao
+import com.example.materna.session.SessionEvents
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +104,143 @@ fun PerfilScreen(
 
     val fotoPerfil by perfilScreenViewModel.fotoPerfil.observeAsState(null)
 
+    val saindoDaConta by perfilScreenViewModel.saindoDaConta.observeAsState(false)
+
+    val logoutRealizado by perfilScreenViewModel.logoutRealizado.observeAsState(false)
+
+    val erroLogout by perfilScreenViewModel.erroLogout.observeAsState(null)
+
+    var exibirDialogLogout by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(logoutRealizado) {
+        if (logoutRealizado) {
+            exibirDialogLogout = false
+            SessionEvents.notificarLogout()
+        }
+    }
+
     val pullToRefreshState = rememberPullToRefreshState()
+
+    if (exibirDialogLogout) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!saindoDaConta) {
+                    exibirDialogLogout = false
+                    perfilScreenViewModel.limparErroLogout()
+                }
+            },
+            icon = {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(
+                            color = colorResource(R.color.main_pink)
+                                .copy(alpha = 0.12f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_logout),
+                        contentDescription = null,
+                        tint = colorResource(R.color.main_pink),
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            },
+            title = {
+                Text(
+                    text = "Sair da conta?",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.main_text_color),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Você poderá entrar novamente quando desejar. O progresso da sua jornada será mantido.",
+                        fontSize = 14.sp,
+                        color = colorResource(R.color.secundary_gray),
+                        textAlign = TextAlign.Center
+                    )
+
+                    erroLogout?.let { erro ->
+                        Spacer(Modifier.height(12.dp))
+
+                        Text(
+                            text = erro,
+                            color = colorResource(R.color.red),
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Button(
+                        onClick = {
+                            perfilScreenViewModel.sairDaConta()
+                        },
+                        enabled = !saindoDaConta &&
+                                !atualizandoFoto &&
+                                !logoutRealizado,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(R.color.main_pink),
+                            contentColor = colorResource(R.color.white)
+                        )
+                    ) {
+                        if (saindoDaConta) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = colorResource(R.color.main_pink),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Sair da conta",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    TextButton(
+                        onClick = {
+                            exibirDialogLogout = false
+                            perfilScreenViewModel.limparErroLogout()
+                        },
+                        enabled = !saindoDaConta && !logoutRealizado,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Continuar conectada",
+                            color = colorResource(R.color.secundary_gray)
+                        )
+                    }
+                }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = !saindoDaConta && erroLogout == null,
+                dismissOnClickOutside = false
+            ),
+            containerColor = colorResource(R.color.white),
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
 
     PullToRefreshBox(
         isRefreshing = carregando,
@@ -312,8 +457,10 @@ fun PerfilScreen(
 
             OutlinedButton(
                 onClick = {
-                    // Logout será implementado com a autenticação.
+                    perfilScreenViewModel.limparErroLogout()
+                    exibirDialogLogout = true
                 },
+                enabled = !atualizandoFoto && !saindoDaConta,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),

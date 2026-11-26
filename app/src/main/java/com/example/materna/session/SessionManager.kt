@@ -131,7 +131,7 @@ class SessionManager(context: Context) {
         }
     }
 
-    fun limparSessao() {
-        preferences.edit().clear().commit()
+    fun limparSessao(): Boolean {
+        return preferences.edit().clear().commit()
     }
 }

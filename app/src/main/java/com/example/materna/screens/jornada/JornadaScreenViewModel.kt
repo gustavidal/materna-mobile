@@ -72,12 +72,16 @@ class JornadaScreenViewModel(
     private val _nomeInstituicao = MutableLiveData<String>()
     val nomeInstituicao: LiveData<String> = _nomeInstituicao
 
+    private val _idColeta = MutableLiveData<Int?>(null)
+    val idColeta: LiveData<Int?> = _idColeta
+
 
 
 
 
     private var idInstituicaoSelecionada: Int? = null
     private var idDoadoraAtual: Int? = null
+    val idDoadoraSelecionada: Int? get() = idDoadoraAtual
     private var idJornadaAtual: Int? = null
     val idJornadaSelecionada: Int? get() = idJornadaAtual
     private var jornadaCarregada: JornadaResponse? = null
@@ -94,6 +98,8 @@ class JornadaScreenViewModel(
 
     private val _jornadaCancelada = MutableLiveData(false)
     val jornadaCancelada: LiveData<Boolean> = _jornadaCancelada
+
+    private var cancelamentoConfirmadoApi = false
 
 
 
@@ -223,6 +229,10 @@ class JornadaScreenViewModel(
                         ?.firstOrNull()
 
                     _nomeInstituicao.value = instituicao?.nome.orEmpty()
+
+                    _idColeta.value = instituicao?.idColeta
+
+                    Log.d("JORNADA_COLETA", "ID coleta: ${_idColeta.value}")
 
                     val jornadasAtivas = instituicao
                         ?.jornadas
@@ -509,17 +519,54 @@ class JornadaScreenViewModel(
         return etapasIniciais + etapasInstituicao
     }
 
+    fun exibirSemBanco() {
+        _mensagemErro.value = ""
+        _estado.value = JornadaEstado.SEM_BANCO
+
+        Log.d("JORNADA_DEBUG", "Doadora sem jornada vinculada.")
+    }
+
+    fun exibirErro(mensagem: String) {
+        _mensagemErro.value = mensagem
+        _estado.value = JornadaEstado.ERRO
+
+        Log.e("JORNADA_DEBUG", mensagem)
+    }
+
     fun carregarInstituicao(
         idInstituicao: Int,
         idDoadora: Int
     ) {
-        if (idInstituicao <= 0 || idDoadora <= 0) return
+        val tag = "JORNADA_DEBUG"
+
+        Log.d(tag, "Iniciando carregamento da jornada.")
+        Log.d(tag, "ID Instituição: $idInstituicao")
+        Log.d(tag, "ID Doadora: $idDoadora")
+
+        if (idDoadora <= 0) {
+            Log.e(tag, "ID da doadora inválido.")
+
+            _mensagemErro.value =
+                "Não foi possível identificar a doadora."
+
+            _estado.value = JornadaEstado.ERRO
+            return
+        }
+
+        if (idInstituicao <= 0) {
+            Log.i(tag, "Nenhuma instituição selecionada.")
+
+            _estado.value = JornadaEstado.SEM_BANCO
+            return
+        }
 
         idInstituicaoSelecionada = idInstituicao
         idDoadoraAtual = idDoadora
 
         _estado.value = JornadaEstado.CARREGANDO
         _mensagemErro.value = ""
+
+        Log.d(tag, "Consultando instituição...")
 
         testarBuscaInstituicao(idInstituicao)
     }
@@ -875,6 +922,14 @@ class JornadaScreenViewModel(
             _cancelandoJornada.value == true ||
             _jornadaCancelada.value == true
         ) return
+
+        if (cancelamentoConfirmadoApi) {
+            _cancelandoJornada.value = true
+            _erroCancelamento.value = null
+
+            finalizarCancelamentoLocal()
+            return
+        }
 
         val idInstituicao = idInstituicaoSelecionada ?: run {
             _estado.value = JornadaEstado.SEM_BANCO
@@ -1567,8 +1622,32 @@ class JornadaScreenViewModel(
                     consultaDocumentosAtual = null
 
                     val retorno = response.body()
+                    val erroApi = response.errorBody()?.string().orEmpty()
+
+                    val semDocumentos =
+                        response.code() == 404 &&
+                                erroApi.contains(
+                                    "\"status_code\"\\s*:\\s*404".toRegex()
+                                ) &&
+                                erroApi.contains("Não foram encontrados dados")
 
                     Log.d(tag, "HTTP: ${response.code()}")
+
+                    if (semDocumentos) {
+                        _documentosDoadora.value = emptyList()
+
+                        associarDocumentosEtapas()
+
+                        _erroDocumentos.value = null
+                        _estadoDocumentos.value = DocumentoEstado.SUCESSO
+
+                        Log.i(
+                            tag,
+                            "Nenhum documento encontrado. Envio liberado."
+                        )
+
+                        return
+                    }
 
                     if (
                         response.isSuccessful &&
@@ -1806,9 +1885,9 @@ class JornadaScreenViewModel(
                         Log.i(tag, "Resposta: $retorno")
                         Log.i(tag, "Jornada cancelada com sucesso.")
 
-                        _jornadaCancelada.value = true
-                        _cancelandoJornada.value = false
+                        cancelamentoConfirmadoApi = true
 
+                        finalizarCancelamentoLocal()
                     } else {
                         val erro = response.errorBody()?.string()
 
@@ -1831,6 +1910,96 @@ class JornadaScreenViewModel(
                     Log.e(tag, "Falha na requisição", t)
                 }
             })
+    }
+
+    private fun finalizarCancelamentoLocal() {
+        val tag = "JORNADA_CANCELAMENTO"
+
+        val idDoadora = idDoadoraAtual
+        val idJornada = idJornadaAtual
+
+        if (idDoadora == null || idJornada == null) {
+            _cancelandoJornada.value = false
+            _erroCancelamento.value =
+                "Não foi possível identificar o progresso local."
+
+            Log.e(tag, "Identificadores incompletos.")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val registrosExcluidos = withContext(Dispatchers.IO) {
+                    jornadaLocalProgressDao.limparProgresso(
+                        idDoadora = idDoadora,
+                        idJornada = idJornada
+                    )
+                }
+
+                Log.i(
+                    tag,
+                    "Registros locais excluídos: $registrosExcluidos"
+                )
+
+                _jornadaCancelada.value = true
+
+            } catch (e: Exception) {
+                Log.e(tag, "Erro ao limpar progresso local.", e)
+
+                _erroCancelamento.value =
+                    "Jornada cancelada no servidor, mas não foi possível limpar o progresso local."
+            } finally {
+                _cancelandoJornada.value = false
+            }
+        }
+    }
+
+    fun confirmarCancelamentoJornada() {
+        if (_jornadaCancelada.value != true) return
+        if (_cancelandoJornada.value == true) return
+
+        val tag = "JORNADA_CANCELAMENTO"
+
+        val consulta = consultaDocumentosAtual
+        consultaDocumentosAtual = null
+        consulta?.cancel()
+
+        // Identificadores da jornada
+        idInstituicaoSelecionada = null
+        idJornadaAtual = null
+        idPrimeiraEtapaReal = null
+        jornadaCarregada = null
+
+        // Progresso
+        etapasInstitucionaisConcluidas = emptySet()
+        _etapas.value = emptyList()
+        _progresso.value = 0
+        _nomeInstituicao.value = ""
+        _idColeta.value = null
+
+        // Vínculos e documentos
+        _vinculosPorEtapa.value = emptyMap()
+        _documentosEnviados.value = emptyMap()
+        _documentosDoadora.value = emptyList()
+        _documentosPorEtapa.value = emptyMap()
+        _documentosEmRegistro.value = emptySet()
+        _errosRegistroDocumento.value = emptyMap()
+        _estadoDocumentos.value = DocumentoEstado.INICIAL
+        _erroDocumentos.value = null
+
+        // Controle de operações
+        criandoVinculo = false
+        concluindoEtapa = false
+        cancelamentoConfirmadoApi = false
+
+        // Estados da interface
+        _mensagemErro.value = ""
+        _erroCancelamento.value = null
+        _cancelandoJornada.value = false
+        _jornadaCancelada.value = false
+        _estado.value = JornadaEstado.SEM_BANCO
+
+        Log.i(tag, "Estados locais da jornada limpos.")
     }
 
     override fun onCleared() {
