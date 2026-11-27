@@ -16,11 +16,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -45,54 +43,57 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.materna.R
+import com.example.materna.components.JornadaAguardandoFinalizacao
+import com.example.materna.components.JornadaFinalizada
 import com.example.materna.components.JornadaProgressCard
 import com.example.materna.components.JornadaTimeline
 import com.example.materna.models.domain.JornadaStatus
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JornadaScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    jornadaScreenViewModel: JornadaScreenViewModel = viewModel(),
+    jornadaScreenViewModel: JornadaScreenViewModel = viewModel()
 ) {
-    val estado by jornadaScreenViewModel.estado.observeAsState(JornadaEstado.CARREGANDO)
+    val estado                 by jornadaScreenViewModel.estado.observeAsState(JornadaEstado.CARREGANDO)
 
-    val progresso by jornadaScreenViewModel.progresso.observeAsState(0)
-    val etapas by jornadaScreenViewModel.etapas.observeAsState(emptyList())
+    val progresso              by jornadaScreenViewModel.progresso.observeAsState(0)
+    val etapas                 by jornadaScreenViewModel.etapas.observeAsState(emptyList())
 
-    val documentosPorEtapa by jornadaScreenViewModel.documentosPorEtapa.observeAsState(emptyMap())
-    val estadoDocumentos by
-        jornadaScreenViewModel.estadoDocumentos.observeAsState(DocumentoEstado.INICIAL)
-    val documentosEmRegistro by
-        jornadaScreenViewModel.documentosEmRegistro.observeAsState(emptySet())
-    val erroDocumentos by jornadaScreenViewModel.erroDocumentos.observeAsState()
-    val errosRegistroDocumento by
-        jornadaScreenViewModel.errosRegistroDocumento.observeAsState(emptyMap())
+    val documentosPorEtapa     by jornadaScreenViewModel.documentosPorEtapa.observeAsState(emptyMap())
+    val estadoDocumentos       by jornadaScreenViewModel.estadoDocumentos.observeAsState(DocumentoEstado.INICIAL)
+    val documentosEmRegistro   by jornadaScreenViewModel.documentosEmRegistro.observeAsState(emptySet())
+    val erroDocumentos         by jornadaScreenViewModel.erroDocumentos.observeAsState()
+    val errosRegistroDocumento by jornadaScreenViewModel.errosRegistroDocumento.observeAsState(emptyMap())
 
-    val mensagemErro by jornadaScreenViewModel.mensagemErro.observeAsState("")
+    val mensagemErro           by jornadaScreenViewModel.mensagemErro.observeAsState("")
 
-    val nomeInstituicao by jornadaScreenViewModel.nomeInstituicao.observeAsState("")
-    val idColeta by jornadaScreenViewModel.idColeta.observeAsState()
-    val vinculosPorEtapa by jornadaScreenViewModel.vinculosPorEtapa.observeAsState(emptyMap())
+    val nomeInstituicao        by jornadaScreenViewModel.nomeInstituicao.observeAsState("")
+    val idColeta               by jornadaScreenViewModel.idColeta.observeAsState()
+    val vinculosPorEtapa       by jornadaScreenViewModel.vinculosPorEtapa.observeAsState(emptyMap())
 
-    val cancelandoJornada by jornadaScreenViewModel.cancelandoJornada.observeAsState(false)
-    val erroCancelamento by jornadaScreenViewModel.erroCancelamento.observeAsState()
-    val jornadaCancelada by jornadaScreenViewModel.jornadaCancelada.observeAsState(false)
+    val cancelandoJornada      by jornadaScreenViewModel.cancelandoJornada.observeAsState(false)
+    val erroCancelamento       by jornadaScreenViewModel.erroCancelamento.observeAsState()
+    val jornadaCancelada       by jornadaScreenViewModel.jornadaCancelada.observeAsState(false)
+    val dataFinalizacao        by jornadaScreenViewModel.dataFinalizacao.observeAsState(null)
 
     var mostrarDialogoCancelamento by remember {
         mutableStateOf(false)
     }
 
-    val primeiraEtapaConcluida =
-        etapas.firstOrNull { it.id == "conheca_doacao" }?.status == JornadaStatus.CONCLUIDA
+    val primeiraEtapaConcluida = etapas
+        .firstOrNull { it.id == "conheca_doacao" }
+        ?.status == JornadaStatus.CONCLUIDA
 
     var mostrarAvisoSaida by remember {
         mutableStateOf(false)
     }
 
     BackHandler(
-        enabled = estado == JornadaEstado.COM_BANCO && !primeiraEtapaConcluida,
+        enabled = estado == JornadaEstado.COM_BANCO && !primeiraEtapaConcluida
     ) {
         mostrarAvisoSaida = true
     }
@@ -103,7 +104,8 @@ fun JornadaScreen(
         mutableStateOf(false)
     }
 
-    val carregandoJornada = estado == JornadaEstado.CARREGANDO
+    val carregandoJornada =
+        estado == JornadaEstado.CARREGANDO
 
     LaunchedEffect(estado) {
         if (!carregandoJornada) {
@@ -117,9 +119,9 @@ fun JornadaScreen(
         onRefresh = {
             if (
                 !carregandoJornada &&
-                    !cancelandoJornada &&
-                    documentosEmRegistro.isEmpty() &&
-                    estadoDocumentos != DocumentoEstado.CARREGANDO
+                !cancelandoJornada &&
+                documentosEmRegistro.isEmpty() &&
+                estadoDocumentos != DocumentoEstado.CARREGANDO
             ) {
                 atualizandoJornada = true
                 jornadaScreenViewModel.recarregarJornada()
@@ -132,38 +134,37 @@ fun JornadaScreen(
                 isRefreshing = atualizandoJornada && carregandoJornada,
                 state = pullToRefreshState,
                 containerColor = colorResource(R.color.white),
-                color = colorResource(R.color.main_pink),
+                color = colorResource(R.color.main_pink)
             )
-        },
+        }
     ) {
         Column(
-            modifier =
-                modifier
-                    .fillMaxSize()
-                    .background(colorResource(R.color.background_cream))
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        start = 24.dp,
-                        end = 24.dp,
-                        top = 32.dp,
-                        bottom = 32.dp,
-                    ),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+            modifier = modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = 24.dp,
+                    end = 24.dp,
+                    top = 32.dp,
+                    bottom = 32.dp
+                ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = "Minha jornada",
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.main_text_color),
+                    color = colorResource(R.color.main_text_color)
                 )
 
                 Text(
                     text = "Acompanhe cada etapa",
                     fontSize = 14.sp,
-                    color = colorResource(R.color.secundary_gray),
+                    color = colorResource(R.color.secundary_gray)
                 )
             }
 
@@ -171,23 +172,25 @@ fun JornadaScreen(
                 JornadaEstado.CARREGANDO -> {
                     if (!atualizandoJornada) {
                         Box(
-                            modifier = Modifier.fillMaxWidth().height(320.dp),
-                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(320.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(42.dp),
                                     color = colorResource(R.color.main_pink),
-                                    strokeWidth = 4.dp,
+                                    strokeWidth = 4.dp
                                 )
 
                                 Text(
                                     text = "Carregando sua jornada...",
                                     fontSize = 14.sp,
-                                    color = colorResource(R.color.secundary_gray),
+                                    color = colorResource(R.color.secundary_gray)
                                 )
                             }
                         }
@@ -196,10 +199,36 @@ fun JornadaScreen(
 
                 JornadaEstado.SEM_BANCO -> Unit
 
-                JornadaEstado.COM_BANCO -> {
-                    JornadaProgressCard(
-                        progresso = progresso,
+                JornadaEstado.FINALIZADA -> {
+                    JornadaFinalizada(
+                        nomeInstituicao = nomeInstituicao,
+                        dataFinalizacao = dataFinalizacao,
+                        onIniciarNovaJornada = {
+                            jornadaScreenViewModel.iniciarNovaJornada {
+                                navController.navigate("servicos") {
+                                    launchSingleTop = true
+                                }
+                            }
+                        },
+                        onVoltarInicio = {
+                            navController.navigate("dashboard") {
+                                launchSingleTop = true
+                            }
+                        }
                     )
+                }
+
+                JornadaEstado.COM_BANCO,
+                JornadaEstado.AGUARDANDO_FINALIZACAO -> {
+                    JornadaProgressCard(
+                        progresso = progresso
+                    )
+
+                    if (estado == JornadaEstado.AGUARDANDO_FINALIZACAO) {
+                        JornadaAguardandoFinalizacao(
+                            nomeInstituicao = nomeInstituicao
+                        )
+                    }
 
                     JornadaTimeline(
                         etapas = etapas,
@@ -216,10 +245,10 @@ fun JornadaScreen(
                         },
                         onEtapaClick = { etapa ->
                             if (etapa.status == JornadaStatus.ATUAL) {
-                                val idInstituicao =
-                                    navController.currentBackStackEntry
-                                        ?.arguments
-                                        ?.getInt("id_instituicao")
+                                val idInstituicao = navController
+                                    .currentBackStackEntry
+                                    ?.arguments
+                                    ?.getInt("id_instituicao")
 
                                 val idJornada = jornadaScreenViewModel.idJornadaSelecionada
 
@@ -227,7 +256,7 @@ fun JornadaScreen(
                                     "conheca_doacao" -> {
                                         if (idInstituicao != null && idInstituicao > 0) {
                                             navController.navigate(
-                                                "conheca_doacao/$idInstituicao",
+                                                "conheca_doacao/$idInstituicao"
                                             )
                                         }
                                     }
@@ -235,7 +264,7 @@ fun JornadaScreen(
                                     "orientacoes" -> {
                                         if (idJornada != null && idJornada > 0) {
                                             navController.navigate(
-                                                "orientacoes/$idJornada",
+                                                "orientacoes/$idJornada"
                                             )
                                         }
                                     }
@@ -243,7 +272,7 @@ fun JornadaScreen(
                                     "questionario" -> {
                                         if (idJornada != null && idJornada > 0) {
                                             navController.navigate(
-                                                "questionario/$idJornada",
+                                                "questionario/$idJornada"
                                             )
                                         }
                                     }
@@ -251,34 +280,34 @@ fun JornadaScreen(
                                     else -> {
                                         if (
                                             etapa.id.startsWith("instituicao_") &&
-                                                etapa.isAgendavel == 1 &&
-                                                idInstituicao != null &&
-                                                idInstituicao > 0 &&
-                                                idJornada != null &&
-                                                idJornada > 0
+                                            etapa.isAgendavel == 1 &&
+                                            idInstituicao != null &&
+                                            idInstituicao > 0 &&
+                                            idJornada != null &&
+                                            idJornada > 0
                                         ) {
-                                            val idEtapa =
-                                                etapa.id.removePrefix("instituicao_").toIntOrNull()
+                                            val idEtapa = etapa.id
+                                                .removePrefix("instituicao_")
+                                                .toIntOrNull()
 
                                             val coleta = idColeta
-                                            val idDoadora =
-                                                jornadaScreenViewModel.idDoadoraSelecionada
+                                            val idDoadora = jornadaScreenViewModel.idDoadoraSelecionada
                                             val idJornadaDoacao = vinculosPorEtapa[etapa.id]
 
                                             if (
                                                 idEtapa != null &&
-                                                    idEtapa > 0 &&
-                                                    coleta != null &&
-                                                    coleta in 1..3 &&
-                                                    idDoadora != null &&
-                                                    idDoadora > 0 &&
-                                                    idJornadaDoacao != null &&
-                                                    idJornadaDoacao > 0
+                                                idEtapa > 0 &&
+                                                coleta != null &&
+                                                coleta in 1..3 &&
+                                                idDoadora != null &&
+                                                idDoadora > 0 &&
+                                                idJornadaDoacao != null &&
+                                                idJornadaDoacao > 0
                                             ) {
                                                 navController.navigate(
                                                     "agendamento/$idInstituicao/$idJornada/$idEtapa/" +
-                                                        "$coleta/$idDoadora/$idJornadaDoacao" +
-                                                        "?nome_instituicao=${Uri.encode(nomeInstituicao)}",
+                                                            "$coleta/$idDoadora/$idJornadaDoacao" +
+                                                            "?nome_instituicao=${Uri.encode(nomeInstituicao)}"
                                                 ) {
                                                     launchSingleTop = true
                                                 }
@@ -286,10 +315,10 @@ fun JornadaScreen(
                                                 android.util.Log.e(
                                                     "AGENDAMENTO",
                                                     "Dados inválidos: " +
-                                                        "Etapa=$idEtapa | " +
-                                                        "Coleta=$coleta | " +
-                                                        "Doadora=$idDoadora | " +
-                                                        "Vínculo=$idJornadaDoacao",
+                                                            "Etapa=$idEtapa | " +
+                                                            "Coleta=$coleta | " +
+                                                            "Doadora=$idDoadora | " +
+                                                            "Vínculo=$idJornadaDoacao"
                                                 )
                                             }
                                         }
@@ -300,27 +329,30 @@ fun JornadaScreen(
                         onDocumentoEnviado = { etapaId, url ->
                             jornadaScreenViewModel.registrarDocumentoEnviado(
                                 etapaId = etapaId,
-                                url = url,
+                                url = url
                             )
                         },
                         onEtapaConcluida = { etapaId ->
                             jornadaScreenViewModel.concluirEtapaSimples(etapaId)
-                        },
+                        }
                     )
 
-                    TextButton(
-                        onClick = {
-                            mostrarDialogoCancelamento = true
-                        },
-                        enabled = !cancelandoJornada,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            text = "Cancelar jornada",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = colorResource(R.color.main_pink),
-                        )
+                    // Após concluir todas as etapas (100%) não faz sentido cancelar a jornada
+                    if (estado == JornadaEstado.COM_BANCO) {
+                        TextButton(
+                            onClick = {
+                                mostrarDialogoCancelamento = true
+                            },
+                            enabled = !cancelandoJornada,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Cancelar jornada",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = colorResource(R.color.main_pink)
+                            )
+                        }
                     }
                 }
 
@@ -340,34 +372,33 @@ fun JornadaScreen(
                 Text(
                     text = "Cancelar jornada?",
                     color = colorResource(R.color.main_text_color),
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text =
-                            "Tem certeza de que deseja cancelar sua jornada? Você poderá perder o progresso realizado.",
-                        color = colorResource(R.color.secundary_gray),
+                        text = "Tem certeza de que deseja cancelar sua jornada? Você poderá perder o progresso realizado.",
+                        color = colorResource(R.color.secundary_gray)
                     )
 
                     if (cancelandoJornada) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(22.dp),
                                 color = colorResource(R.color.main_pink),
-                                strokeWidth = 2.dp,
+                                strokeWidth = 2.dp
                             )
 
                             Text(
                                 text = "Cancelando jornada...",
                                 fontSize = 14.sp,
-                                color = colorResource(R.color.secundary_gray),
+                                color = colorResource(R.color.secundary_gray)
                             )
                         }
                     }
@@ -376,28 +407,30 @@ fun JornadaScreen(
                         Text(
                             text = erro,
                             fontSize = 13.sp,
-                            color = androidx.compose.ui.graphics.Color.Red,
+                            color = androidx.compose.ui.graphics.Color.Red
                         )
                     }
                 }
             },
             confirmButton = {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     TextButton(
                         onClick = {
                             mostrarDialogoCancelamento = false
                         },
                         enabled = !cancelandoJornada,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(
                             text = "Continuar jornada",
                             color = colorResource(R.color.main_pink),
                             fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
+                            textAlign = TextAlign.Center
                         )
                     }
 
@@ -406,19 +439,19 @@ fun JornadaScreen(
                             jornadaScreenViewModel.cancelarJornada()
                         },
                         enabled = !cancelandoJornada,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(
                             text = "Sim, cancelar",
                             color = colorResource(R.color.main_text_color),
                             fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             },
             shape = RoundedCornerShape(20.dp),
-            containerColor = colorResource(R.color.white),
+            containerColor = colorResource(R.color.white)
         )
     }
 
@@ -430,17 +463,16 @@ fun JornadaScreen(
                     text = "Jornada cancelada",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.main_text_color),
+                    color = colorResource(R.color.main_text_color)
                 )
             },
             text = {
                 Text(
-                    text =
-                        "Sua jornada foi cancelada com sucesso. " +
+                    text = "Sua jornada foi cancelada com sucesso. " +
                             "Você poderá selecionar outro banco de leite " +
                             "quando desejar.",
                     fontSize = 14.sp,
-                    color = colorResource(R.color.secundary_gray),
+                    color = colorResource(R.color.secundary_gray)
                 )
             },
             confirmButton = {
@@ -457,18 +489,18 @@ fun JornadaScreen(
                             launchSingleTop = true
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = "Entendido",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = colorResource(R.color.main_pink),
+                        color = colorResource(R.color.main_pink)
                     )
                 }
             },
             shape = RoundedCornerShape(20.dp),
-            containerColor = colorResource(R.color.white),
+            containerColor = colorResource(R.color.white)
         )
     }
 
@@ -480,39 +512,40 @@ fun JornadaScreen(
             title = {
                 Text(
                     text = "Deseja sair da jornada?",
-                    color = colorResource(R.color.main_text_color),
+                    color = colorResource(R.color.main_text_color)
                 )
             },
             text = {
                 Text(
-                    text =
-                        "Você ainda não concluiu a primeira etapa. " +
+                    text = "Você ainda não concluiu a primeira etapa. " +
                             "Se sair agora, sua jornada não estará vinculada " +
-                            "à instituição selecionada.",
+                            "à instituição selecionada."
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         navController.navigate("servicos")
-                    },
+                    }
                 ) {
                     Text(
                         text = "Sair mesmo assim",
-                        color = colorResource(R.color.main_pink),
+                        color = colorResource(R.color.main_pink)
                     )
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = {},
+                    onClick = {
+
+                    }
                 ) {
                     Text(
                         text = "Continuar jornada",
-                        color = colorResource(R.color.main_text_color),
+                        color = colorResource(R.color.main_text_color)
                     )
                 }
-            },
+            }
         )
     }
 
@@ -539,24 +572,26 @@ fun JornadaScreen(
 
         AlertDialog(
             onDismissRequest = sairDaJornada,
+
             icon = {
                 Box(
-                    modifier =
-                        Modifier.size(64.dp)
-                            .background(
-                                color = colorResource(R.color.pink_beige),
-                                shape = RoundedCornerShape(50),
-                            ),
-                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(
+                            color = colorResource(R.color.pink_beige),
+                            shape = RoundedCornerShape(50)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_hospital),
                         contentDescription = null,
                         tint = colorResource(R.color.main_pink),
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             },
+
             title = {
                 Text(
                     text = "Você ainda não iniciou sua jornada",
@@ -564,60 +599,63 @@ fun JornadaScreen(
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     color = colorResource(R.color.main_text_color),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
                 )
             },
+
             text = {
                 Text(
-                    text =
-                        "Selecione um banco de leite para iniciar " +
+                    text = "Selecione um banco de leite para iniciar " +
                             "sua jornada de doação de leite materno.",
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     color = colorResource(R.color.secundary_gray),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
                 )
             },
+
             confirmButton = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Button(
                         onClick = voltarParaServicos,
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.main_pink),
-                                contentColor = colorResource(R.color.white),
-                            ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(R.color.main_pink),
+                            contentColor = colorResource(R.color.white)
+                        )
                     ) {
                         Text(
                             text = "Selecionar banco de leite",
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
                     TextButton(
                         onClick = sairDaJornada,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = "Agora não",
-                            color = colorResource(R.color.secundary_gray),
+                            color = colorResource(R.color.secundary_gray)
                         )
                     }
                 }
             },
-            properties =
-                DialogProperties(
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = false,
-                ),
+
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false
+            ),
+
             shape = RoundedCornerShape(24.dp),
-            containerColor = colorResource(R.color.white),
+            containerColor = colorResource(R.color.white)
         )
     }
 
@@ -628,43 +666,42 @@ fun JornadaScreen(
                 Text(
                     text = "Ops! Algo deu errado",
                     fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.main_text_color),
+                    color = colorResource(R.color.main_text_color)
                 )
             },
             text = {
                 Text(
-                    text =
-                        mensagemErro.ifBlank {
-                            "Não foi possível carregar sua jornada. Verifique sua conexão e tente novamente."
-                        },
-                    color = colorResource(R.color.secundary_gray),
+                    text = mensagemErro.ifBlank {
+                        "Não foi possível carregar sua jornada. Verifique sua conexão e tente novamente."
+                    },
+                    color = colorResource(R.color.secundary_gray)
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         jornadaScreenViewModel.recarregarJornada()
-                    },
+                    }
                 ) {
                     Text(
                         text = "Tentar novamente",
                         color = colorResource(R.color.main_pink),
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = voltarParaServicos,
+                    onClick = voltarParaServicos
                 ) {
                     Text(
                         text = "Voltar",
-                        color = colorResource(R.color.main_text_color),
+                        color = colorResource(R.color.main_text_color)
                     )
                 }
             },
             shape = RoundedCornerShape(20.dp),
-            containerColor = colorResource(R.color.white),
+            containerColor = colorResource(R.color.white)
         )
     }
 }

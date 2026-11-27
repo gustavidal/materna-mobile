@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-
-    <!-- Fotos de perfil -->
-    <cache-path
-        name="fotos_perfil"
-        path="fotos_perfil/" />
-
-    <!-- Fotos de documentos da jornada -->
-    <cache-path
-        name="fotos_documentos"
-        path="fotos_documentos/" />
-
+    <!-- Fotos tiradas pela câmera (salvas em cache/fotos_perfil) -->
+    <cache-path name="fotos_perfil" path="fotos_perfil/" />
 </paths>

@@ -54,4 +54,34 @@ interface JornadaLocalProgressDao {
         idDoadora: Int,
         idJornada: Int
     ): Int
+
+    // Marcador local de "jornada concluída" (idEtapa = jornada_concluida_<idInstituicao>).
+    // Permite mostrar a tela de jornada finalizada mesmo depois que a API
+    // deixa de listar a jornada (vínculos encerrados pela instituição).
+    @Query(
+        """
+        SELECT * FROM jornada_local_progress
+        WHERE idDoadora = :idDoadora
+        AND idEtapa LIKE 'jornada_concluida_%'
+        ORDER BY dataConclusao DESC
+        LIMIT 1
+        """
+    )
+    suspend fun buscarMarcadorFinalizacao(
+        idDoadora: Int
+    ): JornadaLocalProgress?
+
+    @Query(
+        """
+        SELECT * FROM jornada_local_progress
+        WHERE idDoadora = :idDoadora
+        AND idJornada = :idJornada
+        AND idEtapa LIKE 'jornada_concluida_%'
+        LIMIT 1
+        """
+    )
+    suspend fun buscarMarcadorFinalizacaoDaJornada(
+        idDoadora: Int,
+        idJornada: Int
+    ): JornadaLocalProgress?
 }

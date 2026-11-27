@@ -2,12 +2,10 @@ package com.example.materna
 
 import android.R.attr.tag
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.util.Log.e
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -58,17 +56,17 @@ import com.example.materna.screens.confirmaremail.ConfirmarEmailScreen
 import com.example.materna.screens.confirmaremail.ConfirmarEmailScreenViewModel
 import com.example.materna.screens.dashboard.DashboardScreen
 import com.example.materna.screens.dashboard.DashboardScreenViewModel
-import com.example.materna.screens.editarperfil.EditarPerfilScreen
-import com.example.materna.screens.editarperfil.EditarPerfilScreenViewModel
+import com.example.materna.screens.others.ConhecaDoacaoScreen
 import com.example.materna.screens.jornada.JornadaEstado
 import com.example.materna.screens.jornada.JornadaScreen
 import com.example.materna.screens.jornada.JornadaScreenViewModel
+import com.example.materna.screens.others.OrientacoesScreen
+import com.example.materna.screens.others.QuestionarioScreen
 import com.example.materna.screens.login.LoginScreen
 import com.example.materna.screens.login.LoginScreenViewModel
 import com.example.materna.screens.onboarding.OnboardingScreen
-import com.example.materna.screens.others.ConhecaDoacaoScreen
-import com.example.materna.screens.others.OrientacoesScreen
-import com.example.materna.screens.others.QuestionarioScreen
+import com.example.materna.screens.editarperfil.EditarPerfilScreen
+import com.example.materna.screens.editarperfil.EditarPerfilScreenViewModel
 import com.example.materna.screens.perfil.PerfilScreen
 import com.example.materna.screens.perfil.PerfilScreenViewModel
 import com.example.materna.screens.recuperarsenha.RecuperarSenhaScreen
@@ -86,43 +84,29 @@ class MainActivity : ComponentActivity() {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { false }
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle =
-                SystemBarStyle.light(
-                    Color.TRANSPARENT,
-                    Color.TRANSPARENT,
-                ),
-            navigationBarStyle =
-                SystemBarStyle.light(
-                    Color.TRANSPARENT,
-                    Color.TRANSPARENT,
-                ),
-        )
+        enableEdgeToEdge()
         setContent {
             MaternaTheme {
                 val navController = rememberNavController()
 
-                val sessaoExpirada by SessionEvents.sessaoExpirada.collectAsState()
+                val sessaoExpirada  by SessionEvents.sessaoExpirada.collectAsState()
                 val logoutRealizado by SessionEvents.logoutRealizado.collectAsState()
 
                 val context = LocalContext.current
 
-                val servicosCompartilhado: ServicosScreenViewModel =
-                    viewModel(
-                        viewModelStoreOwner = this@MainActivity,
-                        factory =
-                            object : ViewModelProvider.Factory {
-                                @Suppress("UNCHECKED_CAST")
-                                override fun <T : ViewModel> create(
-                                    modelClass: Class<T>,
-                                ): T {
-                                    return ServicosScreenViewModel(
-                                        context = context.applicationContext,
-                                    )
-                                        as T
-                                }
-                            },
-                    )
+                val servicosCompartilhado: ServicosScreenViewModel = viewModel(
+                    viewModelStoreOwner = this@MainActivity,
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(
+                            modelClass: Class<T>
+                        ): T {
+                            return ServicosScreenViewModel(
+                                context = context.applicationContext
+                            ) as T
+                        }
+                    }
+                )
 
                 val database = remember {
                     MaternaDatabaseProvider.getDatabase(context)
@@ -165,22 +149,20 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val bottomBarRoutes =
-                    listOf(
-                        "dashboard",
-                        "campanhas",
-                        "campanha/{id}",
-                        "jornada",
-                        "jornada/{id_instituicao}",
-                        "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}/{id_coleta}/{id_doadora}/{id_jornada_doacao}?nome_instituicao={nome_instituicao}",
-                        "servicos",
-                        "confirmar_banco/{id_instituicao}",
-                        "perfil",
-                    )
+                val bottomBarRoutes = listOf(
+                    "dashboard",
+                    "campanhas",
+                    "campanha/{id}",
+                    "jornada",
+                    "jornada/{id_instituicao}",
+                    "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}/{id_coleta}/{id_doadora}/{id_jornada_doacao}?nome_instituicao={nome_instituicao}",
+                    "servicos",
+                    "confirmar_banco/{id_instituicao}",
+                    "perfil"
+                )
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = colorResource(R.color.background_cream),
                     bottomBar = {
                         if (currentRoute in bottomBarRoutes) {
 
@@ -191,21 +173,17 @@ class MainActivity : ComponentActivity() {
                                         val jornadaEntry = navController.currentBackStackEntry
 
                                         if (jornadaEntry != null) {
-                                            val jornadaViewModel =
-                                                ViewModelProvider(
-                                                    jornadaEntry,
-                                                )[JornadaScreenViewModel::class.java]
+                                            val jornadaViewModel = ViewModelProvider(
+                                                jornadaEntry
+                                            )[JornadaScreenViewModel::class.java]
 
-                                            val primeiraConcluida =
-                                                jornadaViewModel.etapas.value
-                                                    ?.firstOrNull {
-                                                        it.id == "conheca_doacao"
-                                                    }
-                                                    ?.status == JornadaStatus.CONCLUIDA
+                                            val primeiraConcluida = jornadaViewModel.etapas.value
+                                                ?.firstOrNull {
+                                                    it.id == "conheca_doacao"
+                                                }
+                                                ?.status == JornadaStatus.CONCLUIDA
 
-                                            val jornadaCarregada =
-                                                jornadaViewModel.estado.value ==
-                                                    JornadaEstado.COM_BANCO
+                                            val jornadaCarregada = jornadaViewModel.estado.value == JornadaEstado.COM_BANCO
 
                                             if (jornadaCarregada && !primeiraConcluida) {
                                                 navegacaoPendente = navegar
@@ -216,14 +194,16 @@ class MainActivity : ComponentActivity() {
                                         } else {
                                             navegar()
                                         }
+
                                     } else {
                                         navegar()
                                     }
-                                },
+                                }
                             )
                         }
-                    },
+                    }
                 ) { innerPadding ->
+
                     if (mostrarAvisoSaidaJornada) {
                         AlertDialog(
                             onDismissRequest = {
@@ -236,8 +216,8 @@ class MainActivity : ComponentActivity() {
                             text = {
                                 Text(
                                     "Você ainda não concluiu a primeira etapa. " +
-                                        "Sua jornada ainda não está vinculada " +
-                                        "à instituição selecionada.",
+                                            "Sua jornada ainda não está vinculada " +
+                                            "à instituição selecionada."
                                 )
                             },
                             confirmButton = {
@@ -249,11 +229,11 @@ class MainActivity : ComponentActivity() {
                                         navegacaoPendente = null
 
                                         navegar?.invoke()
-                                    },
+                                    }
                                 ) {
                                     Text(
                                         text = "Sair mesmo assim",
-                                        color = colorResource(R.color.main_pink),
+                                        color = colorResource(R.color.main_pink)
                                     )
                                 }
                             },
@@ -262,11 +242,11 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         mostrarAvisoSaidaJornada = false
                                         navegacaoPendente = null
-                                    },
+                                    }
                                 ) {
                                     Text("Continuar jornada")
                                 }
-                            },
+                            }
                         )
                     }
 
@@ -278,84 +258,78 @@ class MainActivity : ComponentActivity() {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
 
-                            val direction =
-                                if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
-                                    AnimatedContentTransitionScope.SlideDirection.Right
-                                } else {
-                                    AnimatedContentTransitionScope.SlideDirection.Left
-                                }
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
 
                             slideIntoContainer(
                                 towards = direction,
-                                animationSpec = tween(300),
+                                animationSpec = tween(300)
                             )
                         },
                         exitTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
 
-                            val direction =
-                                if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
-                                    AnimatedContentTransitionScope.SlideDirection.Right
-                                } else {
-                                    AnimatedContentTransitionScope.SlideDirection.Left
-                                }
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
 
                             slideOutOfContainer(
                                 towards = direction,
-                                animationSpec = tween(300),
+                                animationSpec = tween(300)
                             )
                         },
                         popEnterTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
 
-                            val direction =
-                                if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
-                                    AnimatedContentTransitionScope.SlideDirection.Right
-                                } else {
-                                    AnimatedContentTransitionScope.SlideDirection.Left
-                                }
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
 
                             slideIntoContainer(
                                 towards = direction,
-                                animationSpec = tween(300),
+                                animationSpec = tween(300)
                             )
                         },
                         popExitTransition = {
                             val fromIndex = bottomBarRoutes.indexOf(initialState.destination.route)
                             val toIndex = bottomBarRoutes.indexOf(targetState.destination.route)
 
-                            val direction =
-                                if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
-                                    AnimatedContentTransitionScope.SlideDirection.Right
-                                } else {
-                                    AnimatedContentTransitionScope.SlideDirection.Left
-                                }
+                            val direction = if (fromIndex >= 0 && toIndex >= 0 && toIndex < fromIndex) {
+                                AnimatedContentTransitionScope.SlideDirection.Right
+                            } else {
+                                AnimatedContentTransitionScope.SlideDirection.Left
+                            }
 
                             slideOutOfContainer(
                                 towards = direction,
-                                animationSpec = tween(300),
+                                animationSpec = tween(300)
                             )
-                        },
+                        }
+
                     ) {
                         composable(route = "splash") {
-                            val splashScreenViewModel: SplashScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return SplashScreenViewModel(
-                                                    settingsDao = settingsDao,
-                                                    context = context.applicationContext,
-                                                )
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val splashScreenViewModel: SplashScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return SplashScreenViewModel(
+                                            settingsDao = settingsDao,
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
                             var progress by remember {
                                 mutableStateOf(0f)
@@ -369,13 +343,12 @@ class MainActivity : ComponentActivity() {
 
                                 delay(200)
 
-                                val destination =
-                                    try {
-                                        splashScreenViewModel.verificarDestino()
-                                    } catch (e: Exception) {
-                                        Log.e("SplashScreen", "Erro ao verificar destino", e)
-                                        "login"
-                                    }
+                                val destination = try {
+                                    splashScreenViewModel.verificarDestino()
+                                } catch (e: Exception) {
+                                    Log.e("SplashScreen", "Erro ao verificar destino", e)
+                                    "login"
+                                }
 
                                 navController.navigate(destination) {
                                     popUpTo("splash") {
@@ -391,7 +364,7 @@ class MainActivity : ComponentActivity() {
                         composable(route = "onboarding") {
                             OnboardingScreen(
                                 modifier = Modifier,
-                                navController = navController,
+                                navController = navController
                             )
                         }
 
@@ -399,27 +372,28 @@ class MainActivity : ComponentActivity() {
                             val loginScreenViewModel: LoginScreenViewModel = viewModel()
 
                             LoginScreen(
-                                modifier = Modifier,
+                                modifier = Modifier.padding(innerPadding),
                                 navController = navController,
-                                loginScreenViewModel = loginScreenViewModel,
+                                loginScreenViewModel = loginScreenViewModel
                             )
                         }
 
                         composable(route = "recuperar-senha") {
-                            val appSettings by
-                                remember(settingsDao) {
-                                        settingsDao.observeSettings()
-                                    }
-                                    .collectAsState(initial = null)
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
 
                             RecuperarSenhaScreen(
                                 emailCadastrado = appSettings?.emailDoadora,
+
                                 onVoltarLogin = {
                                     navController.popBackStack()
                                 },
+
                                 onEnviarCodigo = { email ->
                                     // Próxima etapa: integrar o envio do OTP.
-                                },
+                                }
                             )
                         }
 
@@ -427,73 +401,67 @@ class MainActivity : ComponentActivity() {
                             CadastroScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                cadastroScreenViewModel =
-                                    remember { CadastroScreenViewModel(settingsDao = settingsDao) },
+                                cadastroScreenViewModel = remember { CadastroScreenViewModel(settingsDao = settingsDao) }
                             )
                         }
 
-                        composable(
-                            route = "confirmar-email/{id_doadora}",
-                            arguments =
-                                listOf(
-                                    navArgument(name = "id_doadora") {
-                                        type = NavType.IntType
-                                    },
-                                ),
+                        composable(route = "confirmar-email/{id_doadora}",
+                            arguments = listOf(
+                                navArgument(name = "id_doadora") {
+                                    type = NavType.IntType
+                                }
+                            )
                         ) {
                             val idDoadora = it.arguments?.getInt("id_doadora")
 
-                            val confirmarEmailScreenViewModel: ConfirmarEmailScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return ConfirmarEmailScreenViewModel(settingsDao)
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val confirmarEmailScreenViewModel: ConfirmarEmailScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return ConfirmarEmailScreenViewModel(settingsDao) as T
+                                    }
+                                }
+                            )
 
                             ConfirmarEmailScreen(
                                 modifier = Modifier,
                                 navController = navController,
                                 idDoadora = idDoadora!!,
-                                confirmarEmailScreenViewModel = confirmarEmailScreenViewModel,
+                                confirmarEmailScreenViewModel = confirmarEmailScreenViewModel
                             )
                         }
 
+
+
+
+
                         composable(route = "dashboard") {
-                            val dashboardScreenViewModel: DashboardScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return DashboardScreenViewModel(
-                                                    context = context.applicationContext,
-                                                )
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return DashboardScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
                             val context = LocalContext.current
 
-                            val appSettingsDao =
-                                remember(context) {
-                                    MaternaDatabaseProvider.getDatabase(context).appSettingsDao()
-                                }
+                            val appSettingsDao = remember(context) {
+                                MaternaDatabaseProvider
+                                    .getDatabase(context)
+                                    .appSettingsDao()
+                            }
 
-                            val appSettings by
-                                remember(appSettingsDao) {
-                                        appSettingsDao.observeSettings()
-                                    }
-                                    .collectAsState(initial = null)
+                            val appSettings by remember(appSettingsDao) {
+                                appSettingsDao.observeSettings()
+                            }.collectAsState(initial = null)
 
                             val idDoadora = appSettings?.idDoadora
 
@@ -510,51 +478,47 @@ class MainActivity : ComponentActivity() {
                             DashboardScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                dashboardScreenViewModel = dashboardScreenViewModel,
+                                dashboardScreenViewModel = dashboardScreenViewModel
                             )
                         }
 
                         composable(route = "campanhas") {
-                            val dashboardEntry =
-                                remember(it) {
-                                    navController.getBackStackEntry("dashboard")
-                                }
+                            val dashboardEntry = remember(it) {
+                                navController.getBackStackEntry("dashboard")
+                            }
 
-                            val dashboardScreenViewModel: DashboardScreenViewModel =
-                                viewModel(
-                                    viewModelStoreOwner = dashboardEntry,
-                                )
+                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel(
+                                viewModelStoreOwner = dashboardEntry
+                            )
 
                             CampanhasScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                dashboardScreenViewModel = dashboardScreenViewModel,
+                                dashboardScreenViewModel = dashboardScreenViewModel
                             )
                         }
 
                         composable(
                             route = "campanha/{id}",
-                            arguments =
-                                listOf(
-                                    navArgument("id") {
-                                        type = NavType.IntType
-                                    },
-                                ),
+                            arguments = listOf(
+                                navArgument("id") {
+                                    type = NavType.IntType
+                                }
+                            )
                         ) { backStackEntry ->
+
                             val idCampanha = backStackEntry.arguments?.getInt("id")
 
-                            val dashboardEntry =
-                                remember(backStackEntry) {
-                                    navController.getBackStackEntry("dashboard")
-                                }
+                            val dashboardEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry("dashboard")
+                            }
 
-                            val dashboardScreenViewModel: DashboardScreenViewModel =
-                                viewModel(
-                                    viewModelStoreOwner = dashboardEntry,
-                                )
+                            val dashboardScreenViewModel: DashboardScreenViewModel = viewModel(
+                                viewModelStoreOwner = dashboardEntry
+                            )
 
-                            val campanhas by
-                                dashboardScreenViewModel.campanhas.observeAsState(emptyList())
+                            val campanhas by dashboardScreenViewModel.campanhas
+                                .observeAsState(emptyList())
 
                             val campanha = campanhas.find {
                                 it.id == idCampanha
@@ -564,35 +528,34 @@ class MainActivity : ComponentActivity() {
                                 CampanhaScreen(
                                     modifier = Modifier,
                                     navController = navController,
-                                    campanha = campanha,
+                                    campanha = campanha
                                 )
                             }
                         }
 
+
+
+
+                        
                         composable(route = "jornada") {
-                            val appSettings by
-                                remember(settingsDao) {
-                                        settingsDao.observeSettings()
-                                    }
-                                    .collectAsState(initial = null)
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
 
                             val idDoadora = appSettings?.idDoadora
 
-                            val jornadaScreenViewModel: JornadaScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return JornadaScreenViewModel(
-                                                    context = context.applicationContext,
-                                                )
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return JornadaScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
                             LaunchedEffect(idDoadora) {
                                 if (idDoadora != null && idDoadora > 0) {
@@ -601,54 +564,50 @@ class MainActivity : ComponentActivity() {
                                     try {
                                         Log.d(tag, "Consultando vínculos da doadora: $idDoadora")
 
-                                        val resposta =
-                                            kotlinx.coroutines.withContext(
-                                                kotlinx.coroutines.Dispatchers.IO,
-                                            ) {
-                                                com.example.materna.services.materna
-                                                    .MaternaRetrofitFactory(
-                                                        context.applicationContext,
-                                                    )
-                                                    .getVinculoEtapaDoadoraService()
-                                                    .buscarVinculosDoadora(idDoadora)
-                                                    .execute()
-                                            }
+                                        val resposta = kotlinx.coroutines.withContext(
+                                            kotlinx.coroutines.Dispatchers.IO
+                                        ) {
+                                            com.example.materna.services.materna
+                                                .MaternaRetrofitFactory(context.applicationContext)
+                                                .getVinculoEtapaDoadoraService()
+                                                .buscarVinculosDoadora(idDoadora)
+                                                .execute()
+                                        }
 
                                         Log.d(tag, "HTTP: ${resposta.code()}")
 
                                         if (
-                                            resposta.isSuccessful && resposta.body()?.status == true
+                                            resposta.isSuccessful &&
+                                            resposta.body()?.status == true
                                         ) {
-                                            val jornadaVinculada =
-                                                resposta
-                                                    .body()
-                                                    ?.response
-                                                    ?.jornadas
-                                                    .orEmpty()
-                                                    .firstOrNull { jornada ->
-                                                        jornada.isAtivo == 1 &&
+                                            val jornadaVinculada = resposta.body()
+                                                ?.response
+                                                ?.jornadas
+                                                .orEmpty()
+                                                .firstOrNull { jornada ->
+                                                    jornada.isAtivo == 1 &&
                                                             jornada.etapas.any { etapa ->
                                                                 etapa.vinculos.any { vinculo ->
                                                                     vinculo.encerrado == 0 &&
-                                                                        vinculo.status in
-                                                                            listOf(
-                                                                                "em_andamento",
-                                                                                "concluida",
-                                                                            )
+                                                                            vinculo.status in listOf(
+                                                                        "em_andamento",
+                                                                        "concluida"
+                                                                    )
                                                                 }
                                                             }
-                                                    }
+                                                }
 
                                             if (jornadaVinculada != null) {
-                                                val idInstituicao = jornadaVinculada.instituicao.id
+                                                val idInstituicao =
+                                                    jornadaVinculada.instituicao.id
 
                                                 Log.d(
                                                     tag,
-                                                    "Recuperando instituição: $idInstituicao",
+                                                    "Recuperando instituição: $idInstituicao"
                                                 )
 
                                                 navController.navigate(
-                                                    "jornada/$idInstituicao",
+                                                    "jornada/$idInstituicao"
                                                 ) {
                                                     popUpTo("jornada") {
                                                         inclusive = true
@@ -657,21 +616,23 @@ class MainActivity : ComponentActivity() {
                                                     launchSingleTop = true
                                                 }
                                             } else {
-                                                jornadaScreenViewModel.exibirSemBanco()
+                                                jornadaScreenViewModel.verificarFinalizadaOuSemBanco(idDoadora)
                                             }
                                         } else {
-                                            val erroApi = resposta.errorBody()?.string().orEmpty()
+                                            val erroApi = resposta.errorBody()
+                                                ?.string()
+                                                .orEmpty()
 
                                             Log.e(tag, "Resposta da API: $erroApi")
 
                                             if (
                                                 resposta.code() == 404 &&
-                                                    erroApi.contains("Não foram encontrados dados")
+                                                erroApi.contains("Não foram encontrados dados")
                                             ) {
-                                                jornadaScreenViewModel.exibirSemBanco()
+                                                jornadaScreenViewModel.verificarFinalizadaOuSemBanco(idDoadora)
                                             } else {
                                                 jornadaScreenViewModel.exibirErro(
-                                                    "Não foi possível consultar sua jornada.",
+                                                    "Não foi possível consultar sua jornada."
                                                 )
                                             }
                                         }
@@ -681,7 +642,7 @@ class MainActivity : ComponentActivity() {
                                         Log.e(tag, "Erro ao recuperar jornada", e)
 
                                         jornadaScreenViewModel.exibirErro(
-                                            "Não foi possível recuperar sua jornada.",
+                                            "Não foi possível recuperar sua jornada."
                                         )
                                     }
                                 }
@@ -690,57 +651,49 @@ class MainActivity : ComponentActivity() {
                             JornadaScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                jornadaScreenViewModel = jornadaScreenViewModel,
+                                jornadaScreenViewModel = jornadaScreenViewModel
                             )
                         }
 
                         composable(
                             route = "jornada/{id_instituicao}",
-                            arguments =
-                                listOf(
-                                    navArgument("id_instituicao") {
-                                        type = NavType.IntType
-                                    },
-                                ),
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
+                                }
+                            )
                         ) { backStackEntry ->
-                            val idInstituicao =
-                                backStackEntry.arguments?.getInt("id_instituicao")
-                                    ?: return@composable
 
-                            val appSettings by
-                                remember(settingsDao) {
-                                        settingsDao.observeSettings()
-                                    }
-                                    .collectAsState(initial = null)
+                            val idInstituicao = backStackEntry.arguments
+                                ?.getInt("id_instituicao")
+                                ?: return@composable
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
 
                             val idDoadora = appSettings?.idDoadora
 
-                            val jornadaScreenViewModel: JornadaScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return JornadaScreenViewModel(
-                                                    context = context.applicationContext,
-                                                )
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return JornadaScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
-                            val atualizarJornada by
-                                backStackEntry.savedStateHandle
-                                    .getLiveData("atualizar_jornada", false)
-                                    .observeAsState(false)
+                            val atualizarJornada by backStackEntry.savedStateHandle
+                                .getLiveData("atualizar_jornada", false)
+                                .observeAsState(false)
 
                             LaunchedEffect(atualizarJornada) {
                                 if (atualizarJornada) {
-                                    backStackEntry.savedStateHandle.remove<Boolean>(
-                                        "atualizar_jornada",
-                                    )
+                                    backStackEntry.savedStateHandle.remove<Boolean>("atualizar_jornada")
 
                                     jornadaScreenViewModel.recarregarJornada()
                                 }
@@ -750,7 +703,7 @@ class MainActivity : ComponentActivity() {
                                 if (idDoadora != null && idDoadora > 0) {
                                     jornadaScreenViewModel.carregarInstituicao(
                                         idInstituicao = idInstituicao,
-                                        idDoadora = idDoadora,
+                                        idDoadora = idDoadora
                                     )
                                 }
                             }
@@ -758,34 +711,34 @@ class MainActivity : ComponentActivity() {
                             JornadaScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                jornadaScreenViewModel = jornadaScreenViewModel,
+                                jornadaScreenViewModel = jornadaScreenViewModel
                             )
                         }
 
+
+
                         composable(
                             route = "conheca_doacao/{id_instituicao}",
-                            arguments =
-                                listOf(
-                                    navArgument("id_instituicao") {
-                                        type = NavType.IntType
-                                    },
-                                ),
-                        ) { backStackEntry ->
-                            val idInstituicao =
-                                backStackEntry.arguments?.getInt("id_instituicao")
-                                    ?: return@composable
-
-                            val jornadaEntry =
-                                remember(backStackEntry) {
-                                    navController.getBackStackEntry(
-                                        "jornada/$idInstituicao",
-                                    )
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
                                 }
+                            )
+                        ) { backStackEntry ->
 
-                            val jornadaScreenViewModel: JornadaScreenViewModel =
-                                viewModel(
-                                    viewModelStoreOwner = jornadaEntry,
+                            val idInstituicao = backStackEntry.arguments
+                                ?.getInt("id_instituicao")
+                                ?: return@composable
+
+                            val jornadaEntry = remember(backStackEntry) {
+                                navController.getBackStackEntry(
+                                    "jornada/$idInstituicao"
                                 )
+                            }
+
+                            val jornadaScreenViewModel: JornadaScreenViewModel = viewModel(
+                                viewModelStoreOwner = jornadaEntry
+                            )
 
                             var salvando by remember {
                                 mutableStateOf(false)
@@ -800,7 +753,7 @@ class MainActivity : ComponentActivity() {
                                     Text(
                                         text = mensagem,
                                         color = colorResource(R.color.main_pink),
-                                        modifier = Modifier.padding(16.dp),
+                                        modifier = Modifier.padding(16.dp)
                                     )
                                 }
 
@@ -819,40 +772,40 @@ class MainActivity : ComponentActivity() {
                                                 onErro = { erro ->
                                                     salvando = false
                                                     mensagemErro = erro
-                                                },
+                                                }
                                             )
                                         }
                                     },
                                     onVoltar = {
                                         navController.popBackStack()
-                                    },
+                                    }
                                 )
                             }
                         }
 
+
+
                         composable(
                             route = "orientacoes/{id_jornada}",
-                            arguments =
-                                listOf(
-                                    navArgument("id_jornada") {
-                                        type = NavType.IntType
-                                    },
-                                ),
+                            arguments = listOf(
+                                navArgument("id_jornada") {
+                                    type = NavType.IntType
+                                }
+                            )
                         ) { backStackEntry ->
-                            val idJornada = backStackEntry.arguments?.getInt("id_jornada")
 
-                            val appSettings by
-                                remember(settingsDao) {
-                                        settingsDao.observeSettings()
-                                    }
-                                    .collectAsState(initial = null)
+                            val idJornada = backStackEntry.arguments
+                                ?.getInt("id_jornada")
+
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
 
                             val idDoadora = appSettings?.idDoadora
 
-                            val progressoDao =
-                                remember(database) {
-                                    database.jornadaLocalProgressDao()
-                                }
+                            val progressoDao = remember(database) {
+                                database.jornadaLocalProgressDao()
+                            }
 
                             OrientacoesScreen(
                                 idDoadora = idDoadora,
@@ -867,33 +820,32 @@ class MainActivity : ComponentActivity() {
                                         ?.set("atualizar_jornada", true)
 
                                     navController.popBackStack()
-                                },
+                                }
                             )
                         }
 
+
+
                         composable(
                             route = "questionario/{id_jornada}",
-                            arguments =
-                                listOf(
-                                    navArgument("id_jornada") {
-                                        type = NavType.IntType
-                                    },
-                                ),
+                            arguments = listOf(
+                                navArgument("id_jornada") {
+                                    type = NavType.IntType
+                                }
+                            )
                         ) { backStackEntry ->
-                            val idJornada = backStackEntry.arguments?.getInt("id_jornada")
+                            val idJornada = backStackEntry.arguments
+                                ?.getInt("id_jornada")
 
-                            val appSettings by
-                                remember(settingsDao) {
-                                        settingsDao.observeSettings()
-                                    }
-                                    .collectAsState(initial = null)
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
 
                             val idDoadora = appSettings?.idDoadora
 
-                            val progressoDao =
-                                remember(database) {
-                                    database.jornadaLocalProgressDao()
-                                }
+                            val progressoDao = remember(database) {
+                                database.jornadaLocalProgressDao()
+                            }
 
                             QuestionarioScreen(
                                 idDoadora = idDoadora,
@@ -908,67 +860,55 @@ class MainActivity : ComponentActivity() {
                                         ?.set("atualizar_jornada", true)
 
                                     navController.popBackStack()
-                                },
+                                }
                             )
                         }
 
+
+
                         composable(
-                            route =
-                                "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}/{id_coleta}/{id_doadora}/{id_jornada_doacao}?nome_instituicao={nome_instituicao}",
-                            arguments =
-                                listOf(
-                                    navArgument("id_instituicao") {
-                                        type = NavType.IntType
-                                    },
-                                    navArgument("id_jornada") {
-                                        type = NavType.IntType
-                                    },
-                                    navArgument("id_etapa") {
-                                        type = NavType.IntType
-                                    },
-                                    navArgument("nome_instituicao") {
-                                        type = NavType.StringType
-                                        defaultValue = "Instituição"
-                                    },
-                                    navArgument("id_coleta") {
-                                        type = NavType.IntType
-                                    },
-                                    navArgument("id_doadora") {
-                                        type = NavType.IntType
-                                    },
-                                    navArgument("id_jornada_doacao") {
-                                        type = NavType.IntType
-                                    },
-                                ),
+                            route = "agendamento/{id_instituicao}/{id_jornada}/{id_etapa}/{id_coleta}/{id_doadora}/{id_jornada_doacao}?nome_instituicao={nome_instituicao}",
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_jornada") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_etapa") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("nome_instituicao") {
+                                    type = NavType.StringType
+                                    defaultValue = "Instituição"
+                                },
+                                navArgument("id_coleta") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_doadora") {
+                                    type = NavType.IntType
+                                },
+                                navArgument("id_jornada_doacao") {
+                                    type = NavType.IntType
+                                },
+                            )
                         ) { backStackEntry ->
-                            val idInstituicao =
-                                backStackEntry.arguments?.getInt("id_instituicao")
-                                    ?: return@composable
-                            val idJornada =
-                                backStackEntry.arguments?.getInt("id_jornada") ?: return@composable
-                            val idEtapa =
-                                backStackEntry.arguments?.getInt("id_etapa") ?: return@composable
-                            val nomeInstituicao =
-                                backStackEntry.arguments
-                                    ?.getString("nome_instituicao")
-                                    .orEmpty()
-                                    .ifBlank { "Instituição" }
-                            val idColeta =
-                                backStackEntry.arguments?.getInt("id_coleta") ?: return@composable
-                            val idDoadora =
-                                backStackEntry.arguments?.getInt("id_doadora") ?: return@composable
-                            val idJornadaDoacao =
-                                backStackEntry.arguments?.getInt("id_jornada_doacao")
-                                    ?: return@composable
+                            val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
+                            val idJornada = backStackEntry.arguments?.getInt("id_jornada") ?: return@composable
+                            val idEtapa = backStackEntry.arguments?.getInt("id_etapa") ?: return@composable
+                            val nomeInstituicao = backStackEntry.arguments?.getString("nome_instituicao").orEmpty().ifBlank { "Instituição" }
+                            val idColeta = backStackEntry.arguments?.getInt("id_coleta") ?: return@composable
+                            val idDoadora = backStackEntry.arguments?.getInt("id_doadora") ?: return@composable
+                            val idJornadaDoacao = backStackEntry.arguments?.getInt("id_jornada_doacao") ?: return@composable
 
                             Log.d(
                                 "AGENDAMENTO_NAV",
                                 "Instituição: $idInstituicao | " +
-                                    "Jornada: $idJornada | " +
-                                    "Etapa: $idEtapa | " +
-                                    "Coleta: $idColeta | " +
-                                    "Doadora: $idDoadora | " +
-                                    "Vínculo: $idJornadaDoacao",
+                                        "Jornada: $idJornada | " +
+                                        "Etapa: $idEtapa | " +
+                                        "Coleta: $idColeta | " +
+                                        "Doadora: $idDoadora | " +
+                                        "Vínculo: $idJornadaDoacao"
                             )
                             AgendamentoScreen(
                                 nomeInstituicao = nomeInstituicao,
@@ -982,9 +922,13 @@ class MainActivity : ComponentActivity() {
                                 idJornadaDoacao = idJornadaDoacao,
                                 onVoltar = {
                                     navController.popBackStack()
-                                },
+                                }
                             )
                         }
+
+
+
+
 
                         composable(route = "servicos") {
                             ServicosScreen(
@@ -995,58 +939,48 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("confirmar_banco/$idInstituicao") {
                                         launchSingleTop = true
                                     }
-                                },
+                                }
                             )
                         }
 
                         composable(
                             route = "confirmar_banco/{id_instituicao}",
-                            arguments =
-                                listOf(
-                                    navArgument("id_instituicao") {
-                                        type = NavType.IntType
-                                    },
-                                ),
+                            arguments = listOf(
+                                navArgument("id_instituicao") {
+                                    type = NavType.IntType
+                                }
+                            )
                         ) { backStackEntry ->
-                            val idInstituicao =
-                                backStackEntry.arguments?.getInt("id_instituicao")
-                                    ?: return@composable
+                            val idInstituicao = backStackEntry.arguments?.getInt("id_instituicao") ?: return@composable
 
-                            val appSettings by
-                                remember(settingsDao) {
-                                        settingsDao.observeSettings()
-                                    }
-                                    .collectAsState(initial = null)
+                            val appSettings by remember(settingsDao) {
+                                settingsDao.observeSettings()
+                            }.collectAsState(initial = null)
 
                             val idDoadora = appSettings?.idDoadora
 
-                            val instituicoes by
-                                servicosCompartilhado.instituicoes.observeAsState(emptyList())
+                            val instituicoes by servicosCompartilhado.instituicoes.observeAsState(emptyList())
 
                             val instituicao = instituicoes.firstOrNull {
                                 it.id == idInstituicao
                             }
 
-                            val confirmarBancoScreenViewModel: ConfirmarBancoScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return ConfirmarBancoScreenViewModel(
-                                                    context = context.applicationContext,
-                                                )
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val confirmarBancoScreenViewModel: ConfirmarBancoScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return ConfirmarBancoScreenViewModel(
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
-                            val estadoConfirmacao by
-                                confirmarBancoScreenViewModel.estado.observeAsState(
-                                    ConfirmarBancoEstado.INICIAL,
-                                )
+                            val estadoConfirmacao by confirmarBancoScreenViewModel.estado.observeAsState(
+                                ConfirmarBancoEstado.INICIAL
+                            )
 
                             LaunchedEffect(estadoConfirmacao) {
                                 when (estadoConfirmacao) {
@@ -1087,55 +1021,54 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
+
+
+
+
                         composable(route = "perfil") {
-                            val perfilScreenViewModel: PerfilScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return PerfilScreenViewModel(
-                                                    settingsDao = settingsDao,
-                                                    context = context.applicationContext,
-                                                )
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val perfilScreenViewModel: PerfilScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return PerfilScreenViewModel(
+                                            settingsDao = settingsDao,
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
                             PerfilScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                perfilScreenViewModel = perfilScreenViewModel,
+                                perfilScreenViewModel = perfilScreenViewModel
                             )
                         }
 
                         composable(route = "editar_perfil") {
-                            val editarPerfilScreenViewModel: EditarPerfilScreenViewModel =
-                                viewModel(
-                                    factory =
-                                        object : ViewModelProvider.Factory {
-                                            @Suppress("UNCHECKED_CAST")
-                                            override fun <T : ViewModel> create(
-                                                modelClass: Class<T>,
-                                            ): T {
-                                                return EditarPerfilScreenViewModel(
-                                                    settingsDao = settingsDao,
-                                                    context = context.applicationContext,
-                                                )
-                                                    as T
-                                            }
-                                        },
-                                )
+                            val editarPerfilScreenViewModel: EditarPerfilScreenViewModel = viewModel(
+                                factory = object : ViewModelProvider.Factory {
+                                    @Suppress("UNCHECKED_CAST")
+                                    override fun <T : ViewModel> create(
+                                        modelClass: Class<T>
+                                    ): T {
+                                        return EditarPerfilScreenViewModel(
+                                            settingsDao = settingsDao,
+                                            context = context.applicationContext
+                                        ) as T
+                                    }
+                                }
+                            )
 
                             EditarPerfilScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                editarPerfilScreenViewModel = editarPerfilScreenViewModel,
+                                editarPerfilScreenViewModel = editarPerfilScreenViewModel
                             )
                         }
+
                     }
                 }
             }
