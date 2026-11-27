@@ -17,17 +17,18 @@ enum class ConfirmarBancoEstado {
     SEM_VINCULO,
     MESMO_BANCO,
     OUTRO_BANCO,
-    ERRO
+    ERRO,
 }
 
 class ConfirmarBancoScreenViewModel(
-    context: Context
+    context: Context,
 ) : ViewModel() {
     private val applicationContext = context.applicationContext
 
-    private val _estado = MutableLiveData(
-        ConfirmarBancoEstado.INICIAL
-    )
+    private val _estado =
+        MutableLiveData(
+            ConfirmarBancoEstado.INICIAL,
+        )
     val estado: LiveData<ConfirmarBancoEstado> = _estado
 
     private val _mensagemErro = MutableLiveData("")
@@ -37,7 +38,7 @@ class ConfirmarBancoScreenViewModel(
 
     fun verificarVinculo(
         idDoadora: Int,
-        idInstituicao: Int
+        idInstituicao: Int,
     ) {
         if (idDoadora <= 0 || idInstituicao <= 0) {
             _mensagemErro.value = "Identificação inválida."
@@ -50,9 +51,10 @@ class ConfirmarBancoScreenViewModel(
         _estado.value = ConfirmarBancoEstado.CARREGANDO
         _mensagemErro.value = ""
 
-        val call = MaternaRetrofitFactory(applicationContext)
-            .getVinculoEtapaDoadoraService()
-            .buscarVinculosDoadora(idDoadora)
+        val call =
+            MaternaRetrofitFactory(applicationContext)
+                .getVinculoEtapaDoadoraService()
+                .buscarVinculosDoadora(idDoadora)
 
         chamadaAtual = call
 
@@ -61,7 +63,7 @@ class ConfirmarBancoScreenViewModel(
 
                 override fun onResponse(
                     call: Call<VinculoEtapaDoadoraResponse>,
-                    response: Response<VinculoEtapaDoadoraResponse>
+                    response: Response<VinculoEtapaDoadoraResponse>,
                 ) {
                     if (call !== chamadaAtual) return
 
@@ -85,52 +87,53 @@ class ConfirmarBancoScreenViewModel(
 
                     Log.d(
                         "ConfirmarBanco",
-                        "Jornadas retornadas: ${jornadas.size}"
+                        "Jornadas retornadas: ${jornadas.size}",
                     )
 
                     jornadas.forEach { jornada ->
                         Log.d(
                             "ConfirmarBanco",
                             "Jornada ${jornada.id} | " +
-                                    "Instituição ${jornada.instituicao.id} | " +
-                                    "Ativa: ${jornada.isAtivo}"
+                                "Instituição ${jornada.instituicao.id} | " +
+                                "Ativa: ${jornada.isAtivo}",
                         )
                     }
 
                     val jornadasAtivas = jornadas.filter { jornada ->
                         jornada.isAtivo == 1 &&
-                                jornada.etapas.any { etapa ->
-                                    etapa.vinculos.any { vinculo ->
-                                        vinculo.encerrado == 0
-                                    }
+                            jornada.etapas.any { etapa ->
+                                etapa.vinculos.any { vinculo ->
+                                    vinculo.encerrado == 0
                                 }
+                            }
                     }
 
-                    _estado.value = when {
-                        jornadasAtivas.isEmpty() -> {
-                            ConfirmarBancoEstado.SEM_VINCULO
-                        }
+                    _estado.value =
+                        when {
+                            jornadasAtivas.isEmpty() -> {
+                                ConfirmarBancoEstado.SEM_VINCULO
+                            }
 
-                        jornadasAtivas.any {
-                            it.instituicao.id != idInstituicao
-                        } -> {
-                            ConfirmarBancoEstado.OUTRO_BANCO
-                        }
+                            jornadasAtivas.any {
+                                it.instituicao.id != idInstituicao
+                            } -> {
+                                ConfirmarBancoEstado.OUTRO_BANCO
+                            }
 
-                        else -> {
-                            ConfirmarBancoEstado.MESMO_BANCO
+                            else -> {
+                                ConfirmarBancoEstado.MESMO_BANCO
+                            }
                         }
-                    }
 
                     Log.i(
                         "ConfirmarBanco",
-                        "Jornadas ativas encontradas: ${jornadasAtivas.size}"
+                        "Jornadas ativas encontradas: ${jornadasAtivas.size}",
                     )
                 }
 
                 override fun onFailure(
                     call: Call<VinculoEtapaDoadoraResponse>,
-                    t: Throwable
+                    t: Throwable,
                 ) {
                     if (call.isCanceled || call !== chamadaAtual) return
 
@@ -141,17 +144,17 @@ class ConfirmarBancoScreenViewModel(
                     Log.e(
                         "ConfirmarBanco",
                         "Falha ao consultar vínculos: ${t.message}",
-                        t
+                        t,
                     )
                 }
-            }
+            },
         )
     }
 
     fun limparAviso() {
         if (
             _estado.value == ConfirmarBancoEstado.ERRO ||
-            _estado.value == ConfirmarBancoEstado.OUTRO_BANCO
+                _estado.value == ConfirmarBancoEstado.OUTRO_BANCO
         ) {
             _mensagemErro.value = ""
             _estado.value = ConfirmarBancoEstado.INICIAL

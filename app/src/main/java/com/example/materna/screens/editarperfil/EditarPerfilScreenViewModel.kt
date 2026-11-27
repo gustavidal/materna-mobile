@@ -32,6 +32,9 @@ class EditarPerfilScreenViewModel(
     private val _idDoadora = MutableLiveData<Int?>(null)
     val idDoadora: LiveData<Int?> = _idDoadora
 
+    // Foto atual da doadora (reenviada no PUT para não ser apagada)
+    private var fotoAtual: String? = null
+
     private val _nome = MutableLiveData<String>()
     val nome: LiveData<String> = _nome
 
@@ -278,6 +281,7 @@ class EditarPerfilScreenViewModel(
 
 
     private fun preencherCampos(doadora: PerfilDoadora) {
+        fotoAtual = doadora.foto
         _nome.value = doadora.nome
         _cpf.value = FormatadorCampos.cpf(doadora.cpf)
         _dataNascimento.value = FormatadorCampos.dataParaExibicao(doadora.dataNascimento)
@@ -507,6 +511,7 @@ class EditarPerfilScreenViewModel(
         val request = AtualizarDoadoraRequest(
             nome = _nome.value.orEmpty().trim(),
             cpf = _cpf.value.orEmpty(),
+            foto = fotoAtual,
             dataNascimento = FormatadorCampos.dataParaApi(_dataNascimento.value.orEmpty())!!,
             email = _email.value.orEmpty().trim(),
             logradouro = _logradouro.value.orEmpty(),

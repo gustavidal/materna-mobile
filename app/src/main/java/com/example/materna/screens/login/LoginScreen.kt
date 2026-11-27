@@ -49,18 +49,18 @@ import kotlinx.coroutines.delay
 fun LoginScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    loginScreenViewModel: LoginScreenViewModel
+    loginScreenViewModel: LoginScreenViewModel,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager       = LocalFocusManager.current
-    val context            = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
-    val email          by loginScreenViewModel.email.observeAsState(initial = "")
-    val senha          by loginScreenViewModel.senha.observeAsState(initial = "")
-    val mostrarSenha   by loginScreenViewModel.mostrarSenha.observeAsState(false)
+    val email by loginScreenViewModel.email.observeAsState(initial = "")
+    val senha by loginScreenViewModel.senha.observeAsState(initial = "")
+    val mostrarSenha by loginScreenViewModel.mostrarSenha.observeAsState(false)
 
-    val carregando     by loginScreenViewModel.carregando.observeAsState(false)
-    val erroLogin      by loginScreenViewModel.erroLogin.observeAsState(null)
+    val carregando by loginScreenViewModel.carregando.observeAsState(false)
+    val erroLogin by loginScreenViewModel.erroLogin.observeAsState(null)
     val loginRealizado by loginScreenViewModel.loginRealizado.observeAsState(false)
 
     LaunchedEffect(mostrarSenha) {
@@ -82,62 +82,60 @@ fun LoginScreen(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .verticalScroll(rememberScrollState())
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        focusManager.clearFocus(force = true)
-                        keyboardController?.hide()
-                    }
-                )
-            }
-            .padding(horizontal = 28.dp, vertical = 16.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .verticalScroll(rememberScrollState())
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            focusManager.clearFocus(force = true)
+                            keyboardController?.hide()
+                        },
+                    )
+                }
+                .padding(horizontal = 28.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-//        -- cabeçalho
+        //        -- cabeçalho
         Column(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Image(
                 painter = painterResource(R.drawable.ic_materna_logo_sem_fundo),
                 contentDescription = "Logo Materna",
-                modifier = Modifier
-                    .size(120.dp)
+                modifier = Modifier.size(120.dp),
             )
 
             Text(
                 text = "Materna",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.main_text_color)
+                color = colorResource(R.color.main_text_color),
             )
 
             Text(
                 text = "Bem-vinda",
                 fontSize = 13.sp,
-                color = colorResource(R.color.secundary_gray)
+                color = colorResource(R.color.secundary_gray),
             )
         }
 
-//        -- seção de formulário
+        //        -- seção de formulário
         Column(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 text = "E-mail",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = colorResource(R.color.main_text_color),
-                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp),
             )
 
             LoginField(
@@ -147,7 +145,7 @@ fun LoginScreen(
                 iconRes = R.drawable.ic_mail,
                 borderColor = colorResource(R.color.border),
                 textColor = colorResource(R.color.main_text_color),
-                keyboardType = KeyboardType.Email
+                keyboardType = KeyboardType.Email,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -157,7 +155,7 @@ fun LoginScreen(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = colorResource(R.color.main_text_color),
-                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp),
             )
 
             LoginField(
@@ -172,39 +170,36 @@ fun LoginScreen(
                 passwordVisible = mostrarSenha,
                 onTogglePassword = {
                     loginScreenViewModel.toggleMostrarSenha()
-                }
+                },
             )
 
             Text(
                 text = "Esqueci minha senha",
                 fontSize = 14.sp,
                 color = colorResource(R.color.main_pink),
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(top = 10.dp)
-                    .clickable(
-                        interactionSource = remember {
-                            MutableInteractionSource()
-                        },
-                        indication = null
+                modifier =
+                    Modifier.align(Alignment.End).padding(top = 10.dp).clickable(
+                        interactionSource =
+                            remember {
+                                MutableInteractionSource()
+                            },
+                        indication = null,
                     ) {
                         navController.navigate("recuperar-senha")
-                    }
+                    },
             )
 
             Spacer(modifier = Modifier.height(25.dp))
 
             AnimatedVisibility(
-                visible = erroLogin != null
+                visible = erroLogin != null,
             ) {
                 Text(
                     text = erroLogin.orEmpty(),
                     color = colorResource(R.color.red),
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                 )
             }
 
@@ -216,34 +211,32 @@ fun LoginScreen(
                     loginScreenViewModel.realizarLogin(context)
                 },
                 enabled = !carregando,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
+                modifier = Modifier.fillMaxWidth().height(58.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.main_pink)
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = colorResource(R.color.main_pink),
+                    ),
             ) {
                 Text(
                     text = if (carregando) "Entrando..." else "Entrar",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.white)
+                    color = colorResource(R.color.white),
                 )
             }
         }
 
-//        -- seção de um novo cadastro
+        //        -- seção de um novo cadastro
         Column(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom
+            verticalArrangement = Arrangement.Bottom,
         ) {
             Text(
                 text = "Ainda não tenho conta",
                 fontSize = 16.sp,
-                color = colorResource(R.color.secundary_gray)
+                color = colorResource(R.color.secundary_gray),
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -252,24 +245,25 @@ fun LoginScreen(
                 onClick = {
                     navController.navigate("cadastro")
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp)
-                    .border(
-                        width = 2.dp,
-                        color = colorResource(R.color.border),
-                        shape = CircleShape
-                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(58.dp)
+                        .border(
+                            width = 2.dp,
+                            color = colorResource(R.color.border),
+                            shape = CircleShape,
+                        ),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = colorResource(R.color.main_text_color)
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = colorResource(R.color.main_text_color),
+                    ),
             ) {
                 Text(
                     text = "Criar conta",
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
         }

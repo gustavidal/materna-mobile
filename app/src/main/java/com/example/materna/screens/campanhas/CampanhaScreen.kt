@@ -42,77 +42,76 @@ import java.util.Locale
 fun CampanhaScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    campanha: CampanhaResponse
+    campanha: CampanhaResponse,
 ) {
-    val formato = DateTimeFormatter.ofPattern(
-        "dd MMM",
-        Locale("pt", "BR")
-    )
+    val formato =
+        DateTimeFormatter.ofPattern(
+            "dd MMM",
+            Locale("pt", "BR"),
+        )
 
     val zona = ZoneId.of("America/Sao_Paulo")
 
-    val periodo = try {
-        val inicio = Instant.parse(campanha.dataInicio)
-            .atZone(zona)
-            .format(formato)
+    val periodo =
+        try {
+            val inicio = Instant.parse(campanha.dataInicio).atZone(zona).format(formato)
 
-        val fim = Instant.parse(campanha.dataFim)
-            .atZone(zona)
-            .format(formato)
+            val fim = Instant.parse(campanha.dataFim).atZone(zona).format(formato)
 
-        "$inicio — $fim".uppercase(Locale("pt", "BR"))
-    } catch (e: Exception) {
-        "Período indisponível"
-    }
+            "$inicio — $fim".uppercase(Locale("pt", "BR"))
+        } catch (e: Exception) {
+            "Período indisponível"
+        }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .verticalScroll(rememberScrollState())
-            .padding(
-                horizontal = 24.dp,
-                vertical = 32.dp
-            ),
-        verticalArrangement = Arrangement.spacedBy(32.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    horizontal = 24.dp,
+                    vertical = 32.dp,
+                ),
+        verticalArrangement = Arrangement.spacedBy(32.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             IconButton(
                 onClick = {
                     navController.popBackStack()
                 },
-                modifier = Modifier
-                    .background(
+                modifier =
+                    Modifier.background(
                         colorResource(R.color.pink_beige),
-                        CircleShape
-                    )
+                        CircleShape,
+                    ),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = colorResource(R.color.main_text_color)
+                    tint = colorResource(R.color.main_text_color),
                 )
             }
 
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = campanha.titulo,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = colorResource(R.color.main_text_color),
-                    lineHeight = 29.sp
+                    lineHeight = 29.sp,
                 )
 
                 Text(
                     text = "Participe e divulgue",
                     fontSize = 14.sp,
-                    color = colorResource(R.color.secundary_gray)
+                    color = colorResource(R.color.secundary_gray),
                 )
             }
         }
@@ -120,58 +119,54 @@ fun CampanhaScreen(
         AsyncImage(
             model = campanha.foto,
             contentDescription = campanha.titulo,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(230.dp)
-                .clip(RoundedCornerShape(24.dp)),
-            contentScale = ContentScale.Crop
+            modifier = Modifier.fillMaxWidth().height(230.dp).clip(RoundedCornerShape(24.dp)),
+            contentScale = ContentScale.Crop,
         )
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Ativa",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = androidx.compose.ui.graphics.Color(0xFF43A85B),
-                modifier = Modifier
-                    .background(
-                        color = androidx.compose.ui.graphics.Color(0xFFE5F5E9),
-                        shape = CircleShape
-                    )
-                    .padding(
-                        horizontal = 14.dp,
-                        vertical = 8.dp
-                    )
+                modifier =
+                    Modifier.background(
+                            color = androidx.compose.ui.graphics.Color(0xFFE5F5E9),
+                            shape = CircleShape,
+                        )
+                        .padding(
+                            horizontal = 14.dp,
+                            vertical = 8.dp,
+                        ),
             )
 
             Row(
-                modifier = Modifier
-                    .background(
-                        colorResource(R.color.pink_beige),
-                        CircleShape
-                    )
-                    .padding(
-                        horizontal = 14.dp,
-                        vertical = 8.dp
-                    ),
+                modifier =
+                    Modifier.background(
+                            colorResource(R.color.pink_beige),
+                            CircleShape,
+                        )
+                        .padding(
+                            horizontal = 14.dp,
+                            vertical = 8.dp,
+                        ),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_calendar),
                     contentDescription = null,
                     tint = colorResource(R.color.secundary_gray),
-                    modifier = Modifier
-                        .size(20.dp)
+                    modifier = Modifier.size(20.dp),
                 )
 
                 Text(
                     text = periodo,
                     fontSize = 13.sp,
-                    color = colorResource(R.color.main_text_color)
+                    color = colorResource(R.color.main_text_color),
                 )
             }
         }
@@ -180,7 +175,7 @@ fun CampanhaScreen(
             text = campanha.descricao,
             fontSize = 17.sp,
             lineHeight = 28.sp,
-            color = colorResource(R.color.secundary_gray)
+            color = colorResource(R.color.secundary_gray),
         )
 
         Spacer(modifier = Modifier.height(24.dp))

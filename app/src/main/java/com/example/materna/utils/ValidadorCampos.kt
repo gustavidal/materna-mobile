@@ -17,24 +17,28 @@ object ValidadorCampos {
             return false
         }
 
-        val formato = SimpleDateFormat(
-            "dd/MM/yyyy",
-            Locale.getDefault()
-        ).apply {
-            isLenient = false
-        }
+        val formato =
+            SimpleDateFormat(
+                    "dd/MM/yyyy",
+                    Locale.getDefault(),
+                )
+                .apply {
+                    isLenient = false
+                }
 
-        val data = try {
-            formato.parse(value)
-        } catch (e: Exception) {
-            null
-        } ?: return false
+        val data =
+            try {
+                formato.parse(value)
+            } catch (e: Exception) {
+                null
+            } ?: return false
 
         val hoje = Calendar.getInstance()
 
-        val nascimento = Calendar.getInstance().apply {
-            time = data
-        }
+        val nascimento =
+            Calendar.getInstance().apply {
+                time = data
+            }
 
         return !nascimento.after(hoje)
     }
@@ -54,8 +58,7 @@ object ValidadorCampos {
         }
 
         val restoPrimeiro = (soma * 10) % 11
-        val primeiroDigito =
-            if (restoPrimeiro == 10) 0 else restoPrimeiro
+        val primeiroDigito = if (restoPrimeiro == 10) 0 else restoPrimeiro
 
         if (digitos[9] != primeiroDigito) return false
 
@@ -88,9 +91,9 @@ object ValidadorCampos {
     fun emailValido(value: String): Boolean {
         val usuario = value.substringBefore("@")
 
-        return Patterns.EMAIL_ADDRESS
-            .matcher(value)
-            .matches() && usuario.length in 6..256 && !usuario.all { it.isDigit() }
+        return Patterns.EMAIL_ADDRESS.matcher(value).matches() &&
+            usuario.length in 6..256 &&
+            !usuario.all { it.isDigit() }
     }
 
     fun senhaTemOitoCaracteres(value: String): Boolean {
@@ -112,12 +115,15 @@ object ValidadorCampos {
     }
 
     fun senhaValida(value: String): Boolean {
-        return senhaTemOitoCaracteres(value) && senhaTemMaiuscula(value) && senhaTemNumero(value) && senhaTemCaractereEspecial(value)
+        return senhaTemOitoCaracteres(value) &&
+            senhaTemMaiuscula(value) &&
+            senhaTemNumero(value) &&
+            senhaTemCaractereEspecial(value)
     }
 
     fun senhasCoincidem(
         senha: String,
-        confirmacao: String
+        confirmacao: String,
     ): Boolean {
         return confirmacao.isNotEmpty() && senha == confirmacao
     }

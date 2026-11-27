@@ -41,7 +41,7 @@ import java.time.format.DateTimeParseException
 fun CampanhasScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    dashboardScreenViewModel: DashboardScreenViewModel
+    dashboardScreenViewModel: DashboardScreenViewModel,
 ) {
     val campanhas by dashboardScreenViewModel.campanhas.observeAsState(emptyList())
     val carregando by dashboardScreenViewModel.carregandoCampanhas.observeAsState(false)
@@ -52,8 +52,8 @@ fun CampanhasScreen(
     val campanhasVigentes = campanhas.filter { campanha ->
         try {
             campanha.isAtivo == 1 &&
-                    !agora.isBefore(Instant.parse(campanha.dataInicio)) &&
-                    !agora.isAfter(Instant.parse(campanha.dataFim))
+                !agora.isBefore(Instant.parse(campanha.dataInicio)) &&
+                !agora.isAfter(Instant.parse(campanha.dataFim))
         } catch (e: DateTimeParseException) {
             false
         }
@@ -73,77 +73,76 @@ fun CampanhasScreen(
             dashboardScreenViewModel.buscarCampanhas()
         },
         state = state,
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream)),
+        modifier = modifier.fillMaxSize().background(colorResource(R.color.background_cream)),
         indicator = {
             PullToRefreshDefaults.Indicator(
                 isRefreshing = carregando,
                 state = state,
                 modifier = Modifier.align(Alignment.TopCenter),
-                color = colorResource(R.color.main_pink)
+                color = colorResource(R.color.main_pink),
             )
-        }
+        },
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = 16.dp,
-                        vertical = 20.dp
-                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(
+                            horizontal = 16.dp,
+                            vertical = 20.dp,
+                        ),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 IconButton(
                     onClick = {
                         navController.popBackStack()
-                    }
+                    },
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar",
-                        tint = colorResource(R.color.main_text_color)
+                        tint = colorResource(R.color.main_text_color),
                     )
                 }
 
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         text = "Campanhas",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.main_text_color)
+                        color = colorResource(R.color.main_text_color),
                     )
 
                     Text(
                         text = "Participe e divulgue",
                         fontSize = 14.sp,
-                        color = colorResource(R.color.secundary_gray)
+                        color = colorResource(R.color.secundary_gray),
                     )
                 }
             }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 24.dp,
-                    end = 24.dp,
-                    top = 16.dp,
-                    bottom = 32.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding =
+                    PaddingValues(
+                        start = 24.dp,
+                        end = 24.dp,
+                        top = 16.dp,
+                        bottom = 32.dp,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 when {
                     mensagem != null -> {
                         item {
                             Text(
                                 text = mensagem.orEmpty(),
-                                color = colorResource(R.color.secundary_gray)
+                                color = colorResource(R.color.secundary_gray),
                             )
                         }
                     }
@@ -152,7 +151,7 @@ fun CampanhasScreen(
                         item {
                             Text(
                                 text = "Nenhuma campanha disponível no momento.",
-                                color = colorResource(R.color.secundary_gray)
+                                color = colorResource(R.color.secundary_gray),
                             )
                         }
                     }
@@ -160,7 +159,7 @@ fun CampanhasScreen(
                     else -> {
                         items(
                             items = campanhasVigentes,
-                            key = { it.id }
+                            key = { it.id },
                         ) { campanha ->
                             CampanhaCard(
                                 campanha = campanha,
@@ -168,7 +167,7 @@ fun CampanhasScreen(
                                 exibirDetalhes = true,
                                 onClick = {
                                     navController.navigate("campanha/${campanha.id}")
-                                }
+                                },
                             )
                         }
                     }

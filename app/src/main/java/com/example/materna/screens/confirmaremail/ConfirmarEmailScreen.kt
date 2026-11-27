@@ -50,14 +50,14 @@ fun ConfirmarEmailScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
     idDoadora: Int,
-    confirmarEmailScreenViewModel: ConfirmarEmailScreenViewModel
+    confirmarEmailScreenViewModel: ConfirmarEmailScreenViewModel,
 ) {
-    val email               by confirmarEmailScreenViewModel.email.observeAsState("")
-    val codigo              by confirmarEmailScreenViewModel.codigo.observeAsState("")
+    val email by confirmarEmailScreenViewModel.email.observeAsState("")
+    val codigo by confirmarEmailScreenViewModel.codigo.observeAsState("")
 
-    val confirmando         by confirmarEmailScreenViewModel.confirmando.observeAsState(false)
+    val confirmando by confirmarEmailScreenViewModel.confirmando.observeAsState(false)
     val mensagemConfirmacao by confirmarEmailScreenViewModel.mensagemConfirmacao.observeAsState()
-    val codigoConfirmado    by confirmarEmailScreenViewModel.codigoConfirmado.observeAsState(false)
+    val codigoConfirmado by confirmarEmailScreenViewModel.codigoConfirmado.observeAsState(false)
 
     val context = LocalContext.current
 
@@ -74,19 +74,20 @@ fun ConfirmarEmailScreen(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.height(32.dp))
 
         // Cabeçalho
         Box(
             modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             IconButton(
                 onClick = {
@@ -98,12 +99,12 @@ fun ConfirmarEmailScreen(
                     }
                 },
                 enabled = !confirmando,
-                modifier = Modifier.align(Alignment.CenterStart)
+                modifier = Modifier.align(Alignment.CenterStart),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = "Voltar para o login",
-                    tint = colorResource(R.color.main_text_color)
+                    tint = colorResource(R.color.main_text_color),
                 )
             }
 
@@ -111,7 +112,7 @@ fun ConfirmarEmailScreen(
                 text = "Confirmar E-mail",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.main_text_color)
+                color = colorResource(R.color.main_text_color),
             )
         }
 
@@ -119,23 +120,22 @@ fun ConfirmarEmailScreen(
 
         // Ícone de e-mail
         Box(
-            modifier = Modifier
-                .size(74.dp)
-                .shadow(12.dp, CircleShape)
-                .background(colorResource(R.color.white), CircleShape),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier.size(74.dp)
+                    .shadow(12.dp, CircleShape)
+                    .background(colorResource(R.color.white), CircleShape),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
-                modifier = Modifier
-                    .size(54.dp)
-                    .background(colorResource(R.color.pink_beige), CircleShape),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier.size(54.dp).background(colorResource(R.color.pink_beige), CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_mail),
                     contentDescription = null,
                     tint = colorResource(R.color.main_pink),
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(26.dp),
                 )
             }
         }
@@ -146,90 +146,91 @@ fun ConfirmarEmailScreen(
             text = "Verifique seu código",
             fontSize = 21.sp,
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.main_text_color)
+            color = colorResource(R.color.main_text_color),
         )
 
         Spacer(modifier = Modifier.height(28.dp))
 
         // Card principal
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(22.dp)
-                )
-                .background(
-                    colorResource(R.color.white),
-                    RoundedCornerShape(22.dp)
-                )
-                .padding(16.dp)
+            modifier =
+                Modifier.fillMaxWidth()
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(22.dp),
+                    )
+                    .background(
+                        colorResource(R.color.white),
+                        RoundedCornerShape(22.dp),
+                    )
+                    .padding(16.dp),
         ) {
             Text(
                 text = "Enviamos um código para seu e-mail",
                 fontSize = 12.sp,
-                color = colorResource(R.color.main_text_color)
+                color = colorResource(R.color.main_text_color),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Card com e-mail cadastrado
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(colorResource(R.color.background_cream))
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(colorResource(R.color.background_cream))
+                        .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(colorResource(R.color.white), CircleShape),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier.size(40.dp).background(colorResource(R.color.white), CircleShape),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_mail),
                         contentDescription = null,
                         tint = colorResource(R.color.main_pink),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     Text(
                         text = "E-mail principal",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = colorResource(R.color.main_text_color)
+                        color = colorResource(R.color.main_text_color),
                     )
 
                     Spacer(modifier = Modifier.height(3.dp))
 
                     Text(
-                        text = if (email.isNotBlank()) "E-mail enviado para\n$email" else "E-mail não disponível",
+                        text =
+                            if (email.isNotBlank()) "E-mail enviado para\n$email"
+                            else "E-mail não disponível",
                         fontSize = 11.sp,
                         lineHeight = 15.sp,
-                        color = colorResource(R.color.secundary_gray)
+                        color = colorResource(R.color.secundary_gray),
                     )
                 }
 
                 // Indicador de e-mail
                 Box(
-                    modifier = Modifier
-                        .size(18.dp)
-                        .background(colorResource(R.color.main_pink), CircleShape),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier.size(18.dp)
+                            .background(colorResource(R.color.main_pink), CircleShape),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         tint = colorResource(R.color.white),
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(14.dp),
                     )
                 }
             }
@@ -240,22 +241,24 @@ fun ConfirmarEmailScreen(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "CÓDIGO RECEBIDO",
                     fontSize = 11.sp,
-                    color = colorResource(
-                        R.color.main_text_color
-                    )
+                    color =
+                        colorResource(
+                            R.color.main_text_color,
+                        ),
                 )
 
                 Text(
                     text = "Válido por 10 min",
                     fontSize = 11.sp,
-                    color = colorResource(
-                        R.color.secundary_gray
-                    )
+                    color =
+                        colorResource(
+                            R.color.secundary_gray,
+                        ),
                 )
             }
 
@@ -269,7 +272,7 @@ fun ConfirmarEmailScreen(
                 },
                 quantidadeDigitos = 6,
                 enabled = !confirmando,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             // Mensagem de erro da API
@@ -282,7 +285,7 @@ fun ConfirmarEmailScreen(
                     fontSize = 12.sp,
                     lineHeight = 17.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -293,38 +296,39 @@ fun ConfirmarEmailScreen(
                 onClick = {
                     confirmarEmailScreenViewModel.confirmarCodigo(context, idDoadora)
                 },
-                enabled = codigo.length == 6 &&
-                        email.isNotBlank() &&
-                        !confirmando &&
-                        !codigoConfirmado,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                enabled =
+                    codigo.length == 6 && email.isNotBlank() && !confirmando && !codigoConfirmado,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(
-                        R.color.main_pink
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor =
+                            colorResource(
+                                R.color.main_pink,
+                            ),
+                        disabledContainerColor =
+                            colorResource(
+                                    R.color.main_pink,
+                                )
+                                .copy(alpha = 0.5f),
                     ),
-                    disabledContainerColor = colorResource(
-                        R.color.main_pink
-                    ).copy(alpha = 0.5f)
-                ),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 5.dp
-                )
+                elevation =
+                    ButtonDefaults.buttonElevation(
+                        defaultElevation = 5.dp,
+                    ),
             ) {
                 if (confirmando) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
                         color = colorResource(R.color.white),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Text(
                         text = "Confirmar e-mail →",
                         color = colorResource(R.color.white),
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
                     )
                 }
             }
@@ -336,7 +340,7 @@ fun ConfirmarEmailScreen(
         Text(
             text = "Já confirmou seu e-mail?",
             fontSize = 12.sp,
-            color = colorResource(R.color.main_text_color)
+            color = colorResource(R.color.main_text_color),
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -351,20 +355,20 @@ fun ConfirmarEmailScreen(
                 }
             },
             enabled = !confirmando,
-            colors = ButtonDefaults.textButtonColors(
-                containerColor = colorResource(R.color.background_gray)
-            )
+            colors =
+                ButtonDefaults.textButtonColors(
+                    containerColor = colorResource(R.color.background_gray),
+                ),
         ) {
             Row(
                 modifier = Modifier,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Icon(
-                    modifier = Modifier
-                        .size(20.dp),
+                    modifier = Modifier.size(20.dp),
                     painter = painterResource(R.drawable.ic_login),
                     tint = colorResource(R.color.main_pink),
-                    contentDescription = null
+                    contentDescription = null,
                 )
 
                 Spacer(modifier = Modifier.width(7.dp))
@@ -372,7 +376,7 @@ fun ConfirmarEmailScreen(
                 Text(
                     text = "Fazer login",
                     color = colorResource(R.color.main_pink),
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
                 )
             }
         }

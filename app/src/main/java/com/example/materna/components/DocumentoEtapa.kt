@@ -132,12 +132,33 @@ fun DocumentoEtapa(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             when (documentoAtual.idStatusDocumento) {
+                1 -> {
+                    DocumentoStatusCard(
+                        titulo = "Aguardando aprovação",
+                        descricao = "Seu documento está sendo analisado pela instituição.",
+                        corTexto = R.color.golden_august_dark,
+                        corFundo = R.color.golden_august_background
+                    )
+                }
+
                 2 -> {
                     DocumentoStatusCard(
                         titulo = "✓ Documento aceito",
                         descricao = "Seu documento foi aprovado com sucesso.",
                         corTexto = R.color.success_green,
                         corFundo = R.color.success_background
+                    )
+                }
+
+                3 -> {
+                    DocumentoStatusCard(
+                        titulo = "Documento recusado",
+                        descricao = "Seu documento não foi aprovado pela instituição.",
+                        corTexto = R.color.error_red,
+                        corFundo = R.color.pink_beige,
+                        motivoRecusa = documentoAtual.motivoRecusa
+                            ?.takeIf { it.isNotBlank() }
+                            ?: "Motivo não informado pela instituição."
                     )
                 }
 

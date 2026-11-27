@@ -10,14 +10,14 @@ import com.example.materna.models.responses.CampanhaResponse
 import com.example.materna.models.responses.PerfilDoadoraResponse
 import com.example.materna.services.materna.MaternaRetrofitFactory
 import com.google.gson.Gson
+import java.time.Instant
+import java.time.format.DateTimeParseException
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.time.Instant
-import java.time.format.DateTimeParseException
 
 class DashboardScreenViewModel(
-    context: Context
+    context: Context,
 ) : ViewModel() {
     private val applicationContext = context.applicationContext
 
@@ -52,9 +52,7 @@ class DashboardScreenViewModel(
             val inicio = Instant.parse(campanha.dataInicio)
             val fim = Instant.parse(campanha.dataFim)
 
-            campanha.isAtivo == 1 &&
-                    !agora.isBefore(inicio) &&
-                    !agora.isAfter(fim)
+            campanha.isAtivo == 1 && !agora.isBefore(inicio) && !agora.isAfter(fim)
         } catch (e: DateTimeParseException) {
             Log.e("Campanhas", "Data inválida na campanha ${campanha.id}", e)
             false
@@ -67,74 +65,82 @@ class DashboardScreenViewModel(
         _carregandoCampanhas.value = true
         _mensagemCampanhas.value = null
 
-        val call = MaternaRetrofitFactory(applicationContext)
-            .getCampanhaService()
-            .listarCampanhas()
+        val call = MaternaRetrofitFactory(applicationContext).getCampanhaService().listarCampanhas()
 
         chamadaCampanhas = call
 
-        call.enqueue(object : Callback<CampanhaApiResponse> {
-            override fun onResponse(
-                call: Call<CampanhaApiResponse>,
-                response: Response<CampanhaApiResponse>
-            ) {
-                if (call.isCanceled) return
+        call.enqueue(
+            object : Callback<CampanhaApiResponse> {
+                override fun onResponse(
+                    call: Call<CampanhaApiResponse>,
+                    response: Response<CampanhaApiResponse>,
+                ) {
+                    if (call.isCanceled) return
 
-                _carregandoCampanhas.value = false
+                    _carregandoCampanhas.value = false
 
-                Log.i("Campanhas", "Response: ${response.body()}")
+                    Log.i("Campanhas", "Response: ${response.body()}")
 
-                if (response.isSuccessful) {
-                    val resultado = response.body()
+                    if (response.isSuccessful) {
+                        val resultado = response.body()
 
-                    if (resultado?.status == true) {
-                        _campanhas.value = resultado.response
-                            ?.campanha
-                            .orEmpty()
-                            .filter { campanhaVigente(it) }
-                            .sortedByDescending { it.dataInicio }
+                        if (resultado?.status == true) {
+                            _campanhas.value =
+                                resultado.response
+                                    ?.campanha
+                                    .orEmpty()
+                                    .filter { campanhaVigente(it) }
+                                    .sortedByDescending { it.dataInicio }
 
-                        _mensagemCampanhas.value = null
+                            _mensagemCampanhas.value = null
+                        } else {
+                            _campanhas.value = emptyList()
+                            _mensagemCampanhas.value =
+                                resultado?.message ?: "Não foi possível carregar as campanhas."
+                        }
                     } else {
                         _campanhas.value = emptyList()
-                        _mensagemCampanhas.value = resultado?.message ?: "Não foi possível carregar as campanhas."
+
+                        if (response.code() == 404) {
+                            _mensagemCampanhas.value = null
+                            return
+                        }
+
+                        val erro =
+                            try {
+                                response.errorBody()?.string()?.let {
+                                    Gson().fromJson(it, CampanhaApiResponse::class.java)
+                                }
+                            } catch (e: Exception) {
+                                null
+                            }
+
+                        _mensagemCampanhas.value =
+                            erro?.message ?: "Erro ao buscar campanhas (HTTP ${response.code()})."
+
+                        Log.e(
+                            "Campanhas",
+                            "Erro HTTP ${response.code()}: ${_mensagemCampanhas.value}",
+                        )
                     }
-                } else {
+                }
+
+                override fun onFailure(
+                    call: Call<CampanhaApiResponse>,
+                    t: Throwable,
+                ) {
+                    if (call.isCanceled) return
+
+                    _carregandoCampanhas.value = false
                     _campanhas.value = emptyList()
 
-                    if (response.code() == 404) {
-                        _mensagemCampanhas.value = null
-                        return
-                    }
+                    _mensagemCampanhas.value =
+                        "Não foi possível conectar à API. Verifique se o backend está ativo."
 
-                    val erro = try {
-                        response.errorBody()?.string()?.let {
-                            Gson().fromJson(it, CampanhaApiResponse::class.java)
-                        }
-                    } catch (e: Exception) {
-                        null
-                    }
-
-                    _mensagemCampanhas.value = erro?.message ?: "Erro ao buscar campanhas (HTTP ${response.code()})."
-
-                    Log.e("Campanhas", "Erro HTTP ${response.code()}: ${_mensagemCampanhas.value}")
+                    Log.e("Campanhas", "Falha: ${t.message}", t)
                 }
-            }
-
-            override fun onFailure(
-                call: Call<CampanhaApiResponse>,
-                t: Throwable
-            ) {
-                if (call.isCanceled) return
-
-                _carregandoCampanhas.value = false
-                _campanhas.value = emptyList()
-
-                _mensagemCampanhas.value = "Não foi possível conectar à API. Verifique se o backend está ativo."
-
-                Log.e("Campanhas", "Falha: ${t.message}", t)
-            }
-        })
+            },
+        )
     }
 
     private var chamadaDoadora: Call<PerfilDoadoraResponse>? = null
@@ -144,56 +150,55 @@ class DashboardScreenViewModel(
 
         chamadaDoadora?.cancel()
 
-        val call = MaternaRetrofitFactory(applicationContext)
-            .getDoadoraService()
-            .buscarDoadora(idDoadora)
+        val call =
+            MaternaRetrofitFactory(applicationContext).getDoadoraService().buscarDoadora(idDoadora)
 
         chamadaDoadora = call
 
-        call.enqueue(object : Callback<PerfilDoadoraResponse> {
+        call.enqueue(
+            object : Callback<PerfilDoadoraResponse> {
 
-            override fun onResponse(
-                call: Call<PerfilDoadoraResponse>,
-                response: Response<PerfilDoadoraResponse>
-            ) {
-                if (call !== chamadaDoadora || call.isCanceled) return
+                override fun onResponse(
+                    call: Call<PerfilDoadoraResponse>,
+                    response: Response<PerfilDoadoraResponse>,
+                ) {
+                    if (call !== chamadaDoadora || call.isCanceled) return
 
-                val resultado = response.body()
+                    val resultado = response.body()
 
-                if (response.isSuccessful && resultado?.status == true) {
-                    val doadora = resultado.response
-                        ?.doadora
-                        ?.firstOrNull { it.id == idDoadora }
+                    if (response.isSuccessful && resultado?.status == true) {
+                        val doadora =
+                            resultado.response?.doadora?.firstOrNull { it.id == idDoadora }
 
-                    _nomeDoadora.value = doadora?.nome.orEmpty()
+                        _nomeDoadora.value = doadora?.nome.orEmpty()
 
-                    Log.d(
-                        "Dashboard",
-                        "Nome recuperado: ${doadora?.nome}"
-                    )
-                } else {
+                        Log.d(
+                            "Dashboard",
+                            "Nome recuperado: ${doadora?.nome}",
+                        )
+                    } else {
+                        _nomeDoadora.value = ""
+
+                        Log.e(
+                            "Dashboard",
+                            "Erro ao buscar doadora: HTTP ${response.code()}",
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<PerfilDoadoraResponse>,
+                    t: Throwable,
+                ) {
+                    if (call !== chamadaDoadora || call.isCanceled) return
+
                     _nomeDoadora.value = ""
 
-                    Log.e(
-                        "Dashboard",
-                        "Erro ao buscar doadora: HTTP ${response.code()}"
-                    )
+                    Log.e("Dashboard", "Falha ao buscar nome", t)
                 }
-            }
-
-            override fun onFailure(
-                call: Call<PerfilDoadoraResponse>,
-                t: Throwable
-            ) {
-                if (call !== chamadaDoadora || call.isCanceled) return
-
-                _nomeDoadora.value = ""
-
-                Log.e("Dashboard", "Falha ao buscar nome", t)
-            }
-        })
+            },
+        )
     }
-
 
     override fun onCleared() {
         chamadaCampanhas?.cancel()

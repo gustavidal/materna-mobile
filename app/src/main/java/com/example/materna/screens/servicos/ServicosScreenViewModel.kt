@@ -5,17 +5,12 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.materna.models.responses.InstituicaoProxima
 import com.example.materna.models.responses.InstituicoesProximasResponse
 import com.example.materna.models.responses.PerfilDoadoraResponse
 import com.example.materna.models.responses.RotaResponse
 import com.example.materna.services.materna.MaternaRetrofitFactory
 import com.example.materna.services.osrm.OsrmRetrofitFactory
-import com.example.materna.session.SessionManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.osmdroid.util.GeoPoint
 import retrofit2.Call
 import retrofit2.Callback
@@ -26,11 +21,11 @@ enum class ServicosEstado {
     CARREGANDO,
     SUCESSO,
     VAZIO,
-    ERRO
+    ERRO,
 }
 
 class ServicosScreenViewModel(
-    context: Context
+    context: Context,
 ) : ViewModel() {
     private val applicationContext = context.applicationContext
 
@@ -95,82 +90,83 @@ class ServicosScreenViewModel(
         chamadaDoadora?.cancel()
         _localizacaoDoadora.value = null
 
-        val call = MaternaRetrofitFactory(applicationContext)
-            .getDoadoraService()
-            .buscarDoadora(idDoadora)
+        val call =
+            MaternaRetrofitFactory(applicationContext).getDoadoraService().buscarDoadora(idDoadora)
 
         chamadaDoadora = call
 
-        call.enqueue(object : Callback<PerfilDoadoraResponse> {
-            override fun onResponse(
-                call: Call<PerfilDoadoraResponse>,
-                response: Response<PerfilDoadoraResponse>
-            ) {
-                Log.d(
-                    "MaternaAPI",
-                    "GET doadora/$idDoadora - HTTP ${response.code()}"
-                )
+        call.enqueue(
+            object : Callback<PerfilDoadoraResponse> {
+                override fun onResponse(
+                    call: Call<PerfilDoadoraResponse>,
+                    response: Response<PerfilDoadoraResponse>,
+                ) {
+                    Log.d(
+                        "MaternaAPI",
+                        "GET doadora/$idDoadora - HTTP ${response.code()}",
+                    )
 
-                Log.d(
-                    "MaternaAPI",
-                    "Resposta: ${response.body()}"
-                )
+                    Log.d(
+                        "MaternaAPI",
+                        "Resposta: ${response.body()}",
+                    )
 
-                if (call !== chamadaDoadora) return
+                    if (call !== chamadaDoadora) return
 
-                chamadaDoadora = null
+                    chamadaDoadora = null
 
-                if (response.isSuccessful && response.body()?.status == true) {
-                    val doadora = response.body()
-                        ?.response
-                        ?.doadora
-                        ?.firstOrNull { it.id == idDoadora }
+                    if (response.isSuccessful && response.body()?.status == true) {
+                        val doadora =
+                            response.body()?.response?.doadora?.firstOrNull { it.id == idDoadora }
 
-                    val cepDoadora = doadora?.cep.orEmpty()
+                        val cepDoadora = doadora?.cep.orEmpty()
 
-                    if (
-                        _cep.value.isNullOrBlank() &&
-                        cepDoadora.filter { it.isDigit() }.length == 8
-                    ) {
-                        onCepChanged(cepDoadora)
-                        buscarInstituicoes()
-                    }
-
-                    val latitude = doadora?.latitude?.toDoubleOrNull()
-                    val longitude = doadora?.longitude?.toDoubleOrNull()
-
-                    _localizacaoDoadora.value =
                         if (
-                            latitude != null && longitude != null &&
-                            latitude in -90.0..90.0 && longitude in -180.0..180.0
+                            _cep.value.isNullOrBlank() &&
+                                cepDoadora.filter { it.isDigit() }.length == 8
                         ) {
-                            latitude to longitude
-                        } else {
-                            null
+                            onCepChanged(cepDoadora)
+                            buscarInstituicoes()
                         }
-                } else {
+
+                        val latitude = doadora?.latitude?.toDoubleOrNull()
+                        val longitude = doadora?.longitude?.toDoubleOrNull()
+
+                        _localizacaoDoadora.value =
+                            if (
+                                latitude != null &&
+                                    longitude != null &&
+                                    latitude in -90.0..90.0 &&
+                                    longitude in -180.0..180.0
+                            ) {
+                                latitude to longitude
+                            } else {
+                                null
+                            }
+                    } else {
+                        _localizacaoDoadora.value = null
+                        idDoadoraCarregada = null
+                        Log.e(
+                            "Servicos",
+                            "Erro ao consultar doadora: ${response.code()}",
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<PerfilDoadoraResponse>,
+                    t: Throwable,
+                ) {
+                    if (call.isCanceled || call !== chamadaDoadora) return
+
+                    chamadaDoadora = null
                     _localizacaoDoadora.value = null
                     idDoadoraCarregada = null
-                    Log.e(
-                        "Servicos",
-                        "Erro ao consultar doadora: ${response.code()}"
-                    )
+
+                    Log.e("Servicos", "Falha ao consultar localização", t)
                 }
-            }
-
-            override fun onFailure(
-                call: Call<PerfilDoadoraResponse>,
-                t: Throwable
-            ) {
-                if (call.isCanceled || call !== chamadaDoadora) return
-
-                chamadaDoadora = null
-                _localizacaoDoadora.value = null
-                idDoadoraCarregada = null
-
-                Log.e("Servicos", "Falha ao consultar localização", t)
-            }
-        })
+            },
+        )
     }
 
     fun buscarInstituicoes() {
@@ -187,68 +183,73 @@ class ServicosScreenViewModel(
         _estado.value = ServicosEstado.CARREGANDO
         _mensagemErro.value = ""
 
-        val call = MaternaRetrofitFactory(applicationContext)
-            .getInstituicaoService()
-            .buscarInstituicoesProximas(cepAtual)
+        val call =
+            MaternaRetrofitFactory(applicationContext)
+                .getInstituicaoService()
+                .buscarInstituicoesProximas(cepAtual)
 
         chamadaAtual = call
 
-        call.enqueue(object : Callback<InstituicoesProximasResponse> {
+        call.enqueue(
+            object : Callback<InstituicoesProximasResponse> {
 
-            override fun onResponse(
-                call: Call<InstituicoesProximasResponse>,
-                response: Response<InstituicoesProximasResponse>
-            ) {
-                if (call !== chamadaAtual) return
+                override fun onResponse(
+                    call: Call<InstituicoesProximasResponse>,
+                    response: Response<InstituicoesProximasResponse>,
+                ) {
+                    if (call !== chamadaAtual) return
 
-                chamadaAtual = null
+                    chamadaAtual = null
 
-                val body = response.body()
+                    val body = response.body()
 
-                if (response.isSuccessful && body?.status == true) {
-                    val lista = body.response?.instituicao.orEmpty()
+                    if (response.isSuccessful && body?.status == true) {
+                        val lista = body.response?.instituicao.orEmpty()
 
-                    _instituicoes.value = lista
+                        _instituicoes.value = lista
 
-                    _estado.value = if (lista.isEmpty()) {
-                        ServicosEstado.VAZIO
+                        _estado.value =
+                            if (lista.isEmpty()) {
+                                ServicosEstado.VAZIO
+                            } else {
+                                ServicosEstado.SUCESSO
+                            }
+
+                        Log.i("Servicos", "Instituições encontradas: ${lista.size}")
                     } else {
-                        ServicosEstado.SUCESSO
-                    }
+                        _mensagemErro.value =
+                            when (response.code()) {
+                                400 -> "O CEP informado é inválido."
+                                404 -> "Nenhum banco de leite encontrado para esse CEP."
+                                else -> "Não foi possível buscar os bancos de leite."
+                            }
 
-                    Log.i("Servicos", "Instituições encontradas: ${lista.size}")
-                } else {
-                    _mensagemErro.value = when (response.code()) {
-                        400 -> "O CEP informado é inválido."
-                        404 -> "Nenhum banco de leite encontrado para esse CEP."
-                        else -> "Não foi possível buscar os bancos de leite."
+                        _estado.value = ServicosEstado.ERRO
+
+                        Log.e(
+                            "Servicos",
+                            "Erro HTTP ${response.code()}",
+                        )
                     }
+                }
+
+                override fun onFailure(
+                    call: Call<InstituicoesProximasResponse>,
+                    t: Throwable,
+                ) {
+                    if (call.isCanceled || call !== chamadaAtual) return
+
+                    chamadaAtual = null
+
+                    _mensagemErro.value =
+                        "Não foi possível conectar ao servidor. Verifique sua conexão."
 
                     _estado.value = ServicosEstado.ERRO
 
-                    Log.e(
-                        "Servicos",
-                        "Erro HTTP ${response.code()}"
-                    )
+                    Log.e("Servicos", "Falha: ${t.message}", t)
                 }
-            }
-
-            override fun onFailure(
-                call: Call<InstituicoesProximasResponse>,
-                t: Throwable
-            ) {
-                if (call.isCanceled || call !== chamadaAtual) return
-
-                chamadaAtual = null
-
-                _mensagemErro.value =
-                    "Não foi possível conectar ao servidor. Verifique sua conexão."
-
-                _estado.value = ServicosEstado.ERRO
-
-                Log.e("Servicos", "Falha: ${t.message}", t)
-            }
-        })
+            },
+        )
     }
 
     fun buscarRota(instituicao: InstituicaoProxima) {
@@ -259,12 +260,12 @@ class ServicosScreenViewModel(
 
         if (
             origem == null ||
-            latitudeDestino == null ||
-            longitudeDestino == null ||
-            !latitudeDestino.isFinite() ||
-            !longitudeDestino.isFinite() ||
-            latitudeDestino !in -90.0..90.0 ||
-            longitudeDestino !in -180.0..180.0
+                latitudeDestino == null ||
+                longitudeDestino == null ||
+                !latitudeDestino.isFinite() ||
+                !longitudeDestino.isFinite() ||
+                latitudeDestino !in -90.0..90.0 ||
+                longitudeDestino !in -180.0..180.0
         ) {
             _erroRota.value = "Localização indisponível para traçar a rota."
             return
@@ -279,72 +280,72 @@ class ServicosScreenViewModel(
 
         val coordenadas = "${origem.second},${origem.first};" + "$longitudeDestino,$latitudeDestino"
 
-        val call = OsrmRetrofitFactory().getRotaService()
-            .buscarRota(coordenadas)
+        val call = OsrmRetrofitFactory().getRotaService().buscarRota(coordenadas)
 
         chamadaRota = call
 
-        call.enqueue(object : Callback<RotaResponse> {
-            override fun onResponse(
-                call: Call<RotaResponse>,
-                response: Response<RotaResponse>
-            ) {
-                if (call !== chamadaRota) return
-
-                chamadaRota = null
-                _carregandoRota.value = false
-
-                val body = response.body()
-                val rota = body?.routes?.firstOrNull()
-
-                if (
-                    !response.isSuccessful || body?.code != "Ok" || rota == null
+        call.enqueue(
+            object : Callback<RotaResponse> {
+                override fun onResponse(
+                    call: Call<RotaResponse>,
+                    response: Response<RotaResponse>,
                 ) {
-                    _erroRota.value = "Não foi possível calcular a rota."
-                    return
-                }
+                    if (call !== chamadaRota) return
 
-                val pontos = rota.geometry.coordinates.mapNotNull { coordenada ->
-                    val longitude = coordenada.getOrNull(0)
-                    val latitude = coordenada.getOrNull(1)
+                    chamadaRota = null
+                    _carregandoRota.value = false
 
-                    if (
-                        latitude != null &&
-                        longitude != null &&
-                        latitude.isFinite() &&
-                        longitude.isFinite() &&
-                        latitude in -90.0..90.0 &&
-                        longitude in -180.0..180.0
-                    ) {
-                        GeoPoint(latitude, longitude)
-                    } else {
-                        null
+                    val body = response.body()
+                    val rota = body?.routes?.firstOrNull()
+
+                    if (!response.isSuccessful || body?.code != "Ok" || rota == null) {
+                        _erroRota.value = "Não foi possível calcular a rota."
+                        return
                     }
+
+                    val pontos =
+                        rota.geometry.coordinates.mapNotNull { coordenada ->
+                            val longitude = coordenada.getOrNull(0)
+                            val latitude = coordenada.getOrNull(1)
+
+                            if (
+                                latitude != null &&
+                                    longitude != null &&
+                                    latitude.isFinite() &&
+                                    longitude.isFinite() &&
+                                    latitude in -90.0..90.0 &&
+                                    longitude in -180.0..180.0
+                            ) {
+                                GeoPoint(latitude, longitude)
+                            } else {
+                                null
+                            }
+                        }
+
+                    if (pontos.size < 2) {
+                        _erroRota.value = "A rota retornada é inválida."
+                        return
+                    }
+
+                    _pontosRota.value = pontos
+
+                    Log.d("Servicos", "Rota carregada: ${pontos.size} pontos")
                 }
 
-                if (pontos.size < 2) {
-                    _erroRota.value = "A rota retornada é inválida."
-                    return
+                override fun onFailure(
+                    call: Call<RotaResponse>,
+                    t: Throwable,
+                ) {
+                    if (call.isCanceled || call !== chamadaRota) return
+
+                    chamadaRota = null
+                    _carregandoRota.value = false
+                    _erroRota.value = "Erro de conexão ao calcular a rota."
+
+                    Log.e("Servicos", "Erro ao buscar rota", t)
                 }
-
-                _pontosRota.value = pontos
-
-                Log.d("Servicos", "Rota carregada: ${pontos.size} pontos")
-            }
-
-            override fun onFailure(
-                call: Call<RotaResponse>,
-                t: Throwable
-            ) {
-                if (call.isCanceled || call !== chamadaRota) return
-
-                chamadaRota = null
-                _carregandoRota.value = false
-                _erroRota.value = "Erro de conexão ao calcular a rota."
-
-                Log.e("Servicos", "Erro ao buscar rota", t)
-            }
-        })
+            },
+        )
     }
 
     fun cancelarRota() {

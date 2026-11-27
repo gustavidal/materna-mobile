@@ -6,6 +6,10 @@ data class AtualizarDoadoraRequest(
     val nome: String,
     val cpf: String,
 
+    // Foto atual: o backend sobrescreve a coluna com o valor recebido,
+    // então precisa ser reenviada para não ser apagada.
+    val foto: String? = null,
+
     @SerializedName("data_nascimento")
     val dataNascimento: String,
 

@@ -57,44 +57,44 @@ private const val LAST_STEP = 2
 fun CadastroScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    cadastroScreenViewModel: CadastroScreenViewModel
+    cadastroScreenViewModel: CadastroScreenViewModel,
 ) {
-    val keyboardController =  LocalSoftwareKeyboardController.current
-    val focusManager       =  LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
-    val currentStep        by cadastroScreenViewModel.currentStep.observeAsState(0)
+    val currentStep by cadastroScreenViewModel.currentStep.observeAsState(0)
 
-    val camposVisitados    by cadastroScreenViewModel.camposVisitados.observeAsState(emptySet())
+    val camposVisitados by cadastroScreenViewModel.camposVisitados.observeAsState(emptySet())
 
-    val nome               by cadastroScreenViewModel.nome.observeAsState("")
-    val dataNascimento     by cadastroScreenViewModel.dataNascimento.observeAsState("")
-    val cpf                by cadastroScreenViewModel.cpf.observeAsState("")
-    val telefone           by cadastroScreenViewModel.telefone.observeAsState("")
+    val nome by cadastroScreenViewModel.nome.observeAsState("")
+    val dataNascimento by cadastroScreenViewModel.dataNascimento.observeAsState("")
+    val cpf by cadastroScreenViewModel.cpf.observeAsState("")
+    val telefone by cadastroScreenViewModel.telefone.observeAsState("")
 
-    val cep                by cadastroScreenViewModel.cep.observeAsState("")
-    val estado             by cadastroScreenViewModel.estado.observeAsState("")
-    val cidade             by cadastroScreenViewModel.cidade.observeAsState("")
-    val logradouro         by cadastroScreenViewModel.logradouro.observeAsState("")
-    val bairro             by cadastroScreenViewModel.bairro.observeAsState("")
-    val numero             by cadastroScreenViewModel.numero.observeAsState(null)
-    val complemento        by cadastroScreenViewModel.complemento.observeAsState(null)
+    val cep by cadastroScreenViewModel.cep.observeAsState("")
+    val estado by cadastroScreenViewModel.estado.observeAsState("")
+    val cidade by cadastroScreenViewModel.cidade.observeAsState("")
+    val logradouro by cadastroScreenViewModel.logradouro.observeAsState("")
+    val bairro by cadastroScreenViewModel.bairro.observeAsState("")
+    val numero by cadastroScreenViewModel.numero.observeAsState(null)
+    val complemento by cadastroScreenViewModel.complemento.observeAsState(null)
 
-    val email              by cadastroScreenViewModel.email.observeAsState("")
-    val senha              by cadastroScreenViewModel.senha.observeAsState("")
-    val confirmarSenha     by cadastroScreenViewModel.confirmarSenha.observeAsState("")
-    val termosAceitos      by cadastroScreenViewModel.termosAceitos.observeAsState(false)
+    val email by cadastroScreenViewModel.email.observeAsState("")
+    val senha by cadastroScreenViewModel.senha.observeAsState("")
+    val confirmarSenha by cadastroScreenViewModel.confirmarSenha.observeAsState("")
+    val termosAceitos by cadastroScreenViewModel.termosAceitos.observeAsState(false)
 
-    val mostrarSenha       by cadastroScreenViewModel.mostrarSenha.observeAsState(false)
+    val mostrarSenha by cadastroScreenViewModel.mostrarSenha.observeAsState(false)
     val mostrarConfirmacao by cadastroScreenViewModel.mostrarConfirmacao.observeAsState(false)
 
-    val cadastrando        by cadastroScreenViewModel.cadastrando.observeAsState(false)
-    val mensagemCadastro   by cadastroScreenViewModel.mensagemCadastro.observeAsState(null)
+    val cadastrando by cadastroScreenViewModel.cadastrando.observeAsState(false)
+    val mensagemCadastro by cadastroScreenViewModel.mensagemCadastro.observeAsState(null)
 
-    val consultandoCep     by cadastroScreenViewModel.consultandoCep.observeAsState(false)
-    val erroCep            by cadastroScreenViewModel.erroCep.observeAsState(null)
+    val consultandoCep by cadastroScreenViewModel.consultandoCep.observeAsState(false)
+    val erroCep by cadastroScreenViewModel.erroCep.observeAsState(null)
 
-    val cadastroConcluido  by cadastroScreenViewModel.cadastroConcluido.observeAsState(false)
-    val idDoadora          by cadastroScreenViewModel.idDoadora.observeAsState(null)
+    val cadastroConcluido by cadastroScreenViewModel.cadastroConcluido.observeAsState(false)
+    val idDoadora by cadastroScreenViewModel.idDoadora.observeAsState(null)
 
     val context = LocalContext.current
 
@@ -125,63 +125,64 @@ fun CadastroScreen(
 
     // Layout principal: o rodapé fica fora da área rolável.
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .padding(horizontal = 24.dp, vertical = 16.dp),
     ) {
         // Área rolável: cabeçalho, indicadores, campos e mensagens.
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = {
-                            focusManager.clearFocus(force = true)
-                            keyboardController?.hide()
-                        }
-                    )
-                }
+            modifier =
+                Modifier.weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                focusManager.clearFocus(force = true)
+                                keyboardController?.hide()
+                            },
+                        )
+                    },
         ) {
             // Cabeçalho
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(colorResource(R.color.background_gray))
-                        .clickable {
-                            if (currentStep > 0) {
-                                cadastroScreenViewModel.voltarEtapa()
-                            } else {
-                                navController.navigate("login") {
-                                    launchSingleTop = true
+                    modifier =
+                        Modifier.size(40.dp)
+                            .clip(CircleShape)
+                            .background(colorResource(R.color.background_gray))
+                            .clickable {
+                                if (currentStep > 0) {
+                                    cadastroScreenViewModel.voltarEtapa()
+                                } else {
+                                    navController.navigate("login") {
+                                        launchSingleTop = true
+                                    }
                                 }
-                            }
-                        },
+                            },
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                         tint = colorResource(R.color.main_text_color),
-                        contentDescription = "Seta para esquerda (voltar)"
+                        contentDescription = "Seta para esquerda (voltar)",
                     )
                 }
 
                 Text(
                     text = "Etapa ${currentStep + 1} de 3",
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(colorResource(R.color.background_gray))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier =
+                        Modifier.clip(CircleShape)
+                            .background(colorResource(R.color.background_gray))
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                     fontSize = 13.sp,
-                    color = colorResource(R.color.secundary_gray)
+                    color = colorResource(R.color.secundary_gray),
                 )
             }
 
@@ -190,11 +191,11 @@ fun CadastroScreen(
             // Indicadores das etapas
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CadastroStepIndicator(
                     currentStep = currentStep,
-                    totalSteps = LAST_STEP + 1
+                    totalSteps = LAST_STEP + 1,
                 )
             }
 
@@ -204,7 +205,7 @@ fun CadastroScreen(
                 text = "Criar conta",
                 fontSize = 25.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.main_text_color)
+                color = colorResource(R.color.main_text_color),
             )
 
             Spacer(Modifier.height(6.dp))
@@ -212,15 +213,13 @@ fun CadastroScreen(
             Text(
                 text = "Preencha seus dados pessoais",
                 fontSize = 15.sp,
-                color = colorResource(R.color.secundary_gray)
+                color = colorResource(R.color.secundary_gray),
             )
 
             // Campos das três etapas
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 when (currentStep) {
                     // ETAPA 1: dados pessoais
@@ -237,14 +236,14 @@ fun CadastroScreen(
                             maxLength = 100,
                             onFocusLost = {
                                 cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.NOME)
-                            }
+                            },
                         )
                         if (CadastroCampos.NOME in camposVisitados) {
                             cadastroScreenViewModel.erroNome()?.let { erro ->
                                 Text(
                                     text = erro,
                                     fontSize = 12.sp,
-                                    color = colorResource(R.color.red)
+                                    color = colorResource(R.color.red),
                                 )
                             }
                         }
@@ -259,15 +258,17 @@ fun CadastroScreen(
                             icon = painterResource(R.drawable.ic_calendar),
                             keyboardType = KeyboardType.Number,
                             onFocusLost = {
-                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.DATA_NASCIMENTO)
-                            }
+                                cadastroScreenViewModel.onCampoPerdeuFoco(
+                                    CadastroCampos.DATA_NASCIMENTO,
+                                )
+                            },
                         )
                         if (CadastroCampos.DATA_NASCIMENTO in camposVisitados) {
                             cadastroScreenViewModel.erroDataNascimento()?.let { erro ->
                                 Text(
                                     text = erro,
                                     fontSize = 12.sp,
-                                    color = colorResource(R.color.red)
+                                    color = colorResource(R.color.red),
                                 )
                             }
                         }
@@ -283,14 +284,14 @@ fun CadastroScreen(
                             keyboardType = KeyboardType.Number,
                             onFocusLost = {
                                 cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.CPF)
-                            }
+                            },
                         )
                         if (CadastroCampos.CPF in camposVisitados) {
                             cadastroScreenViewModel.erroCpf()?.let { erro ->
                                 Text(
                                     text = erro,
                                     fontSize = 12.sp,
-                                    color = colorResource(R.color.red)
+                                    color = colorResource(R.color.red),
                                 )
                             }
                         }
@@ -306,14 +307,14 @@ fun CadastroScreen(
                             keyboardType = KeyboardType.Phone,
                             onFocusLost = {
                                 cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.TELEFONE)
-                            }
+                            },
                         )
                         if (CadastroCampos.TELEFONE in camposVisitados) {
                             cadastroScreenViewModel.erroTelefone()?.let { erro ->
                                 Text(
                                     text = erro,
                                     fontSize = 12.sp,
-                                    color = colorResource(R.color.red)
+                                    color = colorResource(R.color.red),
                                 )
                             }
                         }
@@ -332,13 +333,13 @@ fun CadastroScreen(
                             keyboardType = KeyboardType.Number,
                             onFocusLost = {
                                 cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.CEP)
-                            }
+                            },
                         )
                         if (consultandoCep) {
                             Text(
                                 text = "Consultando CEP...",
                                 fontSize = 12.sp,
-                                color = colorResource(R.color.secundary_gray)
+                                color = colorResource(R.color.secundary_gray),
                             )
                         }
                         if (CadastroCampos.CEP in camposVisitados) {
@@ -346,7 +347,7 @@ fun CadastroScreen(
                                 Text(
                                     text = erro,
                                     fontSize = 12.sp,
-                                    color = colorResource(R.color.red)
+                                    color = colorResource(R.color.red),
                                 )
                             }
                         }
@@ -354,12 +355,12 @@ fun CadastroScreen(
                             Text(
                                 text = erroCep.orEmpty(),
                                 fontSize = 12.sp,
-                                color = colorResource(R.color.red)
+                                color = colorResource(R.color.red),
                             )
                         }
 
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Box(Modifier.weight(0.8f)) {
                                 CadastroField(
@@ -369,7 +370,7 @@ fun CadastroScreen(
                                         cadastroScreenViewModel.onEstadoChanged(it)
                                     },
                                     placeholder = "UF",
-                                    enabled = false
+                                    enabled = false,
                                 )
                             }
 
@@ -382,7 +383,7 @@ fun CadastroScreen(
                                     },
                                     placeholder = "Sua cidade",
                                     icon = painterResource(R.drawable.ic_building),
-                                    enabled = false
+                                    enabled = false,
                                 )
                             }
                         }
@@ -395,7 +396,7 @@ fun CadastroScreen(
                             },
                             placeholder = "Rua, Avenida, etc.",
                             icon = painterResource(R.drawable.ic_house),
-                            enabled = false
+                            enabled = false,
                         )
 
                         CadastroField(
@@ -406,45 +407,47 @@ fun CadastroScreen(
                             },
                             placeholder = "Seu bairro",
                             icon = painterResource(R.drawable.ic_neighborhood),
-                            enabled = false
+                            enabled = false,
                         )
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.Top
+                            verticalAlignment = Alignment.Top,
                         ) {
                             Column(
                                 modifier = Modifier.weight(0.8f),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 CadastroField(
                                     label = "Número",
                                     value = numero?.toString().orEmpty(),
                                     onValueChange = {
                                         cadastroScreenViewModel.onNumeroChanged(
-                                            it.toIntOrNull()
+                                            it.toIntOrNull(),
                                         )
                                     },
                                     placeholder = "123",
                                     keyboardType = KeyboardType.Number,
                                     onFocusLost = {
-                                        cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.NUMERO)
-                                    }
+                                        cadastroScreenViewModel.onCampoPerdeuFoco(
+                                            CadastroCampos.NUMERO,
+                                        )
+                                    },
                                 )
                                 if (CadastroCampos.NUMERO in camposVisitados) {
                                     cadastroScreenViewModel.erroNumero()?.let { erro ->
                                         Text(
                                             text = erro,
                                             fontSize = 12.sp,
-                                            color = colorResource(R.color.red)
+                                            color = colorResource(R.color.red),
                                         )
                                     }
                                 }
                             }
 
                             Box(
-                                modifier = Modifier.weight(1.6f)
+                                modifier = Modifier.weight(1.6f),
                             ) {
                                 CadastroField(
                                     label = "Complemento",
@@ -453,7 +456,7 @@ fun CadastroScreen(
                                         cadastroScreenViewModel.onComplementoChanged(it)
                                     },
                                     placeholder = "Apto, Bloco, etc.",
-                                    capitalization = KeyboardCapitalization.Words
+                                    capitalization = KeyboardCapitalization.Words,
                                 )
                             }
                         }
@@ -472,14 +475,14 @@ fun CadastroScreen(
                             keyboardType = KeyboardType.Email,
                             onFocusLost = {
                                 cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.EMAIL)
-                            }
+                            },
                         )
                         if (CadastroCampos.EMAIL in camposVisitados) {
                             cadastroScreenViewModel.erroEmail()?.let { erro ->
                                 Text(
                                     text = erro,
                                     fontSize = 12.sp,
-                                    color = colorResource(R.color.red)
+                                    color = colorResource(R.color.red),
                                 )
                             }
                         }
@@ -491,11 +494,13 @@ fun CadastroScreen(
                             placeholder = "Digite sua senha",
                             icon = painterResource(R.drawable.ic_lock),
                             isPassword = !mostrarSenha,
-                            trailingIcon = if (mostrarSenha) painterResource(R.drawable.ic_visibility_off) else painterResource(R.drawable.ic_visibility_on),
+                            trailingIcon =
+                                if (mostrarSenha) painterResource(R.drawable.ic_visibility_off)
+                                else painterResource(R.drawable.ic_visibility_on),
                             onTrailingClick = {
                                 cadastroScreenViewModel.toggleMostrarSenha()
                             },
-                            keyboardType = KeyboardType.Password
+                            keyboardType = KeyboardType.Password,
                         )
                         SenhaRequisitos(senha = senha)
 
@@ -508,43 +513,49 @@ fun CadastroScreen(
                             placeholder = "Confirme sua senha",
                             icon = painterResource(R.drawable.ic_lock),
                             isPassword = !mostrarConfirmacao,
-                            trailingIcon = if (mostrarConfirmacao) painterResource(R.drawable.ic_visibility_off) else painterResource(
-                                R.drawable.ic_visibility_on
-                            ),
+                            trailingIcon =
+                                if (mostrarConfirmacao)
+                                    painterResource(R.drawable.ic_visibility_off)
+                                else
+                                    painterResource(
+                                        R.drawable.ic_visibility_on,
+                                    ),
                             onTrailingClick = {
                                 cadastroScreenViewModel.toggleMostrarConfirmacao()
                             },
                             keyboardType = KeyboardType.Password,
                             onFocusLost = {
-                                cadastroScreenViewModel.onCampoPerdeuFoco(CadastroCampos.CONFIRMAR_SENHA)
-                            }
+                                cadastroScreenViewModel.onCampoPerdeuFoco(
+                                    CadastroCampos.CONFIRMAR_SENHA,
+                                )
+                            },
                         )
                         SenhaConfirmacao(
                             senha = senha,
                             confirmacao = confirmarSenha,
-                            campoVisitado = CadastroCampos.CONFIRMAR_SENHA in camposVisitados
+                            campoVisitado = CadastroCampos.CONFIRMAR_SENHA in camposVisitados,
                         )
 
-
-
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(
                                 checked = termosAceitos,
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = colorResource(R.color.main_pink),
-                                    uncheckedColor = colorResource(R.color.background_gray)
-                                ),
+                                colors =
+                                    CheckboxDefaults.colors(
+                                        checkedColor = colorResource(R.color.main_pink),
+                                        uncheckedColor = colorResource(R.color.background_gray),
+                                    ),
                                 onCheckedChange = {
                                     cadastroScreenViewModel.onTermosAceitosChanged(it)
-                                }
+                                },
                             )
 
                             Text(
-                                text = "Li e concordo com os Termos de Uso e a Política de Privacidade.",
+                                text =
+                                    "Li e concordo com os Termos de Uso e a Política de Privacidade.",
                                 fontSize = 12.sp,
-                                color = colorResource(R.color.secundary_gray)
+                                color = colorResource(R.color.secundary_gray),
                             )
                         }
                     }
@@ -554,13 +565,14 @@ fun CadastroScreen(
             if (mensagemCadastro != null) {
                 Text(
                     text = mensagemCadastro.orEmpty(),
-                    color = if (cadastroConcluido) {
-                        colorResource(R.color.green)
-                    } else {
-                        colorResource(R.color.red)
-                    },
+                    color =
+                        if (cadastroConcluido) {
+                            colorResource(R.color.green)
+                        } else {
+                            colorResource(R.color.red)
+                        },
                     fontSize = 14.sp,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -580,24 +592,24 @@ fun CadastroScreen(
                 keyboardController?.hide()
             },
             enabled = cadastroScreenViewModel.podeContinuar() && !cadastrando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(R.color.main_pink),
-                disabledContainerColor = colorResource(R.color.border)
-            )
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = colorResource(R.color.main_pink),
+                    disabledContainerColor = colorResource(R.color.border),
+                ),
         ) {
             Text(
-                text = when {
-                    cadastrando -> "Cadastrando..."
-                    currentStep == LAST_STEP -> "Finalizar cadastro"
-                    else -> "Continuar"
-                },
+                text =
+                    when {
+                        cadastrando -> "Cadastrando..."
+                        currentStep == LAST_STEP -> "Finalizar cadastro"
+                        else -> "Continuar"
+                    },
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
             )
         }
 
@@ -605,16 +617,14 @@ fun CadastroScreen(
 
         // Rodapé fixo: link para entrar
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Já tem uma conta? ",
                 fontSize = 13.sp,
-                color = colorResource(R.color.secundary_gray)
+                color = colorResource(R.color.secundary_gray),
             )
 
             Text(
@@ -622,15 +632,15 @@ fun CadastroScreen(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(R.color.main_pink),
-                modifier = Modifier
-                    .clickable {
+                modifier =
+                    Modifier.clickable {
                         navController.navigate("login") {
                             popUpTo("cadastro") {
                                 inclusive = true
                             }
                             launchSingleTop = true
                         }
-                    }
+                    },
             )
         }
     }

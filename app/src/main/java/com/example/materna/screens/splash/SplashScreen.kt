@@ -30,22 +30,18 @@ import com.example.materna.R
 @Composable
 fun SplashScreen(progress: Float) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.main_pink)),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxSize().background(colorResource(R.color.main_pink)),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 32.dp)
+            modifier = Modifier.padding(horizontal = 32.dp),
         ) {
-
             Image(
                 painter = painterResource(id = R.drawable.ic_materna_logo_com_fundo),
                 contentDescription = "Logo Materna",
-                modifier = Modifier
-                    .size(160.dp)
+                modifier = Modifier.size(160.dp),
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -54,7 +50,7 @@ fun SplashScreen(progress: Float) {
                 text = "Materna",
                 color = Color.White,
                 fontSize = 38.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -65,23 +61,23 @@ fun SplashScreen(progress: Float) {
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
-                lineHeight = 22.sp
+                lineHeight = 22.sp,
             )
 
             Spacer(modifier = Modifier.height(54.dp))
 
             Box(
-                modifier = Modifier
-                    .width(180.dp)
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color.White.copy(alpha = 0.35f))
+                modifier =
+                    Modifier.width(180.dp)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.White.copy(alpha = 0.35f)),
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth(progress.coerceIn(0f, 1f))
-                        .height(8.dp)
-                        .background(Color.White)
+                    modifier =
+                        Modifier.fillMaxWidth(progress.coerceIn(0f, 1f))
+                            .height(8.dp)
+                            .background(Color.White),
                 )
             }
         }

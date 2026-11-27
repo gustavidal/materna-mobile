@@ -55,10 +55,11 @@ object FormatadorCampos {
     fun dataParaExibicao(value: String): String {
         val partes = value.take(10).split("-")
 
-        if (partes.size != 3 ||
-            partes[0].length != 4 ||
-            partes[1].length != 2 ||
-            partes[2].length != 2
+        if (
+            partes.size != 3 ||
+                partes[0].length != 4 ||
+                partes[1].length != 2 ||
+                partes[2].length != 2
         ) {
             return value
         }
@@ -69,10 +70,11 @@ object FormatadorCampos {
     fun dataParaApi(value: String): String? {
         val partes = value.split("/")
 
-        if (partes.size != 3 ||
-            partes[0].length != 2 ||
-            partes[1].length != 2 ||
-            partes[2].length != 4
+        if (
+            partes.size != 3 ||
+                partes[0].length != 2 ||
+                partes[1].length != 2 ||
+                partes[2].length != 4
         ) {
             return null
         }

@@ -12,11 +12,11 @@ import com.example.materna.models.responses.CancelarAgendamentoResponse
 import com.example.materna.models.responses.HorarioAgenda
 import com.example.materna.models.responses.HorariosAgendaResponse
 import com.example.materna.services.materna.MaternaRetrofitFactory
+import java.time.Instant
+import java.time.ZoneId
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.time.Instant
-import java.time.ZoneId
 
 class AgendamentoScreenViewModel : ViewModel() {
     private val _tipoAtendimento = MutableLiveData<String>()
@@ -64,12 +64,13 @@ class AgendamentoScreenViewModel : ViewModel() {
     private var requisicaoCancelamentoAtual: Call<CancelarAgendamentoResponse>? = null
 
     fun configurarTipoColeta(idColeta: Int) {
-        val tipos = when (idColeta) {
-            1 -> listOf("domiciliar")
-            2 -> listOf("presencial")
-            3 -> listOf("presencial", "domiciliar")
-            else -> emptyList()
-        }
+        val tipos =
+            when (idColeta) {
+                1 -> listOf("domiciliar")
+                2 -> listOf("presencial")
+                3 -> listOf("presencial", "domiciliar")
+                else -> emptyList()
+            }
 
         if (_tiposPermitidos.value == tipos) return
 
@@ -84,8 +85,8 @@ class AgendamentoScreenViewModel : ViewModel() {
         Log.d(
             "AGENDAMENTO_COLETA",
             "ID coleta: $idColeta | " +
-                    "Permitidos: $tipos | " +
-                    "Selecionado: ${_tipoAtendimento.value}"
+                "Permitidos: $tipos | " +
+                "Selecionado: ${_tipoAtendimento.value}",
         )
     }
 
@@ -118,18 +119,19 @@ class AgendamentoScreenViewModel : ViewModel() {
         if (_mensagemErro.value != null) return
         if (_dataSelecionada.value.isNullOrBlank()) return
 
-        val horarioValido = _horarios.value.orEmpty().any {
-            it.idHorario == idHorario &&
+        val horarioValido =
+            _horarios.value.orEmpty().any {
+                it.idHorario == idHorario &&
                     it.disponivel == 1 &&
                     it.isProximo == 1 &&
                     it.idAgendamento == null &&
                     it.idDoadora == null
-        }
+            }
 
         if (!horarioValido) {
             Log.w(
                 "AGENDAMENTO_VALIDACAO",
-                "Tentativa de selecionar um horário inválido."
+                "Tentativa de selecionar um horário inválido.",
             )
             return
         }
@@ -142,24 +144,25 @@ class AgendamentoScreenViewModel : ViewModel() {
     private fun validarFormulario() {
         val idHorario = _horarioSelecionado.value
 
-        val horarioValido = _horarios.value.orEmpty().any {
-            it.idHorario == idHorario &&
+        val horarioValido =
+            _horarios.value.orEmpty().any {
+                it.idHorario == idHorario &&
                     it.disponivel == 1 &&
                     it.isProximo == 1 &&
                     it.idAgendamento == null &&
                     it.idDoadora == null
-        }
+            }
 
         _isFormularioValido.value =
             consultaHorariosConcluida &&
-                    !_isBuscandoHorarios.value.orFalse() &&
-                    !_isLoading.value.orFalse() &&
-                    _mensagemErro.value == null &&
-                    _agendamentoExistente.value == null &&
-                    _tipoAtendimento.value in _tiposPermitidos.value.orEmpty() &&
-                    !_dataSelecionada.value.isNullOrBlank() &&
-                    horarioValido &&
-                    !_isCancelandoAgendamento.value.orFalse()
+                !_isBuscandoHorarios.value.orFalse() &&
+                !_isLoading.value.orFalse() &&
+                _mensagemErro.value == null &&
+                _agendamentoExistente.value == null &&
+                _tipoAtendimento.value in _tiposPermitidos.value.orEmpty() &&
+                !_dataSelecionada.value.isNullOrBlank() &&
+                horarioValido &&
+                !_isCancelandoAgendamento.value.orFalse()
     }
 
     private fun Boolean?.orFalse(): Boolean {
@@ -173,7 +176,7 @@ class AgendamentoScreenViewModel : ViewModel() {
         idDoadora: Int,
         idJornadaDoacao: Int,
         context: Context,
-        preservarAgendamento: Boolean = false
+        preservarAgendamento: Boolean = false,
     ) {
         val tag = "AGENDAMENTO_API"
 
@@ -186,150 +189,152 @@ class AgendamentoScreenViewModel : ViewModel() {
         _horarios.value = emptyList()
         _dataSelecionada.value = null
         _horarioSelecionado.value = null
-        if (!preservarAgendamento) { _agendamentoExistente.value = null }
+        if (!preservarAgendamento) {
+            _agendamentoExistente.value = null
+        }
 
         validarFormulario()
 
         Log.d(tag, "Buscando horários da instituição: $idInstituicao")
 
-        val requisicao = MaternaRetrofitFactory(context.applicationContext)
-            .getHorarioService()
-            .buscarHorariosDisponiveis(
-                idInstituicao = idInstituicao,
-                isProximo = true,
-                idDoadora = idDoadora.toString()
-            )
+        val requisicao =
+            MaternaRetrofitFactory(context.applicationContext)
+                .getHorarioService()
+                .buscarHorariosDisponiveis(
+                    idInstituicao = idInstituicao,
+                    isProximo = true,
+                    idDoadora = idDoadora.toString(),
+                )
 
         consultaHorariosAtual = requisicao
 
-        requisicao.enqueue(object : Callback<HorariosAgendaResponse> {
+        requisicao.enqueue(
+            object : Callback<HorariosAgendaResponse> {
 
-            override fun onResponse(
-                call: Call<HorariosAgendaResponse>,
-                response: Response<HorariosAgendaResponse>
-            ) {
-                if (call.isCanceled || consultaHorariosAtual != call) return
+                override fun onResponse(
+                    call: Call<HorariosAgendaResponse>,
+                    response: Response<HorariosAgendaResponse>,
+                ) {
+                    if (call.isCanceled || consultaHorariosAtual != call) return
 
-                consultaHorariosAtual = null
-                _isBuscandoHorarios.value = false
+                    consultaHorariosAtual = null
+                    _isBuscandoHorarios.value = false
 
-                Log.d(tag, "HTTP: ${response.code()}")
-                Log.d(tag, "URL: ${call.request().url}")
+                    Log.d(tag, "HTTP: ${response.code()}")
+                    Log.d(tag, "URL: ${call.request().url}")
 
-                val body = response.body()
+                    val body = response.body()
 
-                if (response.isSuccessful && body?.status == true) {
+                    if (response.isSuccessful && body?.status == true) {
 
-                    val horariosRecebidos = body.response
-                        ?.horario
-                        .orEmpty()
+                        val horariosRecebidos = body.response?.horario.orEmpty()
 
-                    val agendamento = horariosRecebidos.firstOrNull {
-                        it.idDoadora == idDoadora &&
+                        val agendamento = horariosRecebidos.firstOrNull {
+                            it.idDoadora == idDoadora &&
                                 it.idJornada == idJornada &&
                                 it.idEtapa == idEtapa &&
                                 it.idJornadaDoacao == idJornadaDoacao &&
                                 it.idAgendamento != null &&
                                 it.encerrado == 0 &&
                                 it.idStatus in listOf(1, 2)
-                    }
-
-                    if (agendamento != null || !preservarAgendamento) {
-                        _agendamentoExistente.value = agendamento
-                    } else {
-                        Log.w(
-                            tag,
-                            "Agendamento criado ainda não localizado na consulta."
-                        )
-                    }
-
-                    Log.d(
-                        "AGENDAMENTO_EXISTENTE",
-                        "ID: ${agendamento?.idAgendamento} | " +
-                                "Status: ${agendamento?.status} | " +
-                                "Vínculo: ${agendamento?.idJornadaDoacao}"
-                    )
-
-                    val horariosDisponiveis = horariosRecebidos
-                        .filter {
-                            it.disponivel == 1 &&
-                                    it.isProximo == 1 &&
-                                    it.idDoadora == null &&
-                                    it.idAgendamento == null &&
-                                    it.idJornada == idJornada &&
-                                    it.idEtapa == idEtapa
                         }
-                        .sortedWith(
-                            compareBy<HorarioAgenda> { it.data }
-                                .thenBy { it.hora }
+
+                        if (agendamento != null || !preservarAgendamento) {
+                            _agendamentoExistente.value = agendamento
+                        } else {
+                            Log.w(
+                                tag,
+                                "Agendamento criado ainda não localizado na consulta.",
+                            )
+                        }
+
+                        Log.d(
+                            "AGENDAMENTO_EXISTENTE",
+                            "ID: ${agendamento?.idAgendamento} | " +
+                                "Status: ${agendamento?.status} | " +
+                                "Vínculo: ${agendamento?.idJornadaDoacao}",
                         )
 
-                    _horarios.value = horariosDisponiveis
+                        val horariosDisponiveis =
+                            horariosRecebidos
+                                .filter {
+                                    it.disponivel == 1 &&
+                                        it.isProximo == 1 &&
+                                        it.idDoadora == null &&
+                                        it.idAgendamento == null &&
+                                        it.idJornada == idJornada &&
+                                        it.idEtapa == idEtapa
+                                }
+                                .sortedWith(
+                                    compareBy<HorarioAgenda> { it.data }.thenBy { it.hora },
+                                )
 
-                    consultaHorariosConcluida = true
+                        _horarios.value = horariosDisponiveis
 
-                    validarFormulario()
+                        consultaHorariosConcluida = true
 
-                    Log.i(
-                        tag,
-                        "Horários recebidos: ${horariosRecebidos.size}"
-                    )
+                        validarFormulario()
 
-                    Log.i(
-                        tag,
-                        "Horários disponíveis: ${horariosDisponiveis.size}"
-                    )
-
-                    horariosDisponiveis.forEach { horario ->
-                        Log.d(
+                        Log.i(
                             tag,
-                            "ID: ${horario.idHorario} | " +
+                            "Horários recebidos: ${horariosRecebidos.size}",
+                        )
+
+                        Log.i(
+                            tag,
+                            "Horários disponíveis: ${horariosDisponiveis.size}",
+                        )
+
+                        horariosDisponiveis.forEach { horario ->
+                            Log.d(
+                                tag,
+                                "ID: ${horario.idHorario} | " +
                                     "Etapa: ${horario.idEtapa} | " +
                                     "Data: ${horario.data} | " +
-                                    "Hora: ${horario.hora}"
-                        )
-                    }
-
-                } else {
-
-                    val erro = response.errorBody()?.string()
-
-                    if (
-                        response.code() == 404 &&
-                        erro.orEmpty().contains(
-                            "Não foram encontrados",
-                            ignoreCase = true
-                        )
-                    ) {
-                        _horarios.value = emptyList()
-
-                        Log.i(tag, "Nenhum horário encontrado.")
-
+                                    "Hora: ${horario.hora}",
+                            )
+                        }
                     } else {
 
-                        _mensagemErro.value =
-                            body?.message ?: "Não foi possível buscar os horários."
+                        val erro = response.errorBody()?.string()
 
-                        Log.e(tag, "Erro HTTP ${response.code()}: $erro")
+                        if (
+                            response.code() == 404 &&
+                                erro
+                                    .orEmpty()
+                                    .contains(
+                                        "Não foram encontrados",
+                                        ignoreCase = true,
+                                    )
+                        ) {
+                            _horarios.value = emptyList()
+
+                            Log.i(tag, "Nenhum horário encontrado.")
+                        } else {
+
+                            _mensagemErro.value =
+                                body?.message ?: "Não foi possível buscar os horários."
+
+                            Log.e(tag, "Erro HTTP ${response.code()}: $erro")
+                        }
                     }
                 }
-            }
 
-            override fun onFailure(
-                call: Call<HorariosAgendaResponse>,
-                t: Throwable
-            ) {
-                if (call.isCanceled || consultaHorariosAtual != call) return
+                override fun onFailure(
+                    call: Call<HorariosAgendaResponse>,
+                    t: Throwable,
+                ) {
+                    if (call.isCanceled || consultaHorariosAtual != call) return
 
-                consultaHorariosAtual = null
-                _isBuscandoHorarios.value = false
+                    consultaHorariosAtual = null
+                    _isBuscandoHorarios.value = false
 
-                _mensagemErro.value =
-                    "Falha na comunicação com o servidor."
+                    _mensagemErro.value = "Falha na comunicação com o servidor."
 
-                Log.e(tag, "Falha ao buscar horários", t)
-            }
-        })
+                    Log.e(tag, "Falha ao buscar horários", t)
+                }
+            },
+        )
     }
 
     fun criarAgendamento(
@@ -338,7 +343,7 @@ class AgendamentoScreenViewModel : ViewModel() {
         idEtapa: Int,
         idDoadora: Int,
         idJornadaDoacao: Int,
-        context: Context
+        context: Context,
     ) {
         val tag = "AGENDAMENTO_POST"
 
@@ -356,45 +361,45 @@ class AgendamentoScreenViewModel : ViewModel() {
 
         if (
             idInstituicao <= 0 ||
-            idJornada <= 0 ||
-            idEtapa <= 0 ||
-            idDoadora <= 0 ||
-            idJornadaDoacao <= 0
+                idJornada <= 0 ||
+                idEtapa <= 0 ||
+                idDoadora <= 0 ||
+                idJornadaDoacao <= 0
         ) {
             Log.e(tag, "Identificadores inválidos.")
             return
         }
 
-        val horario = _horarios.value.orEmpty().firstOrNull {
-            it.idHorario == _horarioSelecionado.value &&
+        val horario =
+            _horarios.value.orEmpty().firstOrNull {
+                it.idHorario == _horarioSelecionado.value &&
                     it.idJornada == idJornada &&
                     it.idEtapa == idEtapa &&
                     it.disponivel == 1 &&
                     it.isProximo == 1 &&
                     it.idAgendamento == null &&
                     it.idDoadora == null
-        } ?: return
+            } ?: return
 
         val dataHorario = runCatching {
             Instant.parse(horario.data)
                 .atZone(ZoneId.of("America/Sao_Paulo"))
                 .toLocalDate()
                 .toString()
-        }.getOrNull()
+        }
+            .getOrNull()
 
-        if (
-            dataHorario == null ||
-            dataHorario != _dataSelecionada.value
-        ) {
+        if (dataHorario == null || dataHorario != _dataSelecionada.value) {
             Log.e(tag, "Data incompatível com o horário selecionado.")
             return
         }
 
-        val request = AgendamentoRequest(
-            idCadastroHorario = horario.idHorario,
-            idJornadaDoacao = idJornadaDoacao,
-            idStatusAgendamento = 1
-        )
+        val request =
+            AgendamentoRequest(
+                idCadastroHorario = horario.idHorario,
+                idJornadaDoacao = idJornadaDoacao,
+                idStatusAgendamento = 1,
+            )
 
         _isLoading.value = true
         _mensagemErro.value = null
@@ -406,111 +411,108 @@ class AgendamentoScreenViewModel : ViewModel() {
         Log.d(tag, "Vínculo: ${request.idJornadaDoacao}")
         Log.d(tag, "Status inicial: ${request.idStatusAgendamento}")
 
-        val requisicao = MaternaRetrofitFactory(
-            context.applicationContext
-        )
-            .getAgendamentoService()
-            .criarAgendamento(request)
+        val requisicao =
+            MaternaRetrofitFactory(
+                    context.applicationContext,
+                )
+                .getAgendamentoService()
+                .criarAgendamento(request)
 
         requisicaoAgendamentoAtual = requisicao
 
-        requisicao.enqueue(object : Callback<AgendamentoResponse> {
+        requisicao.enqueue(
+            object : Callback<AgendamentoResponse> {
 
-            override fun onResponse(
-                call: Call<AgendamentoResponse>,
-                response: Response<AgendamentoResponse>
-            ) {
-                if (
-                    call.isCanceled ||
-                    requisicaoAgendamentoAtual != call
-                ) return
-
-                requisicaoAgendamentoAtual = null
-                consultaHorariosConcluida = false
-
-                Log.d(tag, "HTTP: ${response.code()}")
-
-                val body = response.body()
-                val agendamentoCriado = body?.response
-
-                if (
-                    response.isSuccessful &&
-                    body?.status == true &&
-                    agendamentoCriado != null &&
-                    agendamentoCriado.id > 0 &&
-                    agendamentoCriado.idCadastroHorario == horario.idHorario &&
-                    agendamentoCriado.idJornadaDoacao == idJornadaDoacao &&
-                    agendamentoCriado.idStatusAgendamento == 1
+                override fun onResponse(
+                    call: Call<AgendamentoResponse>,
+                    response: Response<AgendamentoResponse>,
                 ) {
-                    Log.i(tag, "Agendamento criado com sucesso!")
-                    Log.d(tag, "ID: ${agendamentoCriado.id}")
-                    Log.d(tag, "Mensagem: ${body.message}")
+                    if (call.isCanceled || requisicaoAgendamentoAtual != call) return
 
-                    _agendamentoExistente.value = horario.copy(
-                        idAgendamento = agendamentoCriado.id,
-                        idJornadaDoacao = idJornadaDoacao,
-                        idDoadora = idDoadora,
-                        idStatus = 1,
-                        status = "Pendente",
-                        encerrado = 0
-                    )
+                    requisicaoAgendamentoAtual = null
+                    consultaHorariosConcluida = false
 
-                    _horarios.value = emptyList()
-                    _dataSelecionada.value = null
-                    _horarioSelecionado.value = null
-                    _isLoading.value = false
+                    Log.d(tag, "HTTP: ${response.code()}")
 
-                    validarFormulario()
+                    val body = response.body()
+                    val agendamentoCriado = body?.response
 
-                    testarBuscaHorarios(
-                        idInstituicao = idInstituicao,
-                        idJornada = idJornada,
-                        idEtapa = idEtapa,
-                        idDoadora = idDoadora,
-                        idJornadaDoacao = idJornadaDoacao,
-                        context = context.applicationContext,
-                        preservarAgendamento = true
-                    )
+                    if (
+                        response.isSuccessful &&
+                            body?.status == true &&
+                            agendamentoCriado != null &&
+                            agendamentoCriado.id > 0 &&
+                            agendamentoCriado.idCadastroHorario == horario.idHorario &&
+                            agendamentoCriado.idJornadaDoacao == idJornadaDoacao &&
+                            agendamentoCriado.idStatusAgendamento == 1
+                    ) {
+                        Log.i(tag, "Agendamento criado com sucesso!")
+                        Log.d(tag, "ID: ${agendamentoCriado.id}")
+                        Log.d(tag, "Mensagem: ${body.message}")
 
-                } else {
+                        _agendamentoExistente.value =
+                            horario.copy(
+                                idAgendamento = agendamentoCriado.id,
+                                idJornadaDoacao = idJornadaDoacao,
+                                idDoadora = idDoadora,
+                                idStatus = 1,
+                                status = "Pendente",
+                                encerrado = 0,
+                            )
+
+                        _horarios.value = emptyList()
+                        _dataSelecionada.value = null
+                        _horarioSelecionado.value = null
+                        _isLoading.value = false
+
+                        validarFormulario()
+
+                        testarBuscaHorarios(
+                            idInstituicao = idInstituicao,
+                            idJornada = idJornada,
+                            idEtapa = idEtapa,
+                            idDoadora = idDoadora,
+                            idJornadaDoacao = idJornadaDoacao,
+                            context = context.applicationContext,
+                            preservarAgendamento = true,
+                        )
+                    } else {
+                        _isLoading.value = false
+
+                        _mensagemErro.value =
+                            "Não foi possível confirmar a criação do agendamento. " +
+                                "Consulte novamente os horários."
+
+                        Log.e(
+                            tag,
+                            "Resposta inválida ou erro HTTP ${response.code()}",
+                        )
+
+                        validarFormulario()
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<AgendamentoResponse>,
+                    t: Throwable,
+                ) {
+                    if (call.isCanceled || requisicaoAgendamentoAtual != call) return
+
+                    requisicaoAgendamentoAtual = null
+                    consultaHorariosConcluida = false
+
                     _isLoading.value = false
 
                     _mensagemErro.value =
-                        "Não foi possível confirmar a criação do agendamento. " +
-                                "Consulte novamente os horários."
+                        "Não foi possível verificar o resultado da solicitação. " +
+                            "Consulte novamente os horários."
 
-                    Log.e(
-                        tag,
-                        "Resposta inválida ou erro HTTP ${response.code()}"
-                    )
+                    Log.e(tag, "Falha na comunicação com a API.", t)
 
                     validarFormulario()
                 }
-            }
-
-            override fun onFailure(
-                call: Call<AgendamentoResponse>,
-                t: Throwable
-            ) {
-                if (
-                    call.isCanceled ||
-                    requisicaoAgendamentoAtual != call
-                ) return
-
-                requisicaoAgendamentoAtual = null
-                consultaHorariosConcluida = false
-
-                _isLoading.value = false
-
-                _mensagemErro.value =
-                    "Não foi possível verificar o resultado da solicitação. " +
-                            "Consulte novamente os horários."
-
-                Log.e(tag, "Falha na comunicação com a API.", t)
-
-                validarFormulario()
-            }
-        })
+            },
+        )
     }
 
     fun cancelarAgendamento(
@@ -519,34 +521,34 @@ class AgendamentoScreenViewModel : ViewModel() {
         idEtapa: Int,
         idDoadora: Int,
         idJornadaDoacao: Int,
-        context: Context
+        context: Context,
     ) {
         val tag = "AGENDAMENTO_CANCELAMENTO"
 
         if (
             !consultaHorariosConcluida ||
-            _isCancelandoAgendamento.value == true ||
-            _isLoading.value == true ||
-            _isBuscandoHorarios.value == true ||
-            requisicaoCancelamentoAtual != null
-        ) return
+                _isCancelandoAgendamento.value == true ||
+                _isLoading.value == true ||
+                _isBuscandoHorarios.value == true ||
+                requisicaoCancelamentoAtual != null
+        )
+            return
 
         val agendamento = _agendamentoExistente.value ?: return
         val idAgendamento = agendamento.idAgendamento ?: return
 
         if (
             idAgendamento <= 0 ||
-            agendamento.idStatus !in listOf(1, 2) ||
-            agendamento.encerrado != 0 ||
-            agendamento.idDoadora != idDoadora ||
-            agendamento.idJornada != idJornada ||
-            agendamento.idEtapa != idEtapa ||
-            agendamento.idJornadaDoacao != idJornadaDoacao
+                agendamento.idStatus !in listOf(1, 2) ||
+                agendamento.encerrado != 0 ||
+                agendamento.idDoadora != idDoadora ||
+                agendamento.idJornada != idJornada ||
+                agendamento.idEtapa != idEtapa ||
+                agendamento.idJornadaDoacao != idJornadaDoacao
         ) {
             Log.w(tag, "Agendamento inválido para cancelamento.")
 
-            _erroCancelamento.value =
-                "Não foi possível identificar o agendamento."
+            _erroCancelamento.value = "Não foi possível identificar o agendamento."
 
             return
         }
@@ -558,23 +560,25 @@ class AgendamentoScreenViewModel : ViewModel() {
 
         validarFormulario()
 
-        val request = CancelarAgendamentoRequest(
-            idDoadora = idDoadora,
-            idStatusAgendamento = 4
-        )
+        val request =
+            CancelarAgendamentoRequest(
+                idDoadora = idDoadora,
+                idStatusAgendamento = 4,
+            )
 
         Log.d(tag, "Iniciando cancelamento.")
         Log.d(tag, "Agendamento: $idAgendamento")
         Log.d(tag, "Vínculo: $idJornadaDoacao")
 
-        val requisicao = MaternaRetrofitFactory(
-            context.applicationContext
-        )
-            .getAgendamentoService()
-            .cancelarAgendamento(
-                idAgendamento = idAgendamento,
-                request = request
-            )
+        val requisicao =
+            MaternaRetrofitFactory(
+                    context.applicationContext,
+                )
+                .getAgendamentoService()
+                .cancelarAgendamento(
+                    idAgendamento = idAgendamento,
+                    request = request,
+                )
 
         requisicaoCancelamentoAtual = requisicao
 
@@ -583,12 +587,9 @@ class AgendamentoScreenViewModel : ViewModel() {
 
                 override fun onResponse(
                     call: Call<CancelarAgendamentoResponse>,
-                    response: Response<CancelarAgendamentoResponse>
+                    response: Response<CancelarAgendamentoResponse>,
                 ) {
-                    if (
-                        call.isCanceled ||
-                        requisicaoCancelamentoAtual != call
-                    ) return
+                    if (call.isCanceled || requisicaoCancelamentoAtual != call) return
 
                     requisicaoCancelamentoAtual = null
 
@@ -599,15 +600,15 @@ class AgendamentoScreenViewModel : ViewModel() {
 
                     if (
                         response.isSuccessful &&
-                        body?.status == true &&
-                        cancelamento != null &&
-                        cancelamento.id == idAgendamento &&
-                        cancelamento.idDoadora == idDoadora &&
-                        cancelamento.idStatusAgendamento == 4
+                            body?.status == true &&
+                            cancelamento != null &&
+                            cancelamento.id == idAgendamento &&
+                            cancelamento.idDoadora == idDoadora &&
+                            cancelamento.idStatusAgendamento == 4
                     ) {
                         Log.i(
                             tag,
-                            "Agendamento cancelado com sucesso!"
+                            "Agendamento cancelado com sucesso!",
                         )
 
                         _agendamentoExistente.value = null
@@ -625,19 +626,18 @@ class AgendamentoScreenViewModel : ViewModel() {
                             idEtapa = idEtapa,
                             idDoadora = idDoadora,
                             idJornadaDoacao = idJornadaDoacao,
-                            context = context.applicationContext
+                            context = context.applicationContext,
                         )
-
                     } else {
                         _isCancelandoAgendamento.value = false
 
                         _erroCancelamento.value =
                             "Não foi possível confirmar o cancelamento. " +
-                                    "Atualize os dados antes de tentar novamente."
+                                "Atualize os dados antes de tentar novamente."
 
                         Log.e(
                             tag,
-                            "Resposta inválida ou HTTP ${response.code()}"
+                            "Resposta inválida ou HTTP ${response.code()}",
                         )
 
                         validarFormulario()
@@ -646,12 +646,9 @@ class AgendamentoScreenViewModel : ViewModel() {
 
                 override fun onFailure(
                     call: Call<CancelarAgendamentoResponse>,
-                    t: Throwable
+                    t: Throwable,
                 ) {
-                    if (
-                        call.isCanceled ||
-                        requisicaoCancelamentoAtual != call
-                    ) return
+                    if (call.isCanceled || requisicaoCancelamentoAtual != call) return
 
                     requisicaoCancelamentoAtual = null
 
@@ -659,17 +656,17 @@ class AgendamentoScreenViewModel : ViewModel() {
 
                     _erroCancelamento.value =
                         "Não foi possível verificar o cancelamento. " +
-                                "Atualize os dados antes de tentar novamente."
+                            "Atualize os dados antes de tentar novamente."
 
                     Log.e(
                         tag,
                         "Falha na comunicação com a API.",
-                        t
+                        t,
                     )
 
                     validarFormulario()
                 }
-            }
+            },
         )
     }
 

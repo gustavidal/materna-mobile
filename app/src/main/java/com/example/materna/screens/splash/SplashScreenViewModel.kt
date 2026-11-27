@@ -10,12 +10,13 @@ import kotlinx.coroutines.withContext
 
 class SplashScreenViewModel(
     private val settingsDao: AppSettingsDao,
-    context: Context
+    context: Context,
 ) : ViewModel() {
 
-    private val sessionManager = SessionManager(
-        context.applicationContext
-    )
+    private val sessionManager =
+        SessionManager(
+            context.applicationContext,
+        )
 
     suspend fun verificarDestino(): String {
         return withContext(Dispatchers.IO) {
@@ -27,8 +28,8 @@ class SplashScreenViewModel(
                 }
 
                 settings?.idDoadoraPendente != null &&
-                        settings.idDoadoraPendente > 0 &&
-                        !settings.emailPendente.isNullOrBlank() -> {
+                    settings.idDoadoraPendente > 0 &&
+                    !settings.emailPendente.isNullOrBlank() -> {
                     "confirmar-email/${settings.idDoadoraPendente}"
                 }
 

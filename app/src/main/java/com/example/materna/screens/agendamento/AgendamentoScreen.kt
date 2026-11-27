@@ -71,43 +71,31 @@ fun AgendamentoScreen(
     iconeInstituicao: Painter,
     iconeHorario: ImageVector,
     onVoltar: () -> Unit,
-    agendamentoScreenViewModel: AgendamentoScreenViewModel = viewModel()
+    agendamentoScreenViewModel: AgendamentoScreenViewModel = viewModel(),
 ) {
-    val tipoAtendimento by agendamentoScreenViewModel
-        .tipoAtendimento.observeAsState("")
+    val tipoAtendimento by agendamentoScreenViewModel.tipoAtendimento.observeAsState("")
 
-    val tiposPermitidos by agendamentoScreenViewModel
-        .tiposPermitidos.observeAsState(emptyList())
+    val tiposPermitidos by agendamentoScreenViewModel.tiposPermitidos.observeAsState(emptyList())
 
-    val dataSelecionada by agendamentoScreenViewModel
-        .dataSelecionada.observeAsState("")
+    val dataSelecionada by agendamentoScreenViewModel.dataSelecionada.observeAsState("")
 
-    val horarioSelecionado by agendamentoScreenViewModel
-        .horarioSelecionado.observeAsState()
+    val horarioSelecionado by agendamentoScreenViewModel.horarioSelecionado.observeAsState()
 
-    val isFormularioValido by agendamentoScreenViewModel
-        .isFormularioValido.observeAsState(false)
+    val isFormularioValido by agendamentoScreenViewModel.isFormularioValido.observeAsState(false)
 
-    val isLoading by agendamentoScreenViewModel
-        .isLoading.observeAsState(false)
+    val isLoading by agendamentoScreenViewModel.isLoading.observeAsState(false)
 
-    val horariosDisponiveis by agendamentoScreenViewModel
-        .horarios.observeAsState(emptyList())
+    val horariosDisponiveis by agendamentoScreenViewModel.horarios.observeAsState(emptyList())
 
-    val isBuscandoHorarios by agendamentoScreenViewModel
-        .isBuscandoHorarios.observeAsState(false)
+    val isBuscandoHorarios by agendamentoScreenViewModel.isBuscandoHorarios.observeAsState(false)
 
-    val mensagemErro by agendamentoScreenViewModel
-        .mensagemErro.observeAsState()
+    val mensagemErro by agendamentoScreenViewModel.mensagemErro.observeAsState()
 
-    val agendamentoExistente by agendamentoScreenViewModel
-        .agendamentoExistente.observeAsState()
+    val agendamentoExistente by agendamentoScreenViewModel.agendamentoExistente.observeAsState()
 
-    val isCancelandoAgendamento by agendamentoScreenViewModel.isCancelandoAgendamento
-        .observeAsState(false)
+    val isCancelandoAgendamento by agendamentoScreenViewModel.isCancelandoAgendamento.observeAsState(false)
 
-    val erroCancelamento by agendamentoScreenViewModel.erroCancelamento
-        .observeAsState()
+    val erroCancelamento by agendamentoScreenViewModel.erroCancelamento.observeAsState()
 
     var exibirDialogCancelamento by remember {
         mutableStateOf(false)
@@ -122,20 +110,19 @@ fun AgendamentoScreen(
     val zona = ZoneId.of("America/Sao_Paulo")
 
     val horariosPorData = horariosDisponiveis.groupBy {
-        Instant.parse(it.data)
-            .atZone(zona)
-            .toLocalDate()
+        Instant.parse(it.data).atZone(zona).toLocalDate()
     }
 
     val datas = horariosPorData.keys.sorted()
 
-    val horarios = horariosPorData.entries
-        .firstOrNull {
-            it.key.toString() == dataSelecionada
-        }
-        ?.value
-        .orEmpty()
-        .sortedBy { it.hora }
+    val horarios =
+        horariosPorData.entries
+            .firstOrNull {
+                it.key.toString() == dataSelecionada
+            }
+            ?.value
+            .orEmpty()
+            .sortedBy { it.hora }
 
     val context = LocalContext.current
 
@@ -148,7 +135,7 @@ fun AgendamentoScreen(
         idJornada,
         idEtapa,
         idDoadora,
-        idJornadaDoacao
+        idJornadaDoacao,
     ) {
         agendamentoScreenViewModel.testarBuscaHorarios(
             idInstituicao = idInstituicao,
@@ -156,7 +143,7 @@ fun AgendamentoScreen(
             idEtapa = idEtapa,
             idDoadora = idDoadora,
             idJornadaDoacao = idJornadaDoacao,
-            context = context.applicationContext
+            context = context.applicationContext,
         )
     }
 
@@ -168,14 +155,15 @@ fun AgendamentoScreen(
             title = {
                 Text(
                     text = "Cancelar agendamento?",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             },
             text = {
                 Text(
-                    text = "Tem certeza de que deseja cancelar " +
+                    text =
+                        "Tem certeza de que deseja cancelar " +
                             "seu agendamento? Você poderá solicitar " +
-                            "um novo horário disponível posteriormente."
+                            "um novo horário disponível posteriormente.",
                 )
             },
             confirmButton = {
@@ -189,14 +177,14 @@ fun AgendamentoScreen(
                             idEtapa = idEtapa,
                             idDoadora = idDoadora,
                             idJornadaDoacao = idJornadaDoacao,
-                            context = context.applicationContext
+                            context = context.applicationContext,
                         )
-                    }
+                    },
                 ) {
                     Text(
                         text = "Sim, cancelar",
                         color = pink,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             },
@@ -204,48 +192,46 @@ fun AgendamentoScreen(
                 TextButton(
                     onClick = {
                         exibirDialogCancelamento = false
-                    }
+                    },
                 ) {
                     Text(
                         text = "Manter agendamento",
-                        color = pink
+                        color = pink,
                     )
                 }
             },
             containerColor = white,
             titleContentColor = colorResource(R.color.main_text_color),
             textContentColor = colorResource(R.color.main_text_color),
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(24.dp),
         )
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .padding(horizontal = 20.dp)
+        modifier =
+            Modifier.fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .padding(horizontal = 20.dp),
     ) {
 
         // Cabeçalho
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
                 onClick = onVoltar,
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(
-                        colorResource(R.color.background_gray),
-                        CircleShape
-                    )
+                modifier =
+                    Modifier.size(42.dp)
+                        .background(
+                            colorResource(R.color.background_gray),
+                            CircleShape,
+                        ),
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = texto
+                    tint = texto,
                 )
             }
 
@@ -256,13 +242,13 @@ fun AgendamentoScreen(
                     text = "Agendamento",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = texto
+                    color = texto,
                 )
 
                 Text(
                     text = nomeInstituicao,
                     fontSize = 13.sp,
-                    color = cinza
+                    color = cinza,
                 )
             }
         }
@@ -272,10 +258,7 @@ fun AgendamentoScreen(
         if (agendamento != null) {
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             ) {
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -287,11 +270,11 @@ fun AgendamentoScreen(
                     },
                     cancelamentoHabilitado =
                         !isCancelandoAgendamento &&
-                                !isBuscandoHorarios &&
-                                !isLoading &&
-                                mensagemErro == null &&
-                                erroCancelamento == null,
-                    isCancelando = isCancelandoAgendamento
+                            !isBuscandoHorarios &&
+                            !isLoading &&
+                            mensagemErro == null &&
+                            erroCancelamento == null,
+                    isCancelando = isCancelandoAgendamento,
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -299,30 +282,24 @@ fun AgendamentoScreen(
 
             Button(
                 onClick = onVoltar,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-                    .height(54.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).height(54.dp),
                 shape = RoundedCornerShape(30.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = pink,
-                    contentColor = white
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = pink,
+                        contentColor = white,
+                    ),
             ) {
                 Text(
                     text = "Voltar para jornada",
                     fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
-
         } else {
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             ) {
 
                 // Tipo de atendimento
@@ -330,14 +307,14 @@ fun AgendamentoScreen(
                     text = "TIPO DE ATENDIMENTO",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = texto
+                    color = texto,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if ("presencial" in tiposPermitidos) {
                         TipoAtendimentoCard(
@@ -347,9 +324,8 @@ fun AgendamentoScreen(
                             selecionado = tipoAtendimento == "presencial",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                agendamentoScreenViewModel
-                                    .onTipoAtendimentoChanged("presencial")
-                            }
+                                agendamentoScreenViewModel.onTipoAtendimentoChanged("presencial")
+                            },
                         )
                     }
 
@@ -362,7 +338,7 @@ fun AgendamentoScreen(
                             modifier = Modifier.weight(1f),
                             onClick = {
                                 agendamentoScreenViewModel.onTipoAtendimentoChanged("domiciliar")
-                            }
+                            },
                         )
                     }
 
@@ -370,7 +346,7 @@ fun AgendamentoScreen(
                         Text(
                             text = "Nenhuma modalidade de atendimento disponível.",
                             fontSize = 13.sp,
-                            color = cinza
+                            color = cinza,
                         )
                     }
                 }
@@ -382,7 +358,7 @@ fun AgendamentoScreen(
                     text = "Selecione uma data",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = texto
+                    color = texto,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -390,15 +366,13 @@ fun AgendamentoScreen(
                 when {
                     isBuscandoHorarios -> {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(90.dp),
-                            contentAlignment = Alignment.Center
+                            modifier = Modifier.fillMaxWidth().height(90.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
                             CircularProgressIndicator(
                                 color = pink,
                                 modifier = Modifier.size(28.dp),
-                                strokeWidth = 3.dp
+                                strokeWidth = 3.dp,
                             )
                         }
                     }
@@ -407,7 +381,7 @@ fun AgendamentoScreen(
                         Text(
                             text = mensagemErro.orEmpty(),
                             color = MaterialTheme.colorScheme.error,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
                         )
                     }
 
@@ -415,42 +389,43 @@ fun AgendamentoScreen(
                         Text(
                             text = "Nenhuma data disponível para esta etapa.",
                             fontSize = 13.sp,
-                            color = cinza
+                            color = cinza,
                         )
                     }
 
                     else -> {
                         LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             items(
                                 items = datas,
-                                key = { it.toString() }
+                                key = { it.toString() },
                             ) { data ->
-
                                 val dataCompleta = data.toString()
 
                                 DataAgendamentoCard(
-                                    diaSemana = data.format(
-                                        DateTimeFormatter.ofPattern("EEE", locale)
-                                    ).removeSuffix(".")
-                                        .replaceFirstChar { it.uppercase() },
-
-                                    dia = data.format(
-                                        DateTimeFormatter.ofPattern("dd")
-                                    ),
-
-                                    mes = data.format(
-                                        DateTimeFormatter.ofPattern("MMM", locale)
-                                    ).removeSuffix(".")
-                                        .replaceFirstChar { it.uppercase() },
-
+                                    diaSemana =
+                                        data
+                                            .format(
+                                                DateTimeFormatter.ofPattern("EEE", locale),
+                                            )
+                                            .removeSuffix(".")
+                                            .replaceFirstChar { it.uppercase() },
+                                    dia =
+                                        data.format(
+                                            DateTimeFormatter.ofPattern("dd"),
+                                        ),
+                                    mes =
+                                        data
+                                            .format(
+                                                DateTimeFormatter.ofPattern("MMM", locale),
+                                            )
+                                            .removeSuffix(".")
+                                            .replaceFirstChar { it.uppercase() },
                                     selecionado = dataSelecionada == dataCompleta,
-
                                     onClick = {
-                                        agendamentoScreenViewModel
-                                            .onDataChanged(dataCompleta)
-                                    }
+                                        agendamentoScreenViewModel.onDataChanged(dataCompleta)
+                                    },
                                 )
                             }
                         }
@@ -464,7 +439,7 @@ fun AgendamentoScreen(
                     text = "Selecione um horário",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = texto
+                    color = texto,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -474,43 +449,35 @@ fun AgendamentoScreen(
                     Text(
                         text = "Selecione uma data para visualizar os horários.",
                         fontSize = 13.sp,
-                        color = cinza
+                        color = cinza,
                     )
-
                 } else {
 
                     horarios.chunked(3).forEach { linha ->
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             linha.forEach { item ->
-
                                 HorarioAgendamentoCard(
                                     horario = item.hora.take(5),
-
                                     disponivel = item.disponivel == 1,
-
-                                    selecionado =
-                                        horarioSelecionado == item.idHorario,
-
+                                    selecionado = horarioSelecionado == item.idHorario,
                                     icone = iconeHorario,
-
                                     modifier = Modifier.weight(1f),
-
                                     onClick = {
                                         if (item.disponivel == 1) {
-                                            agendamentoScreenViewModel
-                                                .onHorarioChanged(item.idHorario)
+                                            agendamentoScreenViewModel.onHorarioChanged(
+                                                item.idHorario,
+                                            )
                                         }
-                                    }
+                                    },
                                 )
                             }
 
                             repeat(3 - linha.size) {
                                 Spacer(
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
                         }
@@ -524,21 +491,21 @@ fun AgendamentoScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         LegendaHorario(
                             cor = white,
-                            descricao = "Livre"
+                            descricao = "Livre",
                         )
 
                         LegendaHorario(
                             cor = pink,
-                            descricao = "Selecionado"
+                            descricao = "Selecionado",
                         )
 
                         LegendaHorario(
                             cor = colorResource(R.color.background_gray),
-                            descricao = "Indisponível"
+                            descricao = "Indisponível",
                         )
                     }
                 }
@@ -555,37 +522,36 @@ fun AgendamentoScreen(
                         idEtapa = idEtapa,
                         idDoadora = idDoadora,
                         idJornadaDoacao = idJornadaDoacao,
-                        context = context.applicationContext
+                        context = context.applicationContext,
                     )
                 },
-                enabled = isFormularioValido &&
+                enabled =
+                    isFormularioValido &&
                         !isLoading &&
                         !isBuscandoHorarios &&
                         mensagemErro == null &&
                         agendamentoExistente == null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-                    .height(54.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).height(54.dp),
                 shape = RoundedCornerShape(30.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = pink,
-                    contentColor = white,
-                    disabledContainerColor = pink.copy(alpha = 0.4f),
-                    disabledContentColor = white
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = pink,
+                        contentColor = white,
+                        disabledContainerColor = pink.copy(alpha = 0.4f),
+                        disabledContentColor = white,
+                    ),
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = white,
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Text(
                         text = "Confirmar",
                         fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
@@ -596,27 +562,27 @@ fun AgendamentoScreen(
 @Composable
 private fun LegendaHorario(
     cor: Color,
-    descricao: String
+    descricao: String,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(12.dp)
-                .background(cor, CircleShape)
-                .border(
-                    width = 1.dp,
-                    color = colorResource(R.color.border),
-                    shape = CircleShape
-                )
+            modifier =
+                Modifier.size(12.dp)
+                    .background(cor, CircleShape)
+                    .border(
+                        width = 1.dp,
+                        color = colorResource(R.color.border),
+                        shape = CircleShape,
+                    ),
         )
 
         Text(
             text = descricao,
             fontSize = 10.sp,
-            color = colorResource(R.color.secundary_gray)
+            color = colorResource(R.color.secundary_gray),
         )
     }
 }

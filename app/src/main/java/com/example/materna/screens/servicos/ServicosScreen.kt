@@ -73,24 +73,26 @@ fun ServicosScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
     servicosScreenViewModel: ServicosScreenViewModel = viewModel(),
-    onSelecionarBanco: (Int) -> Unit = {}
+    onSelecionarBanco: (Int) -> Unit = {},
 ) {
-    val cep          by servicosScreenViewModel.cep.observeAsState("")
-    val estado       by servicosScreenViewModel.estado.observeAsState(ServicosEstado.INICIAL)
+    val cep by servicosScreenViewModel.cep.observeAsState("")
+    val estado by servicosScreenViewModel.estado.observeAsState(ServicosEstado.INICIAL)
     val instituicoes by servicosScreenViewModel.instituicoes.observeAsState(emptyList())
     val mensagemErro by servicosScreenViewModel.mensagemErro.observeAsState("")
-    val pontosRota   by servicosScreenViewModel.pontosRota.observeAsState(emptyList())
+    val pontosRota by servicosScreenViewModel.pontosRota.observeAsState(emptyList())
 
     val context = LocalContext.current
 
-    val appSettingsDao = remember(context) {
-        MaternaDatabaseProvider.getDatabase(context)
-            .appSettingsDao()
-    }
+    val appSettingsDao =
+        remember(context) {
+            MaternaDatabaseProvider.getDatabase(context).appSettingsDao()
+        }
 
-    val appSettings by remember(appSettingsDao) {
-        appSettingsDao.observeSettings()
-    }.collectAsState(initial = null)
+    val appSettings by
+        remember(appSettingsDao) {
+                appSettingsDao.observeSettings()
+            }
+            .collectAsState(initial = null)
 
     var instituicaoSelecionada by remember {
         mutableStateOf<InstituicaoProxima?>(null)
@@ -99,16 +101,14 @@ fun ServicosScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    val isDebug = (context.applicationInfo.flags and
-            ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    val isDebug = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
-    val idDoadora = appSettings?.idDoadora
-        ?: if (isDebug) 1 else null
+    val idDoadora = appSettings?.idDoadora ?: if (isDebug) 1 else null
 
     LaunchedEffect(idDoadora) {
         Log.d(
             "MaternaDoadora",
-            "ID da doadora no Room: $idDoadora"
+            "ID da doadora no Room: $idDoadora",
         )
 
         idDoadora?.let {
@@ -118,14 +118,16 @@ fun ServicosScreen(
 
     val localizacaoDoadora by servicosScreenViewModel.localizacaoDoadora.observeAsState(null)
 
-    val bottomSheetState = rememberStandardBottomSheetState(
-        initialValue = SheetValue.PartiallyExpanded,
-        skipHiddenState = true
-    )
+    val bottomSheetState =
+        rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded,
+            skipHiddenState = true,
+        )
 
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = bottomSheetState
-    )
+    val scaffoldState =
+        rememberBottomSheetScaffoldState(
+            bottomSheetState = bottomSheetState,
+        )
 
     BottomSheetScaffold(
         modifier = modifier.fillMaxSize(),
@@ -134,24 +136,23 @@ fun ServicosScreen(
         sheetContainerColor = colorResource(R.color.background_cream),
         sheetContent = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 600.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp),
             ) {
                 Text(
                     text = "Bancos de leite próximos",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = colorResource(R.color.main_text_color),
-                    modifier = Modifier.padding(
-                        start = 24.dp,
-                        end = 24.dp,
-                        bottom = 12.dp
-                    )
+                    modifier =
+                        Modifier.padding(
+                            start = 24.dp,
+                            end = 24.dp,
+                            bottom = 12.dp,
+                        ),
                 )
 
                 AnimatedVisibility(
-                    visible = instituicaoSelecionada != null
+                    visible = instituicaoSelecionada != null,
                 ) {
                     TextButton(
                         onClick = {
@@ -162,12 +163,12 @@ fun ServicosScreen(
                                 bottomSheetState.partialExpand()
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = null,
-                            tint = colorResource(R.color.golden_august_dark)
+                            tint = colorResource(R.color.golden_august_dark),
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -175,85 +176,84 @@ fun ServicosScreen(
                         Text(
                             text = "Cancelar rota",
                             color = colorResource(R.color.golden_august_dark),
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
                         )
                     }
                 }
 
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(
-                        start = 24.dp,
-                        end = 24.dp,
-                        bottom = 32.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentPadding =
+                        PaddingValues(
+                            start = 24.dp,
+                            end = 24.dp,
+                            bottom = 32.dp,
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     when (estado) {
-                        ServicosEstado.INICIAL -> item {
-                            Text(
-                                text = "Informe seu CEP para encontrar bancos de leite.",
-                                color = colorResource(R.color.secundary_gray)
-                            )
-                        }
-
-                        ServicosEstado.CARREGANDO -> item {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(
-                                    color = colorResource(R.color.main_pink)
+                        ServicosEstado.INICIAL ->
+                            item {
+                                Text(
+                                    text = "Informe seu CEP para encontrar bancos de leite.",
+                                    color = colorResource(R.color.secundary_gray),
                                 )
                             }
-                        }
 
+                        ServicosEstado.CARREGANDO ->
+                            item {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = colorResource(R.color.main_pink),
+                                    )
+                                }
+                            }
 
                         ServicosEstado.SUCESSO -> {
                             items(
                                 items = instituicoes,
-                                key = { instituicao -> instituicao.id }
+                                key = { instituicao -> instituicao.id },
                             ) { instituicao ->
                                 BancoLeiteCard(
                                     instituicao = instituicao,
                                     selecionado = instituicaoSelecionada?.id == instituicao.id,
                                     onSelecionar = {
                                         onSelecionarBanco(instituicao.id)
-                                    }
+                                    },
                                 )
                             }
                         }
 
+                        ServicosEstado.VAZIO ->
+                            item {
+                                ServicosFeedback(
+                                    titulo = "Nenhum banco encontrado",
+                                    descricao =
+                                        "Não encontramos bancos de leite próximos a esse CEP.",
+                                )
+                            }
 
-                        ServicosEstado.VAZIO -> item {
-                            ServicosFeedback(
-                                titulo = "Nenhum banco encontrado",
-                                descricao = "Não encontramos bancos de leite próximos a esse CEP."
-                            )
-                        }
-
-                        ServicosEstado.ERRO -> item {
-                            ServicosFeedback(
-                                titulo = "Ops! O leite derramou...",
-                                descricao = mensagemErro,
-                                onTentarNovamente = {
-                                    servicosScreenViewModel.buscarInstituicoes()
-                                }
-                            )
-                        }
+                        ServicosEstado.ERRO ->
+                            item {
+                                ServicosFeedback(
+                                    titulo = "Ops! O leite derramou...",
+                                    descricao = mensagemErro,
+                                    onTentarNovamente = {
+                                        servicosScreenViewModel.buscarInstituicoes()
+                                    },
+                                )
+                            }
                     }
                 }
             }
-        }
+        },
     ) { innerPadding ->
-
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
             MapaBancosLeite(
                 instituicoes = instituicoes,
@@ -279,28 +279,24 @@ fun ServicosScreen(
                     }
                 },
                 pontosRota = pontosRota,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(
                         onClick = { navController.popBackStack() },
-                        modifier = Modifier
-                            .size(42.dp)
-                            .background(Color.White, CircleShape)
+                        modifier = Modifier.size(42.dp).background(Color.White, CircleShape),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar",
-                            tint = colorResource(R.color.main_text_color)
+                            tint = colorResource(R.color.main_text_color),
                         )
                     }
 
@@ -310,14 +306,14 @@ fun ServicosScreen(
                         text = "Encontrar serviço",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.main_text_color)
+                        color = colorResource(R.color.main_text_color),
                     )
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     CadastroField(
                         value = cep,
@@ -327,21 +323,23 @@ fun ServicosScreen(
                         placeholder = "00000-000",
                         modifier = Modifier.weight(1f),
                         icon = painterResource(R.drawable.ic_pin_location),
-                        keyboardType = KeyboardType.Number
+                        keyboardType = KeyboardType.Number,
                     )
 
                     Button(
                         onClick = {
                             servicosScreenViewModel.buscarInstituicoes()
                         },
-                        enabled = cep.filter { it.isDigit() }.length == 8 &&
+                        enabled =
+                            cep.filter { it.isDigit() }.length == 8 &&
                                 estado != ServicosEstado.CARREGANDO,
                         modifier = Modifier.height(52.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorResource(R.color.main_pink),
-                            contentColor = colorResource(R.color.white)
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = colorResource(R.color.main_pink),
+                                contentColor = colorResource(R.color.white),
+                            ),
                     ) {
                         Text("Buscar")
                     }

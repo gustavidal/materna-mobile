@@ -35,7 +35,7 @@ import com.example.materna.R
 fun ConhecaDoacaoScreen(
     onConcluir: () -> Unit,
     onVoltar: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var mostrarAvisoSaida by remember {
         mutableStateOf(false)
@@ -56,8 +56,8 @@ fun ConhecaDoacaoScreen(
             text = {
                 Text(
                     "Você ainda não concluiu a primeira etapa. " +
-                            "Se sair agora, sua jornada ainda não estará " +
-                            "vinculada à instituição selecionada."
+                        "Se sair agora, sua jornada ainda não estará " +
+                        "vinculada à instituição selecionada.",
                 )
             },
             confirmButton = {
@@ -65,7 +65,7 @@ fun ConhecaDoacaoScreen(
                     onClick = {
                         mostrarAvisoSaida = false
                         onVoltar()
-                    }
+                    },
                 ) {
                     Text("Sair mesmo assim")
                 }
@@ -74,102 +74,109 @@ fun ConhecaDoacaoScreen(
                 TextButton(
                     onClick = {
                         mostrarAvisoSaida = false
-                    }
+                    },
                 ) {
                     Text("Continuar leitura")
                 }
-            }
+            },
         )
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Text(
             text = "Conheça a doação",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.main_text_color)
+            color = colorResource(R.color.main_text_color),
         )
 
         Text(
             text = "Um pequeno gesto pode fazer uma grande diferença.",
             fontSize = 16.sp,
-            color = colorResource(R.color.main_text_color)
+            color = colorResource(R.color.main_text_color),
         )
 
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = colorResource(R.color.white)
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = colorResource(R.color.white),
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = "Por que doar leite materno?",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
 
                 Text(
-                    text = "O leite materno é essencial para a saúde e o desenvolvimento dos bebês. " +
+                    text =
+                        "O leite materno é essencial para a saúde e o desenvolvimento dos bebês. " +
                             "Quando uma mãe não consegue amamentar seu filho, o leite humano doado " +
                             "pode contribuir para a alimentação de recém-nascidos que precisam " +
-                            "desse cuidado, especialmente os prematuros."
+                            "desse cuidado, especialmente os prematuros.",
                 )
             }
         }
 
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = colorResource(R.color.white)
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = colorResource(R.color.white),
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = "Como funciona a doação?",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
 
                 Text(
-                    text = "O processo envolve orientações, avaliação das condições " +
+                    text =
+                        "O processo envolve orientações, avaliação das condições " +
                             "de saúde da doadora e acompanhamento pelo banco de leite humano. " +
                             "O leite doado passa por procedimentos de controle de qualidade " +
-                            "antes de ser destinado aos bebês."
+                            "antes de ser destinado aos bebês.",
                 )
             }
         }
 
         Card(
-            colors = CardDefaults.cardColors(
-                containerColor = colorResource(R.color.white)
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = colorResource(R.color.white),
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = "Quem pode doar?",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
 
                 Text(
-                    text = "Mulheres que amamentam, estão saudáveis e produzem leite " +
+                    text =
+                        "Mulheres que amamentam, estão saudáveis e produzem leite " +
                             "além da necessidade de seus bebês podem ser candidatas à doação. " +
-                            "A equipe do banco de leite avaliará os critérios necessários."
+                            "A equipe do banco de leite avaliará os critérios necessários.",
                 )
             }
         }
@@ -178,18 +185,17 @@ fun ConhecaDoacaoScreen(
 
         Button(
             onClick = onConcluir,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(R.color.main_pink)
-            )
+            modifier = Modifier.fillMaxWidth().height(54.dp),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = colorResource(R.color.main_pink),
+                ),
         ) {
             Text(
                 text = "Concluir leitura",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }

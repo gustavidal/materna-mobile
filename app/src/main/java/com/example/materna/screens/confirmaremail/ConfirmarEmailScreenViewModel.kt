@@ -17,7 +17,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class ConfirmarEmailScreenViewModel(
-    private val settingsDao: AppSettingsDao
+    private val settingsDao: AppSettingsDao,
 ) : ViewModel() {
 
     private val _email = MutableLiveData("")
@@ -48,17 +48,15 @@ class ConfirmarEmailScreenViewModel(
     }
 
     fun onCodigoChanged(value: String) {
-        _codigo.value = value
-            .filter { it in '0'..'9' }
-            .take(6)
+        _codigo.value = value.filter { it in '0'..'9' }.take(6)
 
         _mensagemConfirmacao.value = null
     }
 
     fun podeConfirmar(): Boolean {
         return _codigo.value.orEmpty().length == 6 &&
-                !_email.value.isNullOrBlank() &&
-                _confirmando.value != true
+            !_email.value.isNullOrBlank() &&
+            _confirmando.value != true
     }
 
     fun confirmarCodigo(context: Context, idDoadora: Int) {
@@ -81,101 +79,116 @@ class ConfirmarEmailScreenViewModel(
             return
         }
 
-        val request = ValidarCodigoRequest(
-            idDoadora = idDoadora,
-            codigo = codigoDigitado.toInt()
-        )
+        val request =
+            ValidarCodigoRequest(
+                idDoadora = idDoadora,
+                codigo = codigoDigitado.toInt(),
+            )
 
         _confirmando.value = true
         _mensagemConfirmacao.value = null
         _codigoConfirmado.value = false
 
-        val call = MaternaRetrofitFactory(context.applicationContext)
-            .getAuthService()
-            .validarCodigo(request)
+        val call =
+            MaternaRetrofitFactory(context.applicationContext)
+                .getAuthService()
+                .validarCodigo(request)
 
-        call.enqueue(object : Callback<ValidarCodigoResponse> {
-            override fun onResponse(
-                call: Call<ValidarCodigoResponse>,
-                response: Response<ValidarCodigoResponse>
-            ) {
-                Log.i("ConfirmarCodigo", "Response ${response.body()}")
+        call.enqueue(
+            object : Callback<ValidarCodigoResponse> {
+                override fun onResponse(
+                    call: Call<ValidarCodigoResponse>,
+                    response: Response<ValidarCodigoResponse>,
+                ) {
+                    Log.i("ConfirmarCodigo", "Response ${response.body()}")
 
-                if (response.isSuccessful) {
-                    val resultado = response.body()
+                    if (response.isSuccessful) {
+                        val resultado = response.body()
 
-                    if (
-                        resultado?.status == true &&
-                        resultado.response?.isValidado == true &&
-                        resultado.response.idDoadora == idDoadora
-                    ) {
-                        viewModelScope.launch {
-                            try {
-                                settingsDao.limparCadastroPendente()
+                        if (
+                            resultado?.status == true &&
+                                resultado.response?.isValidado == true &&
+                                resultado.response.idDoadora == idDoadora
+                        ) {
+                            viewModelScope.launch {
+                                try {
+                                    settingsDao.limparCadastroPendente()
 
-                                _codigoConfirmado.value = true
-                            } catch (e: Exception) {
-                                Log.e(
-                                    "ConfirmarCodigo",
-                                    "Erro ao atualizar dados locais",
-                                    e
-                                )
+                                    _codigoConfirmado.value = true
+                                } catch (e: Exception) {
+                                    Log.e(
+                                        "ConfirmarCodigo",
+                                        "Erro ao atualizar dados locais",
+                                        e,
+                                    )
 
-                                _mensagemConfirmacao.value = "Código confirmado, mas houve um erro ao atualizar os dados locais."
-                            } finally {
-                                _confirmando.value = false
+                                    _mensagemConfirmacao.value =
+                                        "Código confirmado, mas houve um erro ao atualizar os dados locais."
+                                } finally {
+                                    _confirmando.value = false
+                                }
                             }
+                        } else {
+                            _confirmando.value = false
+
+                            _mensagemConfirmacao.value =
+                                resultado?.message?.takeIf {
+                                    it.isNotBlank()
+                                } ?: "Código inválido ou expirado."
                         }
                     } else {
                         _confirmando.value = false
 
+                        val erro =
+                            try {
+                                response.errorBody()?.string()?.let {
+                                    Gson()
+                                        .fromJson(
+                                            it,
+                                            ValidarCodigoResponse::class.java,
+                                        )
+                                }
+                            } catch (e: Exception) {
+                                Log.e("ConfirmarCodigo", "Erro ao interpretar resposta", e)
+                                null
+                            }
+
                         _mensagemConfirmacao.value =
-                            resultado?.message?.takeIf {
-                                it.isNotBlank()
-                            } ?: "Código inválido ou expirado."
-                    }
-                } else {
-                    _confirmando.value = false
+                            when {
+                                response.code() == 400 &&
+                                    erro
+                                        ?.field
+                                        ?.contains(
+                                            "CODIGO",
+                                            ignoreCase = true,
+                                        ) == true ->
+                                    "Código incorreto. Confira os seis dígitos e tente novamente."
 
-                    val erro = try {
-                        response.errorBody()?.string()?.let {
-                            Gson().fromJson(
-                                it,
-                                ValidarCodigoResponse::class.java
-                            )
-                        }
-                    } catch (e: Exception) {
-                        Log.e("ConfirmarCodigo", "Erro ao interpretar resposta", e)
-                        null
-                    }
+                                response.code() == 404 ->
+                                    "Não foi possível localizar os dados da confirmação."
 
-                    _mensagemConfirmacao.value = when {
-                        response.code() == 400 && erro?.field?.contains(
-                            "CODIGO",
-                            ignoreCase = true
-                        ) == true -> "Código incorreto. Confira os seis dígitos e tente novamente."
+                                !erro?.field.isNullOrBlank() ->
+                                    "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}".trim()
 
-                        response.code() == 404 -> "Não foi possível localizar os dados da confirmação."
+                                !erro?.message.isNullOrBlank() -> erro?.message
 
-                        !erro?.field.isNullOrBlank() -> "${erro?.message.orEmpty()} ${erro?.field.orEmpty()}".trim()
-
-                        !erro?.message.isNullOrBlank() -> erro?.message
-
-                        else -> "Não foi possível confirmar o código. HTTP ${response.code()}."
+                                else ->
+                                    "Não foi possível confirmar o código. HTTP ${response.code()}."
+                            }
                     }
                 }
-            }
 
-            override fun onFailure(
-                call: Call<ValidarCodigoResponse>,
-                t: Throwable
-            ) {
-                _confirmando.value = false
+                override fun onFailure(
+                    call: Call<ValidarCodigoResponse>,
+                    t: Throwable,
+                ) {
+                    _confirmando.value = false
 
-                _mensagemConfirmacao.value = "Não foi possível conectar à API. Tente novamente."
+                    _mensagemConfirmacao.value = "Não foi possível conectar à API. Tente novamente."
 
-                Log.e("ConfirmarCodigo", "Falha ${t.message}", t)
-            }
-        })
+                    Log.e("ConfirmarCodigo", "Falha ${t.message}", t)
+                }
+            },
+        )
     }
 }

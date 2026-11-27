@@ -1,5 +1,6 @@
 package com.example.materna.screens.others
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,10 +24,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import com.example.materna.data.local.JornadaLocalProgress
 import com.example.materna.data.local.JornadaLocalProgressDao
 import kotlinx.coroutines.launch
+import com.example.materna.R
 
 private data class PerguntaQuestionario(
     val texto: String,
@@ -94,7 +97,8 @@ fun QuestionarioScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(24.dp)
+            .background(colorResource(R.color.background_cream)),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Text(

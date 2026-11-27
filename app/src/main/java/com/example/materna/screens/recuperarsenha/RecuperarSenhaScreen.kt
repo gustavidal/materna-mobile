@@ -1,4 +1,3 @@
-
 package com.example.materna.screens.recuperarsenha
 
 import android.util.Patterns
@@ -56,7 +55,7 @@ import com.example.materna.utils.FormatadorCampos.mascararEmail
 fun RecuperarSenhaScreen(
     emailCadastrado: String?,
     onVoltarLogin: () -> Unit,
-    onEnviarCodigo: (String) -> Unit
+    onEnviarCodigo: (String) -> Unit,
 ) {
     var emailDigitado by rememberSaveable {
         mutableStateOf("")
@@ -70,83 +69,81 @@ fun RecuperarSenhaScreen(
 
     val possuiEmailSalvo = emailSalvo.isNotBlank()
 
-    val outroEmailSelecionado =
-        usarOutroEmail || !possuiEmailSalvo
+    val outroEmailSelecionado = usarOutroEmail || !possuiEmailSalvo
 
-    val emailSelecionado = if (outroEmailSelecionado) {
-        emailDigitado.trim()
-    } else {
-        emailSalvo
-    }
+    val emailSelecionado =
+        if (outroEmailSelecionado) {
+            emailDigitado.trim()
+        } else {
+            emailSalvo
+        }
 
-    val podeEnviar = Patterns.EMAIL_ADDRESS
-        .matcher(emailSelecionado)
-        .matches()
+    val podeEnviar = Patterns.EMAIL_ADDRESS.matcher(emailSelecionado).matches()
 
     val focusManager = LocalFocusManager.current
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_gray))
-            .imePadding()
-            .padding(8.dp)
+        modifier =
+            Modifier.fillMaxSize()
+                .background(colorResource(R.color.background_gray))
+                .imePadding()
+                .padding(8.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(32.dp))
-                .background(colorResource(R.color.background_cream))
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = 22.dp,
-                    vertical = 28.dp
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier.fillMaxSize()
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(colorResource(R.color.background_cream))
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        horizontal = 22.dp,
+                        vertical = 28.dp,
+                    ),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
             Text(
                 text = "Recuperar Senha",
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(R.color.main_text_color),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
 
             Spacer(Modifier.height(36.dp))
 
             // Ícone principal
             Box(
-                modifier = Modifier
-                    .size(110.dp)
-                    .shadow(
-                        elevation = 18.dp,
-                        shape = CircleShape,
-                        ambientColor = colorResource(R.color.pink_beige),
-                        spotColor = colorResource(R.color.main_pink)
-                    )
-                    .background(
-                        colorResource(R.color.white),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier.size(110.dp)
+                        .shadow(
+                            elevation = 18.dp,
+                            shape = CircleShape,
+                            ambientColor = colorResource(R.color.pink_beige),
+                            spotColor = colorResource(R.color.main_pink),
+                        )
+                        .background(
+                            colorResource(R.color.white),
+                            CircleShape,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(76.dp)
-                        .background(
-                            colorResource(R.color.pink_beige),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier.size(76.dp)
+                            .background(
+                                colorResource(R.color.pink_beige),
+                                CircleShape,
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        painter = painterResource(
-                            R.drawable.ic_locked_shield
-                        ),
+                        painter =
+                            painterResource(
+                                R.drawable.ic_locked_shield,
+                            ),
                         contentDescription = null,
                         tint = colorResource(R.color.main_pink),
-                        modifier = Modifier.size(39.dp)
+                        modifier = Modifier.size(39.dp),
                     )
                 }
             }
@@ -158,25 +155,24 @@ fun RecuperarSenhaScreen(
                 fontSize = 27.sp,
                 fontWeight = FontWeight.Bold,
                 color = colorResource(R.color.main_text_color),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
 
             Spacer(Modifier.height(36.dp))
 
             // Card de recuperação
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(colorResource(R.color.white))
-                    .padding(18.dp)
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(colorResource(R.color.white))
+                        .padding(18.dp),
             ) {
-
                 Text(
                     text = "Onde prefere receber o código?",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = colorResource(R.color.main_text_color)
+                    color = colorResource(R.color.main_text_color),
                 )
 
                 Spacer(Modifier.height(24.dp))
@@ -184,64 +180,66 @@ fun RecuperarSenhaScreen(
                 // Opção 1: E-mail salvo no Room
                 if (possuiEmailSalvo) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(
-                                if (!outroEmailSelecionado) {
-                                    colorResource(R.color.pink_beige)
-                                } else {
-                                    colorResource(R.color.background_cream)
-                                }
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = if (!outroEmailSelecionado) {
-                                    colorResource(R.color.main_pink)
-                                } else {
-                                    colorResource(R.color.border)
-                                },
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                            .clickable {
-                                usarOutroEmail = false
-                                focusManager.clearFocus()
-                            }
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
                                 .background(
-                                    colorResource(R.color.white),
-                                    CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
+                                    if (!outroEmailSelecionado) {
+                                        colorResource(R.color.pink_beige)
+                                    } else {
+                                        colorResource(R.color.background_cream)
+                                    },
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color =
+                                        if (!outroEmailSelecionado) {
+                                            colorResource(R.color.main_pink)
+                                        } else {
+                                            colorResource(R.color.border)
+                                        },
+                                    shape = RoundedCornerShape(20.dp),
+                                )
+                                .clickable {
+                                    usarOutroEmail = false
+                                    focusManager.clearFocus()
+                                }
+                                .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier.size(48.dp)
+                                    .background(
+                                        colorResource(R.color.white),
+                                        CircleShape,
+                                    ),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                painter = painterResource(
-                                    R.drawable.ic_mail
-                                ),
+                                painter =
+                                    painterResource(
+                                        R.drawable.ic_mail,
+                                    ),
                                 contentDescription = null,
                                 tint = colorResource(R.color.main_pink),
-                                modifier = Modifier.size(25.dp)
+                                modifier = Modifier.size(25.dp),
                             )
                         }
 
                         Spacer(Modifier.width(14.dp))
 
                         Column(
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         ) {
                             Text(
                                 text = "E-mail principal",
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = colorResource(
-                                    R.color.main_text_color
-                                )
+                                color =
+                                    colorResource(
+                                        R.color.main_text_color,
+                                    ),
                             )
 
                             Spacer(Modifier.height(3.dp))
@@ -249,9 +247,10 @@ fun RecuperarSenhaScreen(
                             Text(
                                 text = mascararEmail(emailSalvo),
                                 fontSize = 14.sp,
-                                color = colorResource(
-                                    R.color.secundary_gray
-                                )
+                                color =
+                                    colorResource(
+                                        R.color.secundary_gray,
+                                    ),
                             )
 
                             Spacer(Modifier.height(3.dp))
@@ -259,14 +258,15 @@ fun RecuperarSenhaScreen(
                             Text(
                                 text = "Conta salva neste dispositivo",
                                 fontSize = 12.sp,
-                                color = colorResource(
-                                    R.color.secundary_gray
-                                )
+                                color =
+                                    colorResource(
+                                        R.color.secundary_gray,
+                                    ),
                             )
                         }
 
                         IndicadorSelecionado(
-                            selecionado = !outroEmailSelecionado
+                            selecionado = !outroEmailSelecionado,
                         )
                     }
 
@@ -275,61 +275,62 @@ fun RecuperarSenhaScreen(
 
                 // Opção 2: Outro e-mail
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            if (outroEmailSelecionado) {
-                                colorResource(R.color.pink_beige)
-                            } else {
-                                colorResource(R.color.background_cream)
-                            }
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = if (outroEmailSelecionado) {
-                                colorResource(R.color.main_pink)
-                            } else {
-                                colorResource(R.color.border)
-                            },
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                        .clickable {
-                            usarOutroEmail = true
-                        }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
                             .background(
-                                colorResource(R.color.white),
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
+                                if (outroEmailSelecionado) {
+                                    colorResource(R.color.pink_beige)
+                                } else {
+                                    colorResource(R.color.background_cream)
+                                },
+                            )
+                            .border(
+                                width = 1.dp,
+                                color =
+                                    if (outroEmailSelecionado) {
+                                        colorResource(R.color.main_pink)
+                                    } else {
+                                        colorResource(R.color.border)
+                                    },
+                                shape = RoundedCornerShape(20.dp),
+                            )
+                            .clickable {
+                                usarOutroEmail = true
+                            }
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.size(48.dp)
+                                .background(
+                                    colorResource(R.color.white),
+                                    CircleShape,
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Email,
                             contentDescription = null,
                             tint = colorResource(R.color.main_pink),
-                            modifier = Modifier.size(25.dp)
+                            modifier = Modifier.size(25.dp),
                         )
                     }
 
                     Spacer(Modifier.width(14.dp))
 
                     Column(
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(
                             text = "Usar outro e-mail",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = colorResource(
-                                R.color.main_text_color
-                            )
+                            color =
+                                colorResource(
+                                    R.color.main_text_color,
+                                ),
                         )
 
                         Spacer(Modifier.height(3.dp))
@@ -337,20 +338,21 @@ fun RecuperarSenhaScreen(
                         Text(
                             text = "Recuperar outra conta",
                             fontSize = 12.sp,
-                            color = colorResource(
-                                R.color.secundary_gray
-                            )
+                            color =
+                                colorResource(
+                                    R.color.secundary_gray,
+                                ),
                         )
                     }
 
                     IndicadorSelecionado(
-                        selecionado = outroEmailSelecionado
+                        selecionado = outroEmailSelecionado,
                     )
                 }
 
                 // Campo exibido somente para outra conta
                 AnimatedVisibility(
-                    visible = outroEmailSelecionado
+                    visible = outroEmailSelecionado,
                 ) {
                     Column {
                         Spacer(Modifier.height(24.dp))
@@ -359,9 +361,10 @@ fun RecuperarSenhaScreen(
                             text = "Informe o e-mail da conta",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
-                            color = colorResource(
-                                R.color.main_text_color
-                            )
+                            color =
+                                colorResource(
+                                    R.color.main_text_color,
+                                ),
                         )
 
                         Spacer(Modifier.height(10.dp))
@@ -375,57 +378,64 @@ fun RecuperarSenhaScreen(
                             placeholder = {
                                 Text(
                                     text = "Digite o e-mail",
-                                    fontSize = 14.sp
+                                    fontSize = 14.sp,
                                 )
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(
-                                        R.drawable.ic_mail
-                                    ),
+                                    painter =
+                                        painterResource(
+                                            R.drawable.ic_mail,
+                                        ),
                                     contentDescription = null,
-                                    modifier = Modifier.size(25.dp)
+                                    modifier = Modifier.size(25.dp),
                                 )
                             },
                             singleLine = true,
                             shape = RoundedCornerShape(18.dp),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = colorResource(
-                                    R.color.main_pink
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    keyboardType = KeyboardType.Email,
                                 ),
-                                unfocusedBorderColor = colorResource(
-                                    R.color.border
+                            colors =
+                                OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor =
+                                        colorResource(
+                                            R.color.main_pink,
+                                        ),
+                                    unfocusedBorderColor =
+                                        colorResource(
+                                            R.color.border,
+                                        ),
+                                    focusedLeadingIconColor =
+                                        colorResource(
+                                            R.color.main_pink,
+                                        ),
+                                    unfocusedLeadingIconColor =
+                                        colorResource(
+                                            R.color.secundary_gray,
+                                        ),
+                                    focusedContainerColor =
+                                        colorResource(
+                                            R.color.white,
+                                        ),
+                                    unfocusedContainerColor =
+                                        colorResource(
+                                            R.color.white,
+                                        ),
                                 ),
-                                focusedLeadingIconColor = colorResource(
-                                    R.color.main_pink
-                                ),
-                                unfocusedLeadingIconColor = colorResource(
-                                    R.color.secundary_gray
-                                ),
-                                focusedContainerColor = colorResource(
-                                    R.color.white
-                                ),
-                                unfocusedContainerColor = colorResource(
-                                    R.color.white
-                                )
-                            )
                         )
 
                         if (
                             emailDigitado.isNotBlank() &&
-                            !Patterns.EMAIL_ADDRESS
-                                .matcher(emailDigitado.trim())
-                                .matches()
+                                !Patterns.EMAIL_ADDRESS.matcher(emailDigitado.trim()).matches()
                         ) {
                             Spacer(Modifier.height(8.dp))
 
                             Text(
                                 text = "Informe um e-mail válido.",
                                 fontSize = 12.sp,
-                                color = colorResource(R.color.main_pink)
+                                color = colorResource(R.color.main_pink),
                             )
                         }
                     }
@@ -440,40 +450,43 @@ fun RecuperarSenhaScreen(
                         onEnviarCodigo(emailSelecionado)
                     },
                     enabled = podeEnviar,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp),
+                    modifier = Modifier.fillMaxWidth().height(58.dp),
                     shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colorResource(
-                            R.color.main_pink
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                                colorResource(
+                                    R.color.main_pink,
+                                ),
+                            contentColor =
+                                colorResource(
+                                    R.color.white,
+                                ),
+                            disabledContainerColor =
+                                colorResource(
+                                    R.color.disabled,
+                                ),
+                            disabledContentColor =
+                                colorResource(
+                                    R.color.secundary_gray,
+                                ),
                         ),
-                        contentColor = colorResource(
-                            R.color.white
+                    elevation =
+                        ButtonDefaults.buttonElevation(
+                            defaultElevation = 7.dp,
                         ),
-                        disabledContainerColor = colorResource(
-                            R.color.disabled
-                        ),
-                        disabledContentColor = colorResource(
-                            R.color.secundary_gray
-                        )
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 7.dp
-                    )
                 ) {
                     Text(
                         text = "Enviar código",
                         fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
 
                     Spacer(Modifier.width(10.dp))
 
                     Icon(
-                        imageVector =
-                            Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
                     )
                 }
             }
@@ -484,31 +497,31 @@ fun RecuperarSenhaScreen(
             Text(
                 text = "Lembrou a sua senha?",
                 fontSize = 16.sp,
-                color = colorResource(R.color.main_text_color)
+                color = colorResource(R.color.main_text_color),
             )
 
             Spacer(Modifier.height(14.dp))
 
             Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(
-                        colorResource(R.color.background_gray)
-                    )
-                    .clickable {
-                        onVoltarLogin()
-                    }
-                    .padding(
-                        horizontal = 20.dp,
-                        vertical = 13.dp
-                    ),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier.clip(RoundedCornerShape(50))
+                        .background(
+                            colorResource(R.color.background_gray),
+                        )
+                        .clickable {
+                            onVoltarLogin()
+                        }
+                        .padding(
+                            horizontal = 20.dp,
+                            vertical = 13.dp,
+                        ),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_login),
                     contentDescription = null,
                     tint = colorResource(R.color.main_pink),
-                    modifier = Modifier.size(21.dp)
+                    modifier = Modifier.size(21.dp),
                 )
 
                 Spacer(Modifier.width(6.dp))
@@ -517,10 +530,9 @@ fun RecuperarSenhaScreen(
                     text = "Fazer login",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = colorResource(R.color.main_pink)
+                    color = colorResource(R.color.main_pink),
                 )
             }
         }
     }
 }
-

@@ -1,5 +1,6 @@
 package com.example.materna.screens.perfil
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +59,10 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import com.example.materna.components.FotoPerfilCropDialog
+import java.io.File
 import com.example.materna.R
 import com.example.materna.components.PerfilIndicador
 import com.example.materna.components.PerfilOpcao
@@ -89,15 +94,82 @@ fun PerfilScreen(
     val context = LocalContext.current
 
 
+    var mostrarOpcoesFoto by rememberSaveable { mutableStateOf(false) }
+    var uriParaCortar by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var uriCamera by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    // Galeria -> abre a tela de corte
     val selecionarFoto = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            perfilScreenViewModel.atualizarFotoPerfil(
-                context = context,
-                uri = uri
-            )
+            uriParaCortar = uri
         }
+    }
+
+    // Câmera -> grava no cache e abre a tela de corte
+    val tirarFoto = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { sucesso ->
+        if (sucesso) {
+            uriParaCortar = uriCamera
+        }
+    }
+
+    if (mostrarOpcoesFoto) {
+        AlertDialog(
+            onDismissRequest = { mostrarOpcoesFoto = false },
+            title = { Text("Foto de perfil", fontWeight = FontWeight.Bold) },
+            text = { Text("De onde você quer pegar a foto?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostrarOpcoesFoto = false
+
+                        val pasta = File(context.cacheDir, "fotos_perfil").apply { mkdirs() }
+                        val arquivo = File(pasta, "camera_${System.currentTimeMillis()}.jpg")
+                        val uri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            arquivo
+                        )
+
+                        uriCamera = uri
+                        tirarFoto.launch(uri)
+                    }
+                ) {
+                    Text("Tirar foto", color = colorResource(R.color.main_pink))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        mostrarOpcoesFoto = false
+                        selecionarFoto.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    }
+                ) {
+                    Text("Escolher da galeria", color = colorResource(R.color.main_pink))
+                }
+            }
+        )
+    }
+
+    uriParaCortar?.let { origem ->
+        FotoPerfilCropDialog(
+            uri = origem,
+            onConfirmar = { recortada ->
+                uriParaCortar = null
+                perfilScreenViewModel.atualizarFotoPerfil(
+                    context = context,
+                    uri = recortada
+                )
+            },
+            onCancelar = { uriParaCortar = null }
+        )
     }
 
     val atualizandoFoto by perfilScreenViewModel.atualizandoFoto.observeAsState(false)
@@ -321,11 +393,7 @@ fun PerfilScreen(
                             .copy(alpha = 0.12f)
                     )
                     .clickable(enabled = !atualizandoFoto) {
-                        selecionarFoto.launch(
-                            PickVisualMediaRequest(
-                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                            )
-                        )
+                        mostrarOpcoesFoto = true
                     },
                 contentAlignment = Alignment.Center
             ) {

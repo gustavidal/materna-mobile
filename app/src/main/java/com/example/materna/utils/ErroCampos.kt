@@ -5,11 +5,9 @@ object ErroCampos {
         val nome = value.trim()
 
         return when {
-            nome.isEmpty() ->
-                "Informe seu nome completo."
+            nome.isEmpty() -> "Informe seu nome completo."
 
-            nome.length > 100 ->
-                "O nome deve ter no máximo 100 caracteres."
+            nome.length > 100 -> "O nome deve ter no máximo 100 caracteres."
 
             else -> null
         }
@@ -17,14 +15,11 @@ object ErroCampos {
 
     fun dataNascimento(value: String): String? {
         return when {
-            value.isEmpty() ->
-                "Informe sua data de nascimento."
+            value.isEmpty() -> "Informe sua data de nascimento."
 
-            value.length < 10 ->
-                "Complete a data de nascimento."
+            value.length < 10 -> "Complete a data de nascimento."
 
-            !ValidadorCampos.dataNascimentoValida(value) ->
-                "Informe uma data válida."
+            !ValidadorCampos.dataNascimentoValida(value) -> "Informe uma data válida."
 
             else -> null
         }
@@ -34,14 +29,11 @@ object ErroCampos {
         val numeros = value.filter { it.isDigit() }
 
         return when {
-            numeros.isEmpty() ->
-                "Informe seu CPF."
+            numeros.isEmpty() -> "Informe seu CPF."
 
-            numeros.length < 11 ->
-                "Complete os 11 dígitos do CPF."
+            numeros.length < 11 -> "Complete os 11 dígitos do CPF."
 
-            !ValidadorCampos.cpfValido(value) ->
-                "CPF inválido. Confira os números informados."
+            !ValidadorCampos.cpfValido(value) -> "CPF inválido. Confira os números informados."
 
             else -> null
         }
@@ -51,8 +43,7 @@ object ErroCampos {
         val numeros = value.filter { it.isDigit() }
 
         return when {
-            numeros.isEmpty() ->
-                "Informe seu telefone."
+            numeros.isEmpty() -> "Informe seu telefone."
 
             !ValidadorCampos.telefoneValido(value) ->
                 "Informe um telefone com DDD e 8 ou 9 dígitos."
@@ -65,11 +56,9 @@ object ErroCampos {
         val numeros = value.filter { it.isDigit() }
 
         return when {
-            numeros.isEmpty() ->
-                "Informe seu CEP."
+            numeros.isEmpty() -> "Informe seu CEP."
 
-            !ValidadorCampos.cepValido(value) ->
-                "Complete os 8 dígitos do CEP."
+            !ValidadorCampos.cepValido(value) -> "Complete os 8 dígitos do CEP."
 
             else -> null
         }
@@ -79,11 +68,9 @@ object ErroCampos {
         val numero = value.toIntOrNull()
 
         return when {
-            value.isBlank() ->
-                "Informe o número do endereço."
+            value.isBlank() -> "Informe o número do endereço."
 
-            !ValidadorCampos.numeroValido(numero) ->
-                "Informe um número maior que zero."
+            !ValidadorCampos.numeroValido(numero) -> "Informe um número maior que zero."
 
             else -> null
         }
@@ -91,8 +78,7 @@ object ErroCampos {
 
     fun email(value: String): String? {
         return when {
-            value.isBlank() ->
-                "Informe seu e-mail."
+            value.isBlank() -> "Informe seu e-mail."
 
             !ValidadorCampos.emailValido(value) ->
                 "E-mail inválido. Verifique o endereço informado."
@@ -103,14 +89,12 @@ object ErroCampos {
 
     fun confirmarSenha(
         senha: String,
-        confirmacao: String
+        confirmacao: String,
     ): String? {
         return when {
-            confirmacao.isBlank() ->
-                "Confirme sua senha."
+            confirmacao.isBlank() -> "Confirme sua senha."
 
-            !ValidadorCampos.senhasCoincidem(senha, confirmacao) ->
-                "As senhas não coincidem."
+            !ValidadorCampos.senhasCoincidem(senha, confirmacao) -> "As senhas não coincidem."
 
             else -> null
         }

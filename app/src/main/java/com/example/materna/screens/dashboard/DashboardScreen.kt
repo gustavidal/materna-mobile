@@ -42,72 +42,69 @@ import com.example.materna.components.DashboardHighlightCard
 fun DashboardScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    dashboardScreenViewModel: DashboardScreenViewModel
+    dashboardScreenViewModel: DashboardScreenViewModel,
 ) {
-    val nomeDoadora         by dashboardScreenViewModel.nomeDoadora.observeAsState("")
-    val bancoSelecionado    by dashboardScreenViewModel.bancoSelecionado.observeAsState(false)
+    val nomeDoadora by dashboardScreenViewModel.nomeDoadora.observeAsState("")
+    val bancoSelecionado by dashboardScreenViewModel.bancoSelecionado.observeAsState(false)
 
-    val campanhas           by dashboardScreenViewModel.campanhas.observeAsState(emptyList())
+    val campanhas by dashboardScreenViewModel.campanhas.observeAsState(emptyList())
     val carregandoCampanhas by dashboardScreenViewModel.carregandoCampanhas.observeAsState(false)
-    val mensagemCampanhas   by dashboardScreenViewModel.mensagemCampanhas.observeAsState(null)
+    val mensagemCampanhas by dashboardScreenViewModel.mensagemCampanhas.observeAsState(null)
 
     LaunchedEffect(dashboardScreenViewModel) {
         dashboardScreenViewModel.buscarCampanhas()
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colorResource(R.color.background_cream))
-            .verticalScroll(rememberScrollState())
-            .padding(
-                start = 24.dp,
-                end = 24.dp,
-                top = 32.dp,
-                bottom = 32.dp
-            ),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.background_cream))
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = 24.dp,
+                    end = 24.dp,
+                    top = 32.dp,
+                    bottom = 32.dp,
+                ),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
                 Text(
                     text = "Olá,",
                     fontSize = 16.sp,
-                    color = colorResource(R.color.secundary_gray)
+                    color = colorResource(R.color.secundary_gray),
                 )
 
                 Text(
-                    text = nomeDoadora
-                        .trim()
-                        .substringBefore(" ")
-                        .ifBlank { "Doadora" } + "!",
+                    text = nomeDoadora.trim().substringBefore(" ").ifBlank { "Doadora" } + "!",
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.main_text_color)
+                    color = colorResource(R.color.main_text_color),
                 )
             }
 
             IconButton(
                 onClick = {
-//                    TODO: Navegar para notificações
+                    //                    TODO: Navegar para notificações
                 },
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        colorResource(R.color.pink_beige),
-                        CircleShape
-                    )
+                modifier =
+                    Modifier.size(48.dp)
+                        .background(
+                            colorResource(R.color.pink_beige),
+                            CircleShape,
+                        ),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_notification),
                     contentDescription = "Notificações",
                     tint = colorResource(R.color.main_text_color),
-                    modifier = Modifier
-                        .size(22.dp)
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -115,8 +112,8 @@ fun DashboardScreen(
         if (!bancoSelecionado) {
             DashboardHighlightCard(
                 onClick = {
-//                    TODO: Navegar para seleção do banco
-                }
+                    //                    TODO: Navegar para seleção do banco
+                },
             )
         }
 
@@ -124,7 +121,7 @@ fun DashboardScreen(
             text = "Como podemos ajudar?",
             fontSize = 23.sp,
             fontWeight = FontWeight.Bold,
-            color = colorResource(R.color.main_text_color)
+            color = colorResource(R.color.main_text_color),
         )
 
         DashboardActionCard(
@@ -135,7 +132,7 @@ fun DashboardScreen(
             destaque = true,
             onClick = {
                 navController.navigate("jornada")
-            }
+            },
         )
 
         DashboardActionCard(
@@ -145,7 +142,7 @@ fun DashboardScreen(
             iconColor = colorResource(R.color.main_pink),
             onClick = {
                 navController.navigate("servicos")
-            }
+            },
         )
 
         DashboardActionCard(
@@ -154,8 +151,8 @@ fun DashboardScreen(
             icon = painterResource(R.drawable.ic_book),
             iconColor = colorResource(R.color.main_pink),
             onClick = {
-//                TODO: Navegar para conteúdos educativos
-            }
+                //                TODO: Navegar para conteúdos educativos
+            },
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -163,72 +160,71 @@ fun DashboardScreen(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Campanhas próximas",
                 fontSize = 23.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(R.color.main_text_color)
+                color = colorResource(R.color.main_text_color),
             )
 
             Text(
                 text = "Ver todas",
                 color = colorResource(R.color.main_pink),
-                modifier = Modifier.clickable {
-                    navController.navigate("campanhas")
-                }
+                modifier =
+                    Modifier.clickable {
+                        navController.navigate("campanhas")
+                    },
             )
         }
 
         when {
             carregandoCampanhas -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(190.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxWidth().height(190.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(
-                        color = colorResource(R.color.main_pink)
+                        color = colorResource(R.color.main_pink),
                     )
                 }
             }
 
             mensagemCampanhas != null -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(190.dp)
-                        .background(
-                            colorResource(R.color.pink_beige),
-                            RoundedCornerShape(18.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(190.dp)
+                            .background(
+                                colorResource(R.color.pink_beige),
+                                RoundedCornerShape(18.dp),
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = mensagemCampanhas.orEmpty(),
                         color = colorResource(R.color.secundary_gray),
                         modifier = Modifier.padding(20.dp),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
 
             campanhas.isEmpty() -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(190.dp)
-                        .background(
-                            colorResource(R.color.pink_beige),
-                            RoundedCornerShape(18.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(190.dp)
+                            .background(
+                                colorResource(R.color.pink_beige),
+                                RoundedCornerShape(18.dp),
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "Nenhuma campanha disponível no momento.",
-                        color = colorResource(R.color.secundary_gray)
+                        color = colorResource(R.color.secundary_gray),
                     )
                 }
             }
@@ -240,7 +236,7 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             navController.navigate("campanha/${campanha.id}")
-                        }
+                        },
                     )
                 }
             }
